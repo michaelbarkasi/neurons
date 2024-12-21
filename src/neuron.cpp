@@ -109,15 +109,9 @@ void neuron::compute_autocorrelation() {
   // Collapse bins if needed
   if (convert_to_bins) {
     
-    double bin_sum;
     for (int n = 0; n < N_trial; n++) {
       for (int b = 0; b < T_n; b++) {
-        bin_sum = 0.0;
-        for (int t = 0; t < t_per_bin; t++) {
-          // Add up the rows in this bin, for this trial
-          bin_sum += trial_data((b*(int)t_per_bin) + t, n);
-        }
-        data(b, n) = bin_sum/(double)t_per_bin;
+        data(b, n) = trial_data(seq(b*(int)t_per_bin, (b*(int)t_per_bin) + t_per_bin - 1), n).sum()/(double)t_per_bin;
       }
     }
     
@@ -138,22 +132,10 @@ void neuron::compute_autocorrelation() {
   for (int lag = 0; lag < max_lag; lag++) {
     
     double normalization_term = 1.0/((double)T_n - (double)lag + 1.0);
-    double bin_sum;
-    
     // Sum over trials
     for (int n = 0; n < N_trial; n++) {
-      
-      // Sum over bins 
-      bin_sum = 0.0;
-      for (int b = 0; b < T_n; b++) {
-        bin_sum += data_padded(b + lag, n) * data(b, n);
-      }
-      
-      // Normalize bin_sum and add to autocorr
-      autocorr(lag) += normalization_term * bin_sum;
-      
+      autocorr(lag) += normalization_term * data_padded(seq(0 + lag, T_n + lag - 1),n).dot(data.col(n));
     }
-    
     // Find mean proportion of co-active bins per trial
     autocorr(lag) *= (1.0/N_trial);
     
