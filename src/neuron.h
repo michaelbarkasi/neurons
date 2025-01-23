@@ -65,7 +65,8 @@ class neuron {
     NumericMatrix fetch_spike_raster_R() const;
     
     // Member functions for fetching analysis results
-    NumericVector fetch_autocorr() const;
+    VectorXd fetch_autocorr() const;
+    NumericVector fetch_autocorr_R() const;
     
     // Member functions for data analysis
     void compute_autocorrelation();

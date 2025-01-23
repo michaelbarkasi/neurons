@@ -66,7 +66,7 @@ MatrixXd neuron::fetch_spike_raster() const {
   return spike_raster;
 } 
 
-// Fetching spike raster (Rcpp matrix)
+// Fetching spike raster (Eigen matrix)
 NumericMatrix neuron::fetch_spike_raster_R() const {
   return wrap(spike_raster);
 } 
@@ -76,7 +76,12 @@ NumericMatrix neuron::fetch_spike_raster_R() const {
  */
 
 // Fetching autocorrelation (Rcpp vector)
-NumericVector neuron::fetch_autocorr() const {
+VectorXd neuron::fetch_autocorr() const {
+  return autocorr;
+}
+
+// Fetching autocorrelation (Rcpp vector)
+NumericVector neuron::fetch_autocorr_R() const {
   return wrap(autocorr);
 }
 
@@ -124,7 +129,7 @@ void neuron::compute_autocorrelation() {
   data_padded.topRows(data.rows()) = data;
   data_padded.bottomRows(data.rows()).setZero();
   
-  // (Re)initialize autocorr and normalizing term 
+  // (Re)initialize autocorr
   autocorr.resize(max_lag);
   autocorr.setZero();
   
@@ -154,7 +159,7 @@ RCPP_MODULE(neuron) {
   .method("load_spike_raster_R", &neuron::load_spike_raster_R)
   .method("fetch_trial_data_R", &neuron::fetch_trial_data_R)
   .method("fetch_spike_raster_R", &neuron::fetch_spike_raster_R)
-  .method("fetch_autocorr", &neuron::fetch_autocorr)
+  .method("fetch_autocorr_R", &neuron::fetch_autocorr_R)
   .method("compute_autocorrelation", &neuron::compute_autocorrelation);
 }
 
