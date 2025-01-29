@@ -50,7 +50,7 @@ class neuron {
       const double t_per_bin = 1.0, 
       const double sample_rate = 1e4
     );
-    virtual ~neuron() {}
+    virtual ~neuron() {};
     
     // Member functions for loading data
     void load_trial_data(const MatrixXd& td);
