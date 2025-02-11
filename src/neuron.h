@@ -4,15 +4,59 @@
 #define NEURON_H
 
 // Rcpp
+// [[Rcpp::depends(BH)]]
 // [[Rcpp::depends(RcppEigen)]]
 #include <Rcpp.h>
 #include <RcppEigen.h>
 #include <nlopt.hpp>
+#include <boost/math/distributions/normal.hpp>
 using namespace Rcpp;
 using namespace Eigen;
 
 // Helper functions
+
+// Build sequence of numbered string prefixes
 CharacterVector enum_prefix(std::string prefix, int n);
+
+// Conert between vector types
+std::vector<double> to_dVec(const VectorXd& vec);
+VectorXd to_eVec(const std::vector<double>& vec);
+
+// Exponential decay function (with gradients) for modelling
+double EDF_autocorr(
+    const double& lag, 
+    const double& A, 
+    const double& tau, 
+    const double& bias_term, 
+    const int& return_grad // 0 = function output, 1 = gradient wrt A, 2 = gradient wrt tau
+  );
+
+// Probability distributions
+double mvnorm_cdf(
+    const VectorXd& x, 
+    const VectorXd& mu, 
+    const MatrixXd& sigma
+  );
+
+double norm_cdf(
+    const double& x, 
+    const double& mu, 
+    const double& sd,
+    const bool& inverse
+  );
+
+MatrixXd mvnorm_random(
+    int n, 
+    VectorXd mu, 
+    MatrixXd sigma
+  );
+
+// For estimating sigma for dichotomized Gaussian simulation
+double dichot_gauss_sigma_eq(
+    const double& threshold,      // threshold for dichotomization
+    const double& cov,            // desired covarance after dichotomization
+    const NumericMatrix& sigma    // covariance matrix
+  );
 
 // Neuron class
 
@@ -98,11 +142,15 @@ class neuron {
     // Member functions for data analysis
     void compute_autocorrelation(const std::string& bin_count_action); // action must be 'sum', 'boolean', or 'mean'
     static double bounded_MSE_EDF_autocorr(
+        // Objective function for fitting EDF model to autocorrelation
         const std::vector<double>& x, // 0 is A, 1 is tau
         std::vector<double>& grad,
         void* data                    // neuron object (this)
     );
     void fit_autocorrelation();
+    void dichot_gauss_simulation(
+      const int& trials
+    );
 
 };
 

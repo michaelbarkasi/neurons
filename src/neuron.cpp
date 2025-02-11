@@ -45,15 +45,113 @@ double EDF_autocorr(
     const double& tau, 
     const double& bias_term,
     const int& return_grad
-) {
-  if (return_grad == 0) { // No gradient, return function output
-    return A * exp(-lag/tau) + bias_term;
-  } else if (return_grad == 1) { // gradient wrt A
-    return exp(-lag/tau);
-  } else if (return_grad == 2) { // gradient wrt tau
-    return A * exp(-lag/tau) * (lag/(tau*tau));
+  ) {
+    if (return_grad == 0) { // No gradient, return function output
+      return A * exp(-lag/tau) + bias_term;
+    } else if (return_grad == 1) { // gradient wrt A
+      return exp(-lag/tau);
+    } else if (return_grad == 2) { // gradient wrt tau
+      return A * exp(-lag/tau) * (lag/(tau*tau));
+    } else {
+      return 0.0;
+    }
   }
-}
+
+// Multivariate normal CDF
+double mvnorm_cdf(
+    const NumericVector& lower, 
+    const NumericVector& upper, 
+    const NumericVector& mean, 
+    const NumericMatrix& sigma  // covariance matrix of dimension n less than 1000
+  ) {
+    
+    if (sigma.nrow() != sigma.ncol()) {Rcpp::stop("Covariance matrix must be square");}
+    if (sigma.nrow() >= 1000) {Rcpp::stop("Covariance matrix must be less than 1000x1000");}
+    if (lower.size() != upper.size()) {Rcpp::stop("Lower and upper bounds must be same length");}
+    if (mean.size() != sigma.nrow() || mean.size() != lower.size()) {Rcpp::stop("Bounds and mean vectors must have the same length as sigma diagonal");}
+    
+    Function pmvnorm("pmvnorm"); // Calls mvtnorm::pmvnorm from R
+    // ... uses Genz algorithm
+    
+    return as<double>(
+      pmvnorm(
+        Named("lower") = lower, 
+        Named("upper") = upper, 
+        Named("mean") = mean, 
+        Named("sigma") = sigma
+      )
+    );
+    
+  }
+
+// Normal CDF inverse
+double norm_cdf(
+    const double& x,
+    const double& mu,
+    const double& sd,
+    const bool& inverse
+  ) {
+    using boost::math::normal; 
+    normal standard_normal(mu, sd);
+    if (inverse) {
+      return boost::math::quantile(standard_normal, x);
+    } else {
+      return boost::math::cdf(standard_normal, x);
+    }
+  }
+
+// Multivariate normal random number generator
+MatrixXd mvnorm_random(
+    int n,                   // Number of points to generate
+    VectorXd mu,             // Mean vector, length determines dimension
+    MatrixXd sigma           // Covariance matrix, square, same dimension as mu
+  ) {
+    // Covariance matrix must be positive definite (e.g., Cholesky decomposition of covariance matrix)
+   
+    int d = mu.size();
+    LLT<MatrixXd> llt(sigma);
+    MatrixXd L = llt.matrixL();
+    
+    MatrixXd Z(d, n);
+    for (int i = 0; i < d; i++) {
+      for (int j = 0; j < n; j++) {
+        Z(i, j) = R::rnorm(0, 1);
+      }
+    }
+    
+    return (L * Z).colwise() + mu;
+    
+  } 
+
+// For estimating sigma for dichotomized Gaussian simulation
+double dichot_gauss_sigma_eq(
+    const double& threshold,      // threshold for dichotomization
+    const double& cov,            // desired covarance after dichotomization
+    const NumericMatrix& sigma    // covariance matrix
+  ) {
+    
+    // Find probability of a point being below the threshold along both dimensions
+    NumericVector lower = {-1e100, -1e100};
+    NumericVector upper = {threshold, threshold};
+    double Phi2 = mvnorm_cdf(
+      lower,
+      upper, 
+      0.0, 
+      sigma
+    );
+    
+    // Find probability of a point being below the threshold along one dimension
+    double Phi = norm_cdf(
+      threshold, 
+      0.0,   // mean
+      1,     // sd
+      false  // return cdf
+    );
+    
+    // desired sigma will be the one which sends this output to zero
+    return cov - Phi2 * Phi * Phi;
+    
+  }
 
 /*
  * ***********************************************************************************
@@ -455,6 +553,30 @@ void neuron::fit_autocorrelation() {
     tau = x[1] * t_per_bin;
     
   } 
+
+void neuron::dichot_gauss_simulation(
+    const int& trials
+) {
+  
+  // Check that autocorrelation has been modelled
+  if (autocorr_edf.size() == 0) {
+    Rcpp::stop("autocorr_edf must be computed before dichot_gauss_simulation");
+  }
+  
+  // Compute gamma (dichotomizing threshold) needed to simulate firing rate lambda 
+  double gamma = norm_cdf(
+    1 - lambda,
+    0,   // mean
+    1,   // sd
+    true // return inverse
+  );
+  
+  // Use optimization to find the autocorrelation vector SIGMA needed to simulate the observed autocorrelation
+  
+  // Make random draws
+  
+  
+}
 
 /*
  * RCPP_MODULE to expose class to R and function to initialize neuron
