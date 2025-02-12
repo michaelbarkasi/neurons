@@ -148,25 +148,27 @@ double norm_cdf(
   }
 
 // Multivariate normal random number generator
-MatrixXd mvnorm_random(
+NumericMatrix mvnorm_random(
     int n,                   // Number of points to generate
-    VectorXd mu,             // Mean vector, length determines dimension
-    MatrixXd sigma           // Covariance matrix, square, same dimension as mu
+    NumericVector mu,             // Mean vector, length determines dimension
+    NumericMatrix sigma           // Covariance matrix, square, same dimension as mu
   ) {
-    // Covariance matrix must be positive definite (e.g., Cholesky decomposition of covariance matrix)
    
-    int d = mu.size();
-    LLT<MatrixXd> llt(sigma);
-    MatrixXd L = llt.matrixL();
+    if (sigma.nrow() != sigma.ncol()) {Rcpp::stop("Covariance matrix must be square");}
+    if (sigma.nrow() != mu.size()) {Rcpp::stop("Mean vector must have same length as sigma diagonal");}
     
-    MatrixXd Z(d, n);
-    for (int i = 0; i < d; i++) {
-      for (int j = 0; j < n; j++) {
-        Z(i, j) = R::rnorm(0, 1);
-      }
-    }
+    Function mvrnorm("mvrnorm", Environment::namespace_env("MASS"));
     
-    return (L * Z).colwise() + mu;
+    // Generate random points
+    NumericMatrix X = as<NumericMatrix>(
+      mvrnorm(
+        Named("n") = n, 
+        Named("mu") = mu, 
+        Named("Sigma") = sigma
+      )
+    );
+    
+    return X;
     
   } 
 
@@ -541,7 +543,7 @@ double neuron::bounded_MSE_EDF_autocorr(
     }
     mse = mse/(double)(max_lag - 1.0);
     
-    // Apply penalty to keep both parameters positive
+    // Apply penalty to keep both parameters positive]
     double penalty_multiple = nrn->penalty_multiple;
     double p1 = penalty_multiple/(x[0] * x[0]);
     double p2 = penalty_multiple/(x[1] * x[1]);
@@ -596,8 +598,9 @@ void neuron::fit_autocorrelation() {
     bias_term = lambda * t_per_bin;
     bias_term = bias_term * bias_term;
     
-    // When A is 1.0 and tau is 10.0, want p1 + p2 = mse0 * 0.25
-    penalty_multiple = (mse0 * 0.25)/(1.0/(A0 * A0) + 1.0/(tau0 * tau0));
+    // When A is 1.0 and tau is 10.0, want p1 + p2 = mse0 * penalty_weight
+    const double penalty_weight = 0.25;
+    penalty_multiple = (mse0 * penalty_weight)/(1.0/(A0 * A0) + 1.0/(tau0 * tau0));
     
     // Set up NLopt optimizer
     nlopt::opt opt(nlopt::LD_LBFGS, n); 
@@ -674,12 +677,11 @@ double neuron::sigma_loss(
 
 void neuron::dichot_gauss_parameters() {
   
-  // Check that autocorrelation has been modelled
+  // Check that autocorrelation has been modeled
   if (autocorr_edf.size() == 0) {
     Rcpp::stop("autocorr_edf must be computed before dichot_gauss_parameters");
   }
   
-  Rcpp::Rcout << "Computing norm_cdf with lambda = " << lambda << std::endl;
   // Compute gamma (dichotomizing threshold) needed to simulate firing rate lambda 
   gamma = norm_cdf(
     1 - lambda,
@@ -687,7 +689,6 @@ void neuron::dichot_gauss_parameters() {
     1,   // sd
     true // return inverse
   );
-  Rcpp::Rcout << "Computed gamma = " << gamma << std::endl;
   
   // Use optimization to find the autocorrelation vector SIGMA needed to simulate the observed autocorrelation
   std::vector<double> x = to_dVec(autocorr_edf);
@@ -717,21 +718,48 @@ void neuron::dichot_gauss_parameters() {
   
 }
 
-NumericMatrix neuron::dichot_gauss_simulation(
+neuron neuron::dichot_gauss_simulation(
     const int& trials
 ) {
   
+  // Assuming that the binning was done by summation
   int max_lag = sigma_gauss.size();
+  int max_time = max_lag * t_per_bin;
   if (max_lag == 0) {
     Rcpp::stop("sigma_gauss must be computed before dichot_gauss_simulation");
   }
   
+  // Add 1 to front of sigma_gauss 
+  std::vector<double> sigma_gauss1(max_lag + 1);
+  for (int i = 0; i <= max_lag; i++) {
+    if (i == 0) {
+      sigma_gauss1[i] = 1.0;
+    } else {
+      sigma_gauss1[i] = sigma_gauss[i - 1];
+    }
+  }
+  
   // Make random draws
-  MatrixXd simulated_trials = mvnorm_random(
-    trials, 
-    VectorXd::Zero(max_lag),
-    to_eMat(toeplitz(sigma_gauss, sigma_gauss))
-  ); 
+  MatrixXd simulated_trials(max_time, trials);
+  simulated_trials.setZero();
+  NumericMatrix sigma_gauss_matrix = toeplitz(sigma_gauss1, sigma_gauss1);
+  NumericVector mu = rep(0.0, max_lag + 1);
+  for (int t = 0; t < t_per_bin; t++) {
+    
+    NumericMatrix simulated_trials_sliceR = mvnorm_random(
+      trials, 
+      mu,
+      sigma_gauss_matrix
+    ); 
+    
+    // Take transpose, as mvrnorm puts "points" (trials) as rows
+    MatrixXd simulated_trials_slice = to_eMat(simulated_trials_sliceR).transpose();
+    
+    for (int l = 0; l < max_lag; l++) {
+      simulated_trials.row(t + (l * t_per_bin)) = simulated_trials_slice.row(l);
+    }
+    
+  }
   
   // Dichotomize
   for (int i = 0; i < simulated_trials.rows(); i++) {
@@ -740,7 +768,15 @@ NumericMatrix neuron::dichot_gauss_simulation(
     }
   }
   
-  return(to_NumMat(simulated_trials));
+  // Make a copy of this neuron 
+  neuron my_sim = neuron(*this);
+  
+  // Load with simulated trials
+  my_sim.load_trial_data(simulated_trials);
+  my_sim.sim = true;
+  
+  // Return simulated neuron
+  return(my_sim);
   
 }
 
@@ -748,6 +784,7 @@ NumericMatrix neuron::dichot_gauss_simulation(
  * RCPP_MODULE to expose class to R and function to initialize neuron
  */
 
+RCPP_EXPOSED_CLASS(neuron)
 RCPP_MODULE(neuron) {
   class_<neuron>("neuron")
   .constructor<int, std::string, std::string, std::string, bool, std::string, std::string, std::string, double, double>()

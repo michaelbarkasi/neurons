@@ -162,7 +162,7 @@ class neuron {
         void* data
     );
     void dichot_gauss_parameters();
-    NumericMatrix dichot_gauss_simulation(const int& trials);
+    neuron dichot_gauss_simulation(const int& trials);
 
 };
 
