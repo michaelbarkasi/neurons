@@ -150,8 +150,8 @@ double norm_cdf(
 // Multivariate normal random number generator
 NumericMatrix mvnorm_random(
     int n,                   // Number of points to generate
-    NumericVector mu,             // Mean vector, length determines dimension
-    NumericMatrix sigma           // Covariance matrix, square, same dimension as mu
+    NumericVector mu,        // Mean vector, length determines dimension
+    NumericMatrix sigma      // Covariance matrix, square, same dimension as mu
   ) {
    
     if (sigma.nrow() != sigma.ncol()) {Rcpp::stop("Covariance matrix must be square");}
@@ -164,7 +164,8 @@ NumericMatrix mvnorm_random(
       mvrnorm(
         Named("n") = n, 
         Named("mu") = mu, 
-        Named("Sigma") = sigma
+        Named("Sigma") = sigma,
+        Named("tol") = 1e-6 // default is 1e-6
       )
     );
     

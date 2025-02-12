@@ -148,18 +148,20 @@ class neuron {
     NumericVector fetch_EDF_parameters() const;
     
     // Member functions for data analysis
-    void compute_autocorrelation(const std::string& bin_count_action); // action must be 'sum', 'boolean', or 'mean'
+    void compute_autocorrelation(
+      const std::string& bin_count_action // action must be 'sum', 'boolean', or 'mean'
+    ); 
     static double bounded_MSE_EDF_autocorr(
-        // Objective function for fitting EDF model to autocorrelation
-        const std::vector<double>& x, // 0 is A, 1 is tau
-        std::vector<double>& grad,
-        void* data                    // neuron object (this)
+      // Objective function for fitting EDF model to autocorrelation
+      const std::vector<double>& x, // 0 is A, 1 is tau
+      std::vector<double>& grad,
+      void* data                    // neuron object (this)
     );
     void fit_autocorrelation();
     static double sigma_loss(
-        const std::vector<double>& x,
-        std::vector<double>&grad,
-        void* data
+      const std::vector<double>& x,
+      std::vector<double>&grad,
+      void* data
     );
     void dichot_gauss_parameters();
     neuron dichot_gauss_simulation(const int& trials);

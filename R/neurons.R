@@ -46,10 +46,3 @@ new_neuron <- function(
   )
   return(neuron)
 }
-
-
-n <- 0.01
-tS <- matrix(c(1,n,n,1),2) 
-tmu <- c(0,0)
-plot(MASS::mvrnorm(1000, tmu, tS), pch=19, cex=0.5)
-
