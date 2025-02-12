@@ -19,24 +19,48 @@ CharacterVector enum_prefix(std::string prefix, int n) {
 // Convert to std::vector with doubles 
 std::vector<double> to_dVec(
     const VectorXd& vec
-) {
-  std::vector<double> dVec(vec.size());
-  for (int i = 0; i < vec.size(); i++) {
-    dVec[i] = vec(i);
+  ) {
+    std::vector<double> dVec(vec.size());
+    for (int i = 0; i < vec.size(); i++) {
+      dVec[i] = vec(i);
+    }
+    return dVec;
   }
-  return dVec;
-}
+// ... overload
+std::vector<double> to_dVec(
+    const NumericVector& vec
+  ) {
+    return Rcpp::as<std::vector<double>>(vec);
+  }
 
 // Convert to Eigen vector with doubles
 VectorXd to_eVec(
     const std::vector<double>& vec
-) {
-  VectorXd eVec(vec.size());
-  for (int i = 0; i < vec.size(); i++) {
-    eVec(i) = vec[i];
+  ) {
+    VectorXd eVec(vec.size());
+    for (int i = 0; i < vec.size(); i++) {
+      eVec(i) = vec[i];
+    }
+    return eVec;
   }
-  return eVec;
-}
+
+// Convert to NumericVector 
+NumericVector to_NumVec(
+    const VectorXd& vec
+  ) {
+    NumericVector num_vec(vec.size());
+    for (int i = 0; i < vec.size(); i++) {
+      num_vec(i) = vec(i);
+    }
+    return num_vec;
+  }
+
+// Convert to Eigen matrix with doubles
+MatrixXd to_eMat(
+    const NumericMatrix& X
+  ) {
+    return Map<MatrixXd>(X.begin(), X.nrow(), X.ncol());
+  }
 
 // EDF model 
 double EDF_autocorr(
@@ -123,16 +147,41 @@ MatrixXd mvnorm_random(
     
   } 
 
-// For estimating sigma for dichotomized Gaussian simulation
-double dichot_gauss_sigma_eq(
-    const double& threshold,      // threshold for dichotomization
-    const double& cov,            // desired covarance after dichotomization
-    const NumericMatrix& sigma    // covariance matrix
+// Function to create Toeplitz matrix
+NumericMatrix toeplitz(
+    const std::vector<double>& first_col, 
+    const std::vector<double>& first_row
   ) {
     
+    int rows = first_col.size();
+    int cols = first_row.size();
+    NumericMatrix T(rows, cols);
+    
+    for (int i = 0; i < rows; i++) {
+      for (int j = 0; j < cols; j++) {
+        T(i, j) = (i >= j) ? first_col(i - j) : first_row(j - i);
+      }
+    }
+    
+    return T;
+    
+  }
+
+// For estimating sigma for dichotomized Gaussian simulation
+NumericVector dichot_gauss_sigma_formula(
+    const double& threshold,      // threshold for dichotomization
+    const NumericVector& cov,     // desired covarance after dichotomization
+    const NumericMatrix& sigma    // covariance matrix
+  ) {
+   
+    // Check dimension
+    int dim = sigma.nrow();
+    if (dim != sigma.ncol()) {Rcpp::stop("Covariance matrix must be square");}
+    if (dim != cov.size()) {Rcpp::stop("Covariance vector must have the same length as sigma diagonal");}
+    
     // Find probability of a point being below the threshold along both dimensions
-    NumericVector lower = {-1e100, -1e100};
-    NumericVector upper = {threshold, threshold};
+    NumericVector lower = Rcpp::rep(-1e100, dim);
+    NumericVector upper = Rcpp::rep(threshold, dim); 
     double Phi2 = mvnorm_cdf(
       lower,
       upper, 
@@ -148,8 +197,13 @@ double dichot_gauss_sigma_eq(
       false  // return cdf
     );
     
-    // desired sigma will be the one which sends this output to zero
-    return cov - Phi2 * Phi * Phi;
+    // desired sigma will be the one which sends all elements to zero
+    NumericVector output(dim);
+    double Phi2PhiPhi = Phi2 * Phi * Phi;
+    for (int i = 0; i < dim; i++) {
+      output[i] = cov[i] - Phi2PhiPhi;
+    }
+    return output;
     
   }
 
@@ -543,7 +597,8 @@ void neuron::fit_autocorrelation() {
     
     // Compute final modelled autocorrelation 
     autocorr_edf.resize(max_lag);
-    for (int i = 1; i < max_lag; i++) {
+    for (int i = 0; i < max_lag; i++) {
+      // Want i = 0 here for the construction of toeplitz sigma matrix
       double lag = (double)i;
       autocorr_edf(i) = EDF_autocorr(lag, x[0], x[1], bias_term, 0);
     }
@@ -554,17 +609,55 @@ void neuron::fit_autocorrelation() {
     
   } 
 
-void neuron::dichot_gauss_simulation(
-    const int& trials
+double neuron::sigma_loss(
+    const std::vector<double>& x, // the diagonal of the covariance matrix sigma
+    std::vector<double>& grad,
+    void* data                    // neuron object (this)
 ) {
+  
+  // Grab neuron 
+  neuron* nrn = static_cast<neuron*>(data);
+  
+  // Grab fitted autocorrelation 
+  NumericVector autocorr_fitted = to_NumVec(nrn->autocorr_edf);
+  int max_lag = autocorr_fitted.size();
+  
+  // Grab threshold
+  double dichot_threshold = nrn->gamma;
+  
+  // Extend sigma_diag and autocorr_fitted to have lag = 0 on front
+  std::vector<double> sigma_diag(max_lag + 1);
+  NumericVector autocorr_fitted0(max_lag + 1);
+  for (int i = 0; i <= max_lag; i++) {
+    if (i == 0) {
+      sigma_diag[i] = 1.0;
+      autocorr_fitted0(i) = 1.0;
+    } else {
+      sigma_diag[i] = x[i - 1];
+      autocorr_fitted0(i) = autocorr_fitted(i - 1);
+    }
+  }
+  
+  // Create sigma from its diagonal
+  NumericMatrix SIGMA = toeplitz(sigma_diag, sigma_diag);
+  
+  // Compute formula
+  NumericVector output = dichot_gauss_sigma_formula(dichot_threshold, autocorr_fitted0, SIGMA);
+  
+  // Return sum of squares
+  return Rcpp::sum(output * output);
+  
+}
+
+void neuron::dichot_guass_parameters() {
   
   // Check that autocorrelation has been modelled
   if (autocorr_edf.size() == 0) {
-    Rcpp::stop("autocorr_edf must be computed before dichot_gauss_simulation");
+    Rcpp::stop("autocorr_edf must be computed before dichot_gauss_parameters");
   }
   
   // Compute gamma (dichotomizing threshold) needed to simulate firing rate lambda 
-  double gamma = norm_cdf(
+  gamma = norm_cdf(
     1 - lambda,
     0,   // mean
     1,   // sd
@@ -572,9 +665,57 @@ void neuron::dichot_gauss_simulation(
   );
   
   // Use optimization to find the autocorrelation vector SIGMA needed to simulate the observed autocorrelation
+  std::vector<double> x = to_dVec(autocorr_edf);
+  size_t n = x.size();
+  
+  // Set up NLopt optimizer
+  nlopt::opt opt(nlopt::LN_NELDERMEAD, n); // LD_LBFGS would need gradient function
+  opt.set_min_objective(neuron::sigma_loss, this);
+  opt.set_ftol_rel(ctol);       // stop when iteration changes objective fn value by less than this fraction 
+  opt.set_maxeval(max_evals);   // Maximum number of evaluations to try
+  
+  // Find Sigma
+  int success_code = 0;
+  double min_fx;
+  try {
+    nlopt::result sc = opt.optimize(x, min_fx);
+    success_code = static_cast<int>(sc);
+  } catch (std::exception& e) {
+    if (false) {
+      Rcpp::Rcout << "Optimization failed: " << e.what() << std::endl;
+    }
+    success_code = 0;
+  }
+  
+  // Save 
+  sigma_gauss = x;
+  
+}
+
+MatrixXd neuron::dichot_gauss_simulation(
+    const int& trials
+) {
+  
+  int max_lag = sigma_gauss.size();
+  if (max_lag == 0) {
+    Rcpp::stop("sigma_gauss must be computed before dichot_gauss_simulation");
+  }
   
   // Make random draws
+  MatrixXd simulated_trials = mvnorm_random(
+    trials, 
+    VectorXd::Zero(max_lag),
+    to_eMat(toeplitz(sigma_gauss, sigma_gauss))
+  ); 
   
+  // Dichotomize
+  for (int i = 0; i < simulated_trials.rows(); i++) {
+    for (int j = 0; j < simulated_trials.cols(); j++) {
+      simulated_trials(i, j) = (simulated_trials(i, j) < gamma) ? 0.0 : 1.0;
+    }
+  }
+  
+  return simulated_trials;
   
 }
 
@@ -596,6 +737,8 @@ RCPP_MODULE(neuron) {
   .method("fetch_EDF_parameters", &neuron::fetch_EDF_parameters)
   .method("fetch_id_data", &neuron::fetch_id_data)
   .method("compute_autocorrelation", &neuron::compute_autocorrelation)
-  .method("fit_autocorrelation", &neuron::fit_autocorrelation);
+  .method("fit_autocorrelation", &neuron::fit_autocorrelation)
+  .method("dichot_guass_parameters", &neuron::dichot_guass_parameters)
+  .method("dichot_gauss_simulation", &neuron::dichot_gauss_simulation); // Returns MatrixXd??
 }
 

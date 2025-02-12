@@ -51,10 +51,16 @@ MatrixXd mvnorm_random(
     MatrixXd sigma
   );
 
-// For estimating sigma for dichotomized Gaussian simulation
-double dichot_gauss_sigma_eq(
+// Function to create Toeplitz matrix
+NumericMatrix toeplitz(
+    const std::vector<double>& first_col, 
+    const std::vector<double>& first_row
+  );
+
+// Formula for estimating sigma for dichotomized Gaussian simulation
+NumericVector dichot_gauss_sigma_formula(
     const double& threshold,      // threshold for dichotomization
-    const double& cov,            // desired covarance after dichotomization
+    const NumericVector& cov,     // desired covarance after dichotomization
     const NumericMatrix& sigma    // covariance matrix
   );
 
@@ -88,6 +94,7 @@ class neuron {
     // Analysis fields
     VectorXd autocorr;                                  // Estimated (observed) autocorrelation of trial_data
     VectorXd autocorr_edf;                              // Estimated autocorrelation of trial_data using EDF model
+    std::vector<double> sigma_gauss;                    // Covariance matrix for Gaussian simulation
     int max_evals = 500;                                // Max number of evals when fitting EDF to autocorrelation
     double ctol = 1e-7;                                 // Convergence tolerance when fitting EDF to autocorrelation
     double A0 = 0.1;                                    // Initial amplitude of EDF model of autocorrelation 
@@ -96,6 +103,7 @@ class neuron {
     double tau;                                         // Fitted time constant of EDF model of autocorrelation
     double bias_term;                                   // Bias term for EDF model of autocorrelation
     double penalty_multiple;                            // For scaling boundary penalty terms when fitting EDF model of autocorrelation
+    double gamma;                                       // Threshold for dichotomized Gaussian simulation
 
   public:
     
@@ -148,9 +156,12 @@ class neuron {
         void* data                    // neuron object (this)
     );
     void fit_autocorrelation();
-    void dichot_gauss_simulation(
-      const int& trials
-    );
+    static double sigma_loss(
+        const std::vector<double>& x,
+        std::vector<double>&grad &,
+        void* data);
+    void dichot_guass_parameters();
+    MatrixXd dichot_gauss_simulation(const int& trials);
 
 };
 
