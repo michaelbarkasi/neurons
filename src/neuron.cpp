@@ -59,7 +59,30 @@ NumericVector to_NumVec(
 MatrixXd to_eMat(
     const NumericMatrix& X
   ) {
-    return Map<MatrixXd>(X.begin(), X.nrow(), X.ncol());
+    int Xnrow = X.nrow();
+    int Xncol = X.ncol();
+    MatrixXd M = MatrixXd(Xnrow, Xncol);
+    for (int i = 0; i < Xnrow; i++) {
+      for (int j = 0; j < Xncol; j++) {
+        M(i, j) = X(i, j);
+      }
+    }
+    return M;
+  }
+
+// Convert to NumericMatrix
+NumericMatrix to_NumMat(
+    const MatrixXd& M
+  ) {
+    int M_nrow = M.rows();
+    int M_ncol = M.cols();
+    NumericMatrix X(M_nrow, M_ncol);
+    for (int i = 0; i < M_nrow; i++) {
+      for (int j = 0; j < M_ncol; j++) {
+        X(i, j) = M(i, j);
+      }
+    }
+    return X;
   }
 
 // EDF model 
@@ -159,7 +182,7 @@ NumericMatrix toeplitz(
     
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
-        T(i, j) = (i >= j) ? first_col(i - j) : first_row(j - i);
+        T(i, j) = (i >= j) ? first_col[i - j] : first_row[j - i];
       }
     }
     
@@ -218,7 +241,7 @@ neuron::neuron(
   const std::string recording_name, 
   const std::string type, 
   const std::string hemi,
-  const bool sim, 
+  bool sim, 
   const std::string unit_time, 
   const std::string unit_sample_rate, 
   const std::string unit_data, 
@@ -577,7 +600,7 @@ void neuron::fit_autocorrelation() {
     penalty_multiple = (mse0 * 0.25)/(1.0/(A0 * A0) + 1.0/(tau0 * tau0));
     
     // Set up NLopt optimizer
-    nlopt::opt opt(nlopt::LD_LBFGS, n); // LD_LBFGS would need gradient function
+    nlopt::opt opt(nlopt::LD_LBFGS, n); 
     opt.set_min_objective(neuron::bounded_MSE_EDF_autocorr, this);
     opt.set_ftol_rel(ctol);       // stop when iteration changes objective fn value by less than this fraction 
     opt.set_maxeval(max_evals);   // Maximum number of evaluations to try
@@ -649,13 +672,14 @@ double neuron::sigma_loss(
   
 }
 
-void neuron::dichot_guass_parameters() {
+void neuron::dichot_gauss_parameters() {
   
   // Check that autocorrelation has been modelled
   if (autocorr_edf.size() == 0) {
     Rcpp::stop("autocorr_edf must be computed before dichot_gauss_parameters");
   }
   
+  Rcpp::Rcout << "Computing norm_cdf with lambda = " << lambda << std::endl;
   // Compute gamma (dichotomizing threshold) needed to simulate firing rate lambda 
   gamma = norm_cdf(
     1 - lambda,
@@ -663,6 +687,7 @@ void neuron::dichot_guass_parameters() {
     1,   // sd
     true // return inverse
   );
+  Rcpp::Rcout << "Computed gamma = " << gamma << std::endl;
   
   // Use optimization to find the autocorrelation vector SIGMA needed to simulate the observed autocorrelation
   std::vector<double> x = to_dVec(autocorr_edf);
@@ -692,7 +717,7 @@ void neuron::dichot_guass_parameters() {
   
 }
 
-MatrixXd neuron::dichot_gauss_simulation(
+NumericMatrix neuron::dichot_gauss_simulation(
     const int& trials
 ) {
   
@@ -715,7 +740,7 @@ MatrixXd neuron::dichot_gauss_simulation(
     }
   }
   
-  return simulated_trials;
+  return(to_NumMat(simulated_trials));
   
 }
 
@@ -738,7 +763,7 @@ RCPP_MODULE(neuron) {
   .method("fetch_id_data", &neuron::fetch_id_data)
   .method("compute_autocorrelation", &neuron::compute_autocorrelation)
   .method("fit_autocorrelation", &neuron::fit_autocorrelation)
-  .method("dichot_guass_parameters", &neuron::dichot_guass_parameters)
+  .method("dichot_gauss_parameters", &neuron::dichot_gauss_parameters)
   .method("dichot_gauss_simulation", &neuron::dichot_gauss_simulation); // Returns MatrixXd??
 }
 

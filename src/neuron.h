@@ -75,7 +75,7 @@ class neuron {
     const std::string recording_name = "not_provided";  // Recording (if any) on which this neuron is based
     const std::string type = "generic";                 // Type of neuron, e.g. "generic", "blackbox" "LIF", "McCullochPitts", "excitatory", "inhibitory", etc.
     const std::string hemi = "not_provided";            // Hemisphere of neuron, e.g. "left", "right"
-    const bool sim = false;                             // Whether this neuron is simulated or based on recorded data
+    bool sim = false;                                   // Whether this neuron is simulated or based on recorded data
     
     // Unit specifications
     const std::string unit_time = "ms";                 // Unit of time, e.g., "ms", "bin", "sample"
@@ -158,10 +158,11 @@ class neuron {
     void fit_autocorrelation();
     static double sigma_loss(
         const std::vector<double>& x,
-        std::vector<double>&grad &,
-        void* data);
-    void dichot_guass_parameters();
-    MatrixXd dichot_gauss_simulation(const int& trials);
+        std::vector<double>&grad,
+        void* data
+    );
+    void dichot_gauss_parameters();
+    NumericMatrix dichot_gauss_simulation(const int& trials);
 
 };
 
