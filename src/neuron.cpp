@@ -640,146 +640,133 @@ double neuron::sigma_loss(
     const std::vector<double>& x, // the diagonal of the covariance matrix sigma
     std::vector<double>& grad,
     void* data                    // neuron object (this)
-) {
-  
-  // Grab neuron 
-  neuron* nrn = static_cast<neuron*>(data);
-  
-  // Grab fitted autocorrelation 
-  NumericVector autocorr_fitted = to_NumVec(nrn->autocorr_edf);
-  int max_lag = autocorr_fitted.size();
-  
-  // Grab threshold
-  double dichot_threshold = nrn->gamma;
-  
-  // Extend sigma_diag and autocorr_fitted to have lag = 0 on front
-  std::vector<double> sigma_diag(max_lag + 1);
-  NumericVector autocorr_fitted0(max_lag + 1);
-  for (int i = 0; i <= max_lag; i++) {
-    if (i == 0) {
-      sigma_diag[i] = 1.0;
-      autocorr_fitted0(i) = 1.0;
-    } else {
-      sigma_diag[i] = x[i - 1];
-      autocorr_fitted0(i) = autocorr_fitted(i - 1);
+  ) {
+    
+    // Grab neuron 
+    neuron* nrn = static_cast<neuron*>(data);
+    
+    // Grab fitted autocorrelation 
+    NumericVector autocorr_fitted = to_NumVec(nrn->autocorr_edf);
+    int max_lag = autocorr_fitted.size();
+    
+    // Grab threshold
+    double dichot_threshold = nrn->gamma;
+    
+    // Extend sigma_diag and autocorr_fitted to have lag = 0 on front
+    std::vector<double> sigma_diag(max_lag + 1);
+    NumericVector autocorr_fitted0(max_lag + 1);
+    for (int i = 0; i <= max_lag; i++) {
+      if (i == 0) {
+        sigma_diag[i] = 1.0;
+        autocorr_fitted0(i) = 1.0;
+      } else {
+        sigma_diag[i] = x[i - 1];
+        autocorr_fitted0(i) = autocorr_fitted(i - 1);
+      }
     }
+    
+    // Create sigma from its diagonal
+    NumericMatrix SIGMA = toeplitz(sigma_diag, sigma_diag);
+    
+    // Compute formula
+    NumericVector output = dichot_gauss_sigma_formula(dichot_threshold, autocorr_fitted0, SIGMA);
+    
+    // Return sum of squares
+    return Rcpp::sum(output * output);
+    
   }
-  
-  // Create sigma from its diagonal
-  NumericMatrix SIGMA = toeplitz(sigma_diag, sigma_diag);
-  
-  // Compute formula
-  NumericVector output = dichot_gauss_sigma_formula(dichot_threshold, autocorr_fitted0, SIGMA);
-  
-  // Return sum of squares
-  return Rcpp::sum(output * output);
-  
-}
 
 void neuron::dichot_gauss_parameters() {
-  
-  // Check that autocorrelation has been modeled
-  if (autocorr_edf.size() == 0) {
-    Rcpp::stop("autocorr_edf must be computed before dichot_gauss_parameters");
-  }
-  
-  // Compute gamma (dichotomizing threshold) needed to simulate firing rate lambda 
-  gamma = norm_cdf(
-    1 - lambda,
-    0,   // mean
-    1,   // sd
-    true // return inverse
-  );
-  
-  // Use optimization to find the autocorrelation vector SIGMA needed to simulate the observed autocorrelation
-  std::vector<double> x = to_dVec(autocorr_edf);
-  size_t n = x.size();
-  
-  // Set up NLopt optimizer
-  nlopt::opt opt(nlopt::LN_NELDERMEAD, n); // LD_LBFGS would need gradient function
-  opt.set_min_objective(neuron::sigma_loss, this);
-  opt.set_ftol_rel(ctol);       // stop when iteration changes objective fn value by less than this fraction 
-  opt.set_maxeval(max_evals);   // Maximum number of evaluations to try
-  
-  // Find Sigma
-  int success_code = 0;
-  double min_fx;
-  try {
-    nlopt::result sc = opt.optimize(x, min_fx);
-    success_code = static_cast<int>(sc);
-  } catch (std::exception& e) {
-    if (false) {
-      Rcpp::Rcout << "Optimization failed: " << e.what() << std::endl;
+    
+    // Check that autocorrelation has been modeled
+    if (autocorr_edf.size() == 0) {
+      Rcpp::stop("autocorr_edf must be computed before dichot_gauss_parameters");
     }
-    success_code = 0;
+    
+    // Compute gamma (dichotomizing threshold) needed to simulate firing rate lambda 
+    gamma = norm_cdf(
+      1 - lambda,
+      0,   // mean
+      1,   // sd
+      true // return inverse
+    );
+    
+    // Use optimization to find the autocorrelation vector SIGMA needed to simulate the observed autocorrelation
+    std::vector<double> x = to_dVec(autocorr_edf);
+    size_t n = x.size();
+    
+    // Set up NLopt optimizer
+    nlopt::opt opt(nlopt::LN_NELDERMEAD, n); // LD_LBFGS would need gradient function
+    opt.set_min_objective(neuron::sigma_loss, this);
+    opt.set_ftol_rel(ctol);       // stop when iteration changes objective fn value by less than this fraction 
+    opt.set_maxeval(max_evals);   // Maximum number of evaluations to try
+    
+    // Find Sigma
+    int success_code = 0;
+    double min_fx;
+    try {
+      nlopt::result sc = opt.optimize(x, min_fx);
+      success_code = static_cast<int>(sc);
+    } catch (std::exception& e) {
+      if (false) {
+        Rcpp::Rcout << "Optimization failed: " << e.what() << std::endl;
+      }
+      success_code = 0;
+    }
+    
+    // Save 
+    sigma_gauss = x;
+    
   }
-  
-  // Save 
-  sigma_gauss = x;
-  
-}
 
 neuron neuron::dichot_gauss_simulation(
     const int& trials
-) {
-  
-  // Assuming that the binning was done by summation
-  int max_lag = sigma_gauss.size();
-  int max_time = max_lag * t_per_bin;
-  if (max_lag == 0) {
-    Rcpp::stop("sigma_gauss must be computed before dichot_gauss_simulation");
-  }
-  
-  // Add 1 to front of sigma_gauss 
-  std::vector<double> sigma_gauss1(max_lag + 1);
-  for (int i = 0; i <= max_lag; i++) {
-    if (i == 0) {
-      sigma_gauss1[i] = 1.0;
-    } else {
-      sigma_gauss1[i] = sigma_gauss[i - 1];
-    }
-  }
-  
-  // Make random draws
-  MatrixXd simulated_trials(max_time, trials);
-  simulated_trials.setZero();
-  NumericMatrix sigma_gauss_matrix = toeplitz(sigma_gauss1, sigma_gauss1);
-  NumericVector mu = rep(0.0, max_lag + 1);
-  for (int t = 0; t < t_per_bin; t++) {
+  ) {
     
-    NumericMatrix simulated_trials_sliceR = mvnorm_random(
+    // Assuming that the binning was done by summation
+    int max_lag = sigma_gauss.size();
+    if (max_lag == 0) {Rcpp::stop("sigma_gauss must be computed before dichot_gauss_simulation");}
+    
+    // Add 1 to front of sigma_gauss 
+    std::vector<double> sigma_gauss1(max_lag + 1);
+    sigma_gauss1[0] = 1.0;
+    for (int i = 0; i < max_lag; i++) {
+      sigma_gauss1[i + 1] = sigma_gauss[i];
+    }
+    
+    // Make random draws
+    NumericMatrix sigma_gauss_matrix = toeplitz(sigma_gauss1, sigma_gauss1);
+    NumericVector mu = rep(0.0, max_lag + 1);
+    NumericMatrix simulated_trials_transpose = mvnorm_random(
       trials, 
       mu,
       sigma_gauss_matrix
     ); 
     
-    // Take transpose, as mvrnorm puts "points" (trials) as rows
-    MatrixXd simulated_trials_slice = to_eMat(simulated_trials_sliceR).transpose();
+    // Take transpose, mvrnorm puts "points" (trials) as rows
+    MatrixXd simulated_trials = to_eMat(simulated_trials_transpose).transpose();
     
-    for (int l = 0; l < max_lag; l++) {
-      simulated_trials.row(t + (l * t_per_bin)) = simulated_trials_slice.row(l);
+    // Dichotomize
+    for (int i = 0; i < simulated_trials.rows(); i++) {
+      for (int j = 0; j < simulated_trials.cols(); j++) {
+        simulated_trials(i, j) = (simulated_trials(i, j) < gamma) ? 0.0 : 1.0;
+      }
     }
     
+    // Make a copy of this neuron 
+    neuron my_sim = neuron(*this);
+    
+    // Load with simulated trials
+    // ... seems like these are needed for sim, but they also mess up the analysis of the observed data. 
+    // my_sim.load_trial_data(simulated_trials);
+    // my_sim.sim = true;
+    // my_sim.unit_time = "bin";
+    // my_sim.t_per_bin = 1.0;
+    
+    // Return simulated neuron
+    return(my_sim);
+    
   }
-  
-  // Dichotomize
-  for (int i = 0; i < simulated_trials.rows(); i++) {
-    for (int j = 0; j < simulated_trials.cols(); j++) {
-      simulated_trials(i, j) = (simulated_trials(i, j) < gamma) ? 0.0 : 1.0;
-    }
-  }
-  
-  // Make a copy of this neuron 
-  neuron my_sim = neuron(*this);
-  
-  // Load with simulated trials
-  my_sim.load_trial_data(simulated_trials);
-  my_sim.sim = true;
-  
-  // Return simulated neuron
-  return(my_sim);
-  
-}
 
 /*
  * RCPP_MODULE to expose class to R and function to initialize neuron

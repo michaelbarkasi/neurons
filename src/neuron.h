@@ -67,45 +67,45 @@ NumericVector dichot_gauss_sigma_formula(
 // Neuron class
 
 class neuron {
-
-  private:
-    
-    // ID parameters
-    const int id_num = 0;                               // Fixed ID number for each neuron
-    const std::string recording_name = "not_provided";  // Recording (if any) on which this neuron is based
-    const std::string type = "generic";                 // Type of neuron, e.g. "generic", "blackbox" "LIF", "McCullochPitts", "excitatory", "inhibitory", etc.
-    const std::string hemi = "not_provided";            // Hemisphere of neuron, e.g. "left", "right"
-    bool sim = false;                                   // Whether this neuron is simulated or based on recorded data
-    
-    // Unit specifications
-    const std::string unit_time = "ms";                 // Unit of time, e.g., "ms", "bin", "sample"
-    const std::string unit_sample_rate = "Hz";          // Unit of recording sample rate, e.g., "Hz", "kHz"
-    const std::string unit_data = "mV";                 // Unit of data, e.g., "mV", "spike count"
-    
-    // Unit conversions 
-    const double t_per_bin = 1.0;                       // Time (in above units) per bin, e.g., 1 ms per bin
-    const double sample_rate = 1e4;                     // Sample rate (in above units), e.g., 10000 Hz
-    
-    // Data fields
-    MatrixXd trial_data;                                // NxM matrix of doubles, rows as recording times (in "unit_time"), columns as trials, data values in "unit_data"
-    MatrixXd spike_raster;                              // Nx2 matrix, each row one spike, columns as time (in "unit_time") and trial number
-    double lambda;                                      // Mean value of neuron, in "unit_data" per "unit_time"
-    
-    // Analysis fields
-    VectorXd autocorr;                                  // Estimated (observed) autocorrelation of trial_data
-    VectorXd autocorr_edf;                              // Estimated autocorrelation of trial_data using EDF model
-    std::vector<double> sigma_gauss;                    // Covariance matrix for Gaussian simulation
-    int max_evals = 500;                                // Max number of evals when fitting EDF to autocorrelation
-    double ctol = 1e-7;                                 // Convergence tolerance when fitting EDF to autocorrelation
-    double A0 = 0.1;                                    // Initial amplitude of EDF model of autocorrelation 
-    double tau0 = 10.0;                                 // Initial time constant of EDF model of autocorrelation
-    double A;                                           // Fitted amplitude of EDF model of autocorrelation
-    double tau;                                         // Fitted time constant of EDF model of autocorrelation
-    double bias_term;                                   // Bias term for EDF model of autocorrelation
-    double penalty_multiple;                            // For scaling boundary penalty terms when fitting EDF model of autocorrelation
-    double gamma;                                       // Threshold for dichotomized Gaussian simulation
+  
+  // private:
 
   public:
+    
+    // ID parameters
+    int id_num = 0;                               // Fixed ID number for each neuron
+    std::string recording_name = "not_provided";  // Recording (if any) on which this neuron is based
+    std::string type = "generic";                 // Type of neuron, e.g. "generic", "blackbox" "LIF", "McCullochPitts", "excitatory", "inhibitory", etc.
+    std::string hemi = "not_provided";            // Hemisphere of neuron, e.g. "left", "right"
+    bool sim = false;                             // Whether this neuron is simulated or based on recorded data
+    
+    // Unit specifications
+    std::string unit_time = "ms";                 // Unit of time, e.g., "ms", "bin", "sample"
+    std::string unit_sample_rate = "Hz";          // Unit of recording sample rate, e.g., "Hz", "kHz"
+    std::string unit_data = "mV";                 // Unit of data, e.g., "mV", "spike count"
+    
+    // Unit conversions 
+    double t_per_bin = 1.0;                       // Time (in above units) per bin, e.g., 1 ms per bin
+    double sample_rate = 1e4;                     // Sample rate (in above units), e.g., 10000 Hz
+    
+    // Data fields
+    MatrixXd trial_data;                          // NxM matrix of doubles, rows as recording times (in "unit_time"), columns as trials, data values in "unit_data"
+    MatrixXd spike_raster;                        // Nx2 matrix, each row one spike, columns as time (in "unit_time") and trial number
+    double lambda;                                // Mean value of neuron, in "unit_data" per "unit_time"
+    
+    // Analysis fields
+    VectorXd autocorr;                            // Estimated (observed) autocorrelation of trial_data
+    VectorXd autocorr_edf;                        // Estimated autocorrelation of trial_data using EDF model
+    std::vector<double> sigma_gauss;              // Covariance matrix for Gaussian simulation
+    int max_evals = 500;                          // Max number of evals when fitting EDF to autocorrelation
+    double ctol = 1e-7;                           // Convergence tolerance when fitting EDF to autocorrelation
+    double A0 = 0.1;                              // Initial amplitude of EDF model of autocorrelation 
+    double tau0 = 10.0;                           // Initial time constant of EDF model of autocorrelation
+    double A;                                     // Fitted amplitude of EDF model of autocorrelation
+    double tau;                                   // Fitted time constant of EDF model of autocorrelation
+    double bias_term;                             // Bias term for EDF model of autocorrelation
+    double penalty_multiple;                      // For scaling boundary penalty terms when fitting EDF model of autocorrelation
+    double gamma;                                 // Threshold for dichotomized Gaussian simulation
     
     // Constructor and Destructor
     neuron(
