@@ -166,7 +166,7 @@ class neuron {
       std::vector<double>&grad,
       void* data
     );
-    void dichot_gauss_parameters();
+    void dichot_gauss_parameters(const bool& verbose);
     neuron dichot_gauss_simulation(const int& trials);
 
 };

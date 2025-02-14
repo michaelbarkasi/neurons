@@ -117,7 +117,7 @@ double mvnorm_cdf(
     if (lower.size() != upper.size()) {Rcpp::stop("Lower and upper bounds must be same length");}
     if (mean.size() != sigma.nrow() || mean.size() != lower.size()) {Rcpp::stop("Bounds and mean vectors must have the same length as sigma diagonal");}
     
-    Function pmvnorm("pmvnorm"); // Calls mvtnorm::pmvnorm from R
+    Function pmvnorm("pmvnorm", Environment::namespace_env("mvtnorm"));
     // ... uses Genz algorithm
     
     return as<double>(
@@ -206,21 +206,22 @@ NumericVector dichot_gauss_sigma_formula(
     if (dim != cov.size()) {Rcpp::stop("Covariance vector must have the same length as sigma diagonal");}
     
     // Find probability of a point being below the threshold along both dimensions
-    NumericVector lower = Rcpp::rep(-1e100, dim);
+    NumericVector lower = Rcpp::rep(-Inf, dim);
     NumericVector upper = Rcpp::rep(threshold, dim); 
+    NumericVector mean = Rcpp::rep(0.0, dim);
     double Phi2 = mvnorm_cdf(
       lower,
       upper, 
-      0.0, 
+      mean, 
       sigma
     );
-    
+   
     // Find probability of a point being below the threshold along one dimension
     double Phi = norm_cdf(
       threshold, 
-      0.0,   // mean
-      1,     // sd
-      false  // return cdf
+      0.0,     // mean
+      1.0,     // sd
+      false    // return cdf
     );
     
     // desired sigma will be the one which sends all elements to zero
@@ -229,6 +230,7 @@ NumericVector dichot_gauss_sigma_formula(
     for (int i = 0; i < dim; i++) {
       output[i] = cov[i] - Phi2PhiPhi;
     }
+    
     return output;
     
   }
@@ -702,12 +704,15 @@ double neuron::sigma_loss(
     
     // Return sum of squares
     double ls = Rcpp::sum(output * output);
-    Rcpp::Rcout << "loss: " << ls << std::endl;
-    return Rcpp::sum(output * output);
+    return ls;
     
   }
 
-void neuron::dichot_gauss_parameters() {
+void neuron::dichot_gauss_parameters(
+    const bool& verbose
+  ) {
+    
+    if (verbose) {Rcpp::Rcout << "Finding dichotomized Gaussian parameters ..." << std::endl;}
     
     // Check that autocorrelation has been modeled
     if (autocorr_edf.size() == 0) {
@@ -717,23 +722,26 @@ void neuron::dichot_gauss_parameters() {
     // Compute gamma (dichotomizing threshold) needed to simulate firing rate lambda 
     gamma = norm_cdf(
       1 - lambda_bin,
-      0,   // mean
-      1,   // sd
-      true // return inverse
+      0.0,   // mean
+      1.0,   // sd
+      true   // return inverse
     );
     
-    Rcpp::Rcout << "lambda_bin: " << lambda_bin << std::endl;
-    Rcpp::Rcout << "gamma: " << gamma << std::endl;
-    
     // Use optimization to find the autocorrelation vector SIGMA needed to simulate the observed autocorrelation
-    std::vector<double> x = to_dVec(autocorr_edf*10);
+    std::vector<double> x = to_dVec(autocorr_edf);
     size_t n = x.size();
     
     // Set up NLopt optimizer
-    nlopt::opt opt(nlopt::LN_NELDERMEAD, n); // LD_LBFGS would need gradient function
+    nlopt::opt opt(nlopt::LN_COBYLA, n); // LD_LBFGS would need gradient function
     opt.set_min_objective(neuron::sigma_loss, this);
     opt.set_ftol_rel(ctol);       // stop when iteration changes objective fn value by less than this fraction 
     opt.set_maxeval(max_evals);   // Maximum number of evaluations to try
+    
+    // Set boundary
+    std::vector<double> lb(n, -1.0);
+    std::vector<double> ub(n, 1.0);
+    opt.set_lower_bounds(lb);
+    opt.set_upper_bounds(ub);
     
     // Find Sigma
     int success_code = 0;
@@ -747,7 +755,6 @@ void neuron::dichot_gauss_parameters() {
       }
       success_code = 0;
     }
-    Rcpp::Rcout << "success_code: " << success_code << std::endl;
     
     // Save 
     sigma_gauss = x;
