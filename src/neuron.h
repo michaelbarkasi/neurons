@@ -20,7 +20,10 @@ CharacterVector enum_prefix(std::string prefix, int n);
 
 // Conert between vector types
 std::vector<double> to_dVec(const VectorXd& vec);
+std::vector<double> to_dVec(const NumericVector& vec);
 VectorXd to_eVec(const std::vector<double>& vec);
+NumericVector to_NumVec(const VectorXd& vec);
+NumericVector to_NumVec(const std::vector<double>& vec);
 
 // Exponential decay function (with gradients) for modelling
 double EDF_autocorr(
@@ -33,9 +36,8 @@ double EDF_autocorr(
 
 // Probability distributions
 double mvnorm_cdf(
-    const VectorXd& x, 
-    const VectorXd& mu, 
-    const MatrixXd& sigma
+    const NumericVector& upper, 
+    const NumericMatrix& sigma
   );
 
 double norm_cdf(
@@ -58,10 +60,21 @@ NumericMatrix toeplitz(
   );
 
 // Formula for estimating sigma for dichotomized Gaussian simulation
-NumericVector dichot_gauss_sigma_formula(
+NumericVector dg_sigma_formula(
     const double& threshold,      // threshold for dichotomization
     const NumericVector& cov,     // desired covarance after dichotomization
     const NumericMatrix& sigma    // covariance matrix
+  );
+double dg_sigma_formula_scalar(
+    const double& threshold,      // threshold for dichotomization
+    const double& cov,            // desired covarance after dichotomization
+    const double& sigma           // covariance matrix
+);
+
+// Function to find sigma by root bisection 
+double dg_find_sigma_RootBisection(
+    const double& threshold,      // threshold for dichotomization
+    const double& cov             // desired covarance after dichotomization
   );
 
 // Neuron class
@@ -97,7 +110,7 @@ class neuron {
     // Analysis fields
     VectorXd autocorr;                            // Estimated (observed) autocorrelation of trial_data
     VectorXd autocorr_edf;                        // Estimated autocorrelation of trial_data using EDF model
-    std::vector<double> sigma_gauss;              // Covariance matrix for Gaussian simulation
+    std::vector<double> sigma_gauss;              // Covariance values for Gaussian simulation
     int max_evals = 500;                          // Max number of evals when fitting EDF to autocorrelation
     double ctol = 1e-7;                           // Convergence tolerance when fitting EDF to autocorrelation
     double A0 = 0.1;                              // Initial amplitude of EDF model of autocorrelation 
@@ -166,8 +179,10 @@ class neuron {
       std::vector<double>&grad,
       void* data
     );
-    void dichot_gauss_parameters(const bool& verbose);
-    neuron dichot_gauss_simulation(const int& trials);
+    void dg_parameters(const bool& verbose);
+    neuron dg_simulation(const int& trials);
+    
+    double test(const double& threshold, const double& cov, const double& sigma);
 
 };
 

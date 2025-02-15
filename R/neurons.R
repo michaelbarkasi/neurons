@@ -46,3 +46,8 @@ new_neuron <- function(
   )
   return(neuron)
 }
+
+
+test <- function(x,y,z) {
+  return(dg_sigma_formula_scalar(x,y,z))
+}
