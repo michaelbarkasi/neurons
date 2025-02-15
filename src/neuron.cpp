@@ -128,18 +128,10 @@ double mvnorm_cdf(
     double prob = as<double>(
       pmvnorm( // by default, lower = -Inf and mean = 0.
         Named("upper") = upper, 
-        Named("corr") = sigma,
+        Named("corr") = sigma, // "corr", or "sigma"? "corr" seems to return expected results
         Named("keepAttr") = false
       )
     );
-    
-    if (isnan(prob)) {
-      Rcpp::Rcout << "-- nan --" << std::endl;
-      Rcpp::Rcout << "upper: " << upper[0] << std::endl;
-      Rcpp::Rcout << "sigma: " << sigma(0,1) << std::endl;
-      Rcpp::Rcout << "prob: " << prob << std::endl;
-      Rcpp::Rcout << "-- nan --" << std::endl;
-    }
     
     return prob;
     
@@ -227,7 +219,6 @@ NumericVector dg_sigma_formula(
       upper, 
       sigma
     );
-    Rcpp::Rcout << "Phi2: " << Phi2 << std::endl;
    
     // Find probability of a point being below the threshold along one dimension
     double Phi = norm_cdf(
@@ -236,13 +227,10 @@ NumericVector dg_sigma_formula(
       1.0,     // sd
       false    // return cdf
     );
-    Rcpp::Rcout << "Phi: " << Phi << std::endl;
     
     // desired sigma will be the one which sends all elements to zero
     NumericVector output(dim);
-    double Phi2PhiPhi = Phi2 + Phi * Phi;
     for (int i = 0; i < dim; i++) {
-      Rcpp::Rcout << "i: " << i << ", cov[i]: " << cov[i] << ", output: " << cov[i] - Phi2 + Phi * Phi << std::endl;
       output[i] = cov[i] - Phi2 + Phi * Phi;
     }
     
@@ -267,7 +255,6 @@ double dg_sigma_formula_scalar(
   
   // Evaluate formula and return second value
   NumericVector output = dg_sigma_formula(threshold, cov1, sigmaMat);
-  Rcpp::Rcout << "formula output: " << output[1] << std::endl;
   return output[1];
   
 }
@@ -284,26 +271,10 @@ double dg_find_sigma_RootBisection(
   // Initiate sigmas
   double sigma_lower = -0.999;
   double sigma_upper = 0.999;
-  Rcpp::Rcout << "sigma_lower: " << sigma_lower << std::endl;
-  Rcpp::Rcout << "sigma_upper: " << sigma_upper << std::endl;
   
   // Evaluate formula
   double fx_lower = dg_sigma_formula_scalar(threshold, cov, sigma_lower);
-  Rcpp::Rcout << "--fx_lower: " << fx_lower << std::endl;
   double fx_upper = dg_sigma_formula_scalar(threshold, cov, sigma_upper);
-  Rcpp::Rcout << "--fx_upper: " << fx_upper << std::endl;
-  
-  Rcpp::Rcout << "fx_lower: " << fx_lower << std::endl;
-  Rcpp::Rcout << "abs(fx_lower): " << abs(fx_lower) << std::endl;
-  Rcpp::Rcout << "tol: " << tol << std::endl;
-  Rcpp::Rcout << "abs(fx_lower) < tol: " << (abs(fx_lower) < tol) << std::endl;
-  Rcpp::Rcout << "fx_upper: " << fx_upper << std::endl;
-  Rcpp::Rcout << "abs(fx_upper): " << abs(fx_upper) << std::endl;
-  Rcpp::Rcout << "tol: " << tol << std::endl;
-  Rcpp::Rcout << "abs(fx_upper) < tol: " << (abs(fx_upper) < tol) << std::endl;
-  Rcpp::Rcout << "fx_lower * fx_upper: " << (fx_lower * fx_upper) << std::endl;
-  Rcpp::Rcout << "tol: " << tol << std::endl;
-  Rcpp::Rcout << "fx_lower * fx_upper > tol: " << (fx_lower * fx_upper > tol) << std::endl;
   
   // Run checks 
   if (abs(fx_lower) < tol) {return sigma_lower;}
@@ -314,28 +285,18 @@ double dg_find_sigma_RootBisection(
   double fx = Inf;
   double sigma_mid;
   int iter = 0;
-  Rcpp::Rcout << "fx: " << fx << std::endl;
-  Rcpp::Rcout << "abs(fx): " << abs(fx) << std::endl;
-  Rcpp::Rcout << "tol: " << tol << std::endl;
-  Rcpp::Rcout << "abs(fx) > tol: " << (abs(fx) > tol) << std::endl;
-  Rcpp::Rcout << "iter: " << iter << std::endl;
-  Rcpp::Rcout << "max_iter: " << max_iter << std::endl;
-  Rcpp::Rcout << "iter < max_iter" << (iter < max_iter) << std::endl;
   while (abs(fx) > tol && iter < max_iter) {
-    Rcpp::Rcout << "inside while loop" << std::endl;
+    
     // Find midpoint
     sigma_mid = (sigma_lower + sigma_upper)/2.0;
     fx = dg_sigma_formula_scalar(threshold, cov, sigma_mid);
-    Rcpp::Rcout << "got fx" << std::endl;
+    
     // Update bounds
     if (fx > 0.0) {
       sigma_lower = sigma_mid;
     } else {
       sigma_upper = sigma_mid;
     }
-    Rcpp::Rcout << "sigma_mid: " << sigma_mid << std::endl;
-    Rcpp::Rcout << "fx: " << fx << std::endl;
-    Rcpp::Rcout << "inter: " << iter << std::endl;
     
     // Update iteration
     iter++;
@@ -768,7 +729,7 @@ void neuron::fit_autocorrelation() {
       nlopt::result sc = opt.optimize(x, min_fx);
       success_code = static_cast<int>(sc);
     } catch (std::exception& e) { 
-      if (true) {
+      if (false) {
         Rcpp::Rcout << "Optimization failed: " << e.what() << std::endl;
       } 
       success_code = 0;
@@ -840,7 +801,7 @@ void neuron::dg_parameters(
     if (max_lag == 0) {
       Rcpp::stop("autocorr_edf must be computed before dg_parameters");
     }
-    Rcpp::Rcout << "Got here" << std::endl;
+    
     // Compute gamma (dichotomizing threshold) needed to simulate firing rate lambda 
     gamma = norm_cdf(
       1 - lambda_bin,
@@ -852,18 +813,11 @@ void neuron::dg_parameters(
     // Resize sigma_gauss
     sigma_gauss.resize(max_lag);
     
-    Rcpp::Rcout << "autocorr_edf: " << autocorr_edf[0] << ", " 
-                << autocorr_edf[1] << ", "
-                << autocorr_edf[2] << std::endl;
-    
     // Find sigma_gauss for each lag
     for (int i = 0; i < max_lag; i++) {
       sigma_gauss[i] = dg_find_sigma_RootBisection(gamma, autocorr_edf[i]);
     }
-
-    Rcpp::Rcout << "sigma_gauss: " << to_NumVec(sigma_gauss)[0] << ", " 
-                << to_NumVec(sigma_gauss)[1] << ", "
-                << to_NumVec(sigma_gauss)[2] << std::endl;
+   
   }
 
 neuron neuron::dg_simulation(
@@ -914,27 +868,6 @@ neuron neuron::dg_simulation(
     
   }
 
-double neuron::test(
-    const double& threshold,      // threshold for dichotomization
-    const double& cov,            // desired covarance after dichotomization
-    const double& sigma           // correlation coefficient
-) {
-  
-  // Construct covariance matrix sigma (2x2)
-  NumericMatrix sigmaMat(2, 2);
-  sigmaMat(_,0) = NumericVector::create(1.0, sigma);
-  sigmaMat(_,1) = NumericVector::create(sigma, 1.0);
-  
-  // Extend cov to have lag = 0 on front
-  NumericVector cov1 = {1.0, cov};
-  
-  // Evaluate formula and return second value
-  NumericVector output = dg_sigma_formula(threshold, cov1, sigmaMat);
-  Rcpp::Rcout << "formula output: " << output[1] << std::endl;
-  return output[1];
-  
-}
-
 /*
  * RCPP_MODULE to expose class to R and function to initialize neuron
  */
@@ -955,7 +888,6 @@ RCPP_MODULE(neuron) {
   .method("fetch_EDF_parameters", &neuron::fetch_EDF_parameters)
   .method("fetch_id_data", &neuron::fetch_id_data)
   .method("fetch_lambda", &neuron::fetch_lambda)
-  .method("test", &neuron::test)
   .method("compute_autocorrelation", &neuron::compute_autocorrelation)
   .method("fit_autocorrelation", &neuron::fit_autocorrelation)
   .method("dg_parameters", &neuron::dg_parameters)

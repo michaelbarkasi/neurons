@@ -181,8 +181,6 @@ class neuron {
     );
     void dg_parameters(const bool& verbose);
     neuron dg_simulation(const int& trials);
-    
-    double test(const double& threshold, const double& cov, const double& sigma);
 
 };
 
