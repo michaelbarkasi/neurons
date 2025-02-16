@@ -110,7 +110,7 @@ class neuron {
     // Analysis fields
     VectorXd autocorr;                            // Estimated (observed) autocorrelation of trial_data
     VectorXd autocorr_edf;                        // Estimated autocorrelation of trial_data using EDF model
-    std::vector<double> sigma_gauss;              // Covariance values for Gaussian simulation
+    std::vector<double> sigma_gauss;              // Covariance values for Gaussian simulation, in time units of bin
     int max_evals = 500;                          // Max number of evals when fitting EDF to autocorrelation
     double ctol = 1e-7;                           // Convergence tolerance when fitting EDF to autocorrelation
     double A0 = 0.1;                              // Initial amplitude of EDF model of autocorrelation 
@@ -119,7 +119,7 @@ class neuron {
     double tau;                                   // Fitted time constant of EDF model of autocorrelation
     double bias_term;                             // Bias term for EDF model of autocorrelation
     double penalty_multiple;                      // For scaling boundary penalty terms when fitting EDF model of autocorrelation
-    double gamma;                                 // Threshold for dichotomized Gaussian simulation
+    double gamma;                                 // Threshold for dichotomized Gaussian simulation (in time units of bin)
     
     // Constructor and Destructor
     neuron(
@@ -174,13 +174,8 @@ class neuron {
       void* data                    // neuron object (this)
     );
     void fit_autocorrelation();
-    static double sigma_loss(
-      const std::vector<double>& x,
-      std::vector<double>&grad,
-      void* data
-    );
     void dg_parameters(const bool& verbose);
-    neuron dg_simulation(const int& trials);
+    neuron dg_simulation(const int& trials, const bool& verbose);
 
 };
 

@@ -749,52 +749,11 @@ void neuron::fit_autocorrelation() {
     
   } 
 
-double neuron::sigma_loss(
-    const std::vector<double>& x, // the diagonal of the covariance matrix sigma
-    std::vector<double>& grad,
-    void* data                    // neuron object (this)
-  ) {
-    
-    // Grab neuron 
-    neuron* nrn = static_cast<neuron*>(data);
-    
-    // Grab fitted autocorrelation 
-    NumericVector autocorr_fitted = to_NumVec(nrn->autocorr_edf);
-    int max_lag = autocorr_fitted.size();
-    
-    // Grab threshold
-    double dichot_threshold = nrn->gamma;
-    
-    // Extend sigma_diag and autocorr_fitted to have lag = 0 on front
-    std::vector<double> sigma_diag(max_lag + 1);
-    NumericVector autocorr_fitted0(max_lag + 1);
-    for (int i = 0; i <= max_lag; i++) {
-      if (i == 0) {
-        sigma_diag[i] = 1.0;
-        autocorr_fitted0(i) = 1.0;
-      } else {
-        sigma_diag[i] = x[i - 1];
-        autocorr_fitted0(i) = autocorr_fitted(i - 1);
-      }
-    }
-    
-    // Create sigma from its diagonal
-    NumericMatrix SIGMA = makePositiveDefinite(toeplitz(sigma_diag, sigma_diag));
-    
-    // Compute formula
-    NumericVector output = dg_sigma_formula(dichot_threshold, autocorr_fitted0, SIGMA);
-    
-    // Return sum of squares
-    double ls = Rcpp::sum(output * output);
-    return ls;
-    
-  }
-
 void neuron::dg_parameters(
     const bool& verbose
   ) {
     
-    if (verbose) {Rcpp::Rcout << "Finding dichotomized Gaussian parameters ..." << std::endl;}
+    if (verbose) {Rcpp::Rcout << "Finding dichotomized Gaussian parameters for neuron " << id_num << ", " << recording_name << " ..." << std::endl;}
     
     // Check that autocorrelation has been modeled
     int max_lag = autocorr_edf.size();
@@ -821,10 +780,13 @@ void neuron::dg_parameters(
   }
 
 neuron neuron::dg_simulation(
-    const int& trials
+    const int& trials,
+    const bool& verbose
   ) {
+   
+    if (verbose) {Rcpp::Rcout << "Running dichotomized Gaussian simulation of neuron " << id_num << ", " << recording_name << " ..." << std::endl;}
     
-    // Assuming that the binning was done by summation
+    // Check that sigma_guass has been computed
     int max_lag = sigma_gauss.size();
     if (max_lag == 0) {Rcpp::stop("sigma_gauss must be computed before dg_simulation");}
     
