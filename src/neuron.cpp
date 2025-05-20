@@ -657,7 +657,7 @@ double neuron::bounded_MSE_EDF_autocorr(
     }
     mse = mse/(double)(max_lag - 1.0);
     
-    // Apply penalty to keep both parameters positive]
+    // Apply penalty to keep both parameters positive
     double penalty_multiple = nrn->penalty_multiple;
     double p1 = penalty_multiple/(x[0] * x[0]);
     double p2 = penalty_multiple/(x[1] * x[1]);
@@ -853,6 +853,6 @@ RCPP_MODULE(neuron) {
   .method("compute_autocorrelation", &neuron::compute_autocorrelation)
   .method("fit_autocorrelation", &neuron::fit_autocorrelation)
   .method("dg_parameters", &neuron::dg_parameters)
-  .method("dg_simulation", &neuron::dg_simulation); // Returns MatrixXd??
+  .method("dg_simulation", &neuron::dg_simulation); 
 }
 
