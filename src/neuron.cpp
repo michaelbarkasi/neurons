@@ -340,6 +340,7 @@ neuron::neuron(
     const std::string recording_name, 
     const std::string type, 
     const std::string genotype,
+    const std::string sex,
     const std::string hemi,
     const std::string region,
     const std::string age,
@@ -353,6 +354,7 @@ neuron::neuron(
     recording_name(recording_name), 
     type(type), 
     genotype(genotype),
+    sex(sex),
     hemi(hemi), 
     region(region),
     age(age),
@@ -481,6 +483,7 @@ List neuron::fetch_id_data() const {
     _["recording_name"] = recording_name,
     _["type"] = type,
     _["genotype"] = genotype,
+    _["sex"] = sex,
     _["hemi"] = hemi,
     _["region"] = region,
     _["age"] = age,
@@ -859,6 +862,17 @@ NumericMatrix neuron::estimate_autocorr_params(
       Rcpp::Rcout << "Estimating autocorrelation parameters for neuron " << id_num << ", " << recording_name << " ..." << std::endl;
     }
     
+    // Pre-process base neuron, if needed
+    if (autocorr_edf.size() == 0) {
+      // ... set exponential decay function (EDF) parameters 
+      set_edf_initials(A0, tau0);
+      set_edf_termination(ctol, max_evals);
+      // ... compute autocorrelation
+      compute_autocorrelation(bin_count_action);
+      // ... fit autocorrelation 
+      fit_autocorrelation();
+    }
+    
     // Find parameters for dichotomized Gaussian simulation
     dg_parameters(
       false // verbose?
@@ -915,7 +929,7 @@ NumericMatrix neuron::estimate_autocorr_params(
 RCPP_EXPOSED_CLASS(neuron)
 RCPP_MODULE(neuron) {
   class_<neuron>("neuron")
-  .constructor<int, std::string, std::string, std::string, std::string, std::string, std::string, bool, std::string, std::string, std::string, double, double>()
+  .constructor<int, std::string, std::string, std::string, std::string, std::string, std::string, std::string, bool, std::string, std::string, std::string, double, double>()
   .method("set_edf_initials", &neuron::set_edf_initials)
   .method("set_edf_termination", &neuron::set_edf_termination)
   .method("load_trial_data_R", &neuron::load_trial_data_R)

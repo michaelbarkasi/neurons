@@ -98,7 +98,8 @@ class neuron {
     int id_num = 0;                               // Fixed ID number for each neuron
     std::string recording_name = "not_provided";  // Recording (if any) on which this neuron is based
     std::string type = "generic";                 // Modeled electrophysiology of neuron of neuron, e.g. "generic", "blackbox" "LIF", "McCullochPitts", "excitatory", "inhibitory", etc.
-    std::string genotype = "WT";                  // Genotype of neuron, e.g. "WT", "KO", "MECP2", "transgenic", etc.
+    std::string genotype = "WT";                  // Genotype of animal, e.g. "WT", "KO", "MECP2", "transgenic", etc.
+    std::string sex = "not_provided";             // Sex of animal
     std::string hemi = "not_provided";            // Hemisphere of neuron, e.g. "left", "right"
     std::string region = "not_provided";          // Brain region of neuron, e.g. "V1", "M1", "CA1", "PFC", etc.
     std::string age = "not_provided";             // Age of neuron, e.g. "P0", "P7", "P14", "adult", etc.
@@ -139,6 +140,7 @@ class neuron {
       const std::string recording_name = "not_provided", 
       const std::string type = "generic", 
       const std::string genotype = "WT",
+      const std::string sex = "not_provided",
       const std::string hemi = "not_provided",
       const std::string region = "not_provided",
       const std::string age = "not_provided",

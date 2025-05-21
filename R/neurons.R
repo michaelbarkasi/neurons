@@ -33,6 +33,7 @@ new_neuron <- function(
     recording_name = "not_provided", 
     type = "generic", 
     genotype = "not_provided",
+    sex = "not_provided",
     hemi = "not_provided",
     region = "not_provided",
     age = "not_provided", 
@@ -45,7 +46,7 @@ new_neuron <- function(
   ) {
     neuron <- new(
       neuron, 
-      id_num, recording_name, type, genotype, hemi, region, age, sim, unit_time, unit_sample_rate, unit_data, t_per_bin, sample_rate
+      id_num, recording_name, type, genotype, sex, hemi, region, age, sim, unit_time, unit_sample_rate, unit_data, t_per_bin, sample_rate
     )
     return(neuron)
   }
@@ -61,7 +62,7 @@ load.rasters.as.neurons <- function(
     # Input: 
     #   raster_df: Data frame (or file name to csv importable as such), each row a spike; 
     #                 must have columns: cell, time_in_ms, trial
-    #                 optional columns: recording_name, hemisphere, genotype, region, age
+    #                 optional columns: recording_name, hemisphere, genotype, sex, region, age
     # Output: 
     #   neuron_list: List of neuron objects, one per cell
     
@@ -95,14 +96,16 @@ load.rasters.as.neurons <- function(
       if ("hemisphere" %in% colnames(raster_df)) {
         hemi <- unique(raster_df$hemisphere[c_mask])
         if (length(hemi) != 1) hemi <- "not_provided"
-        else if (hemi == "left ACx") hemi <- "left"
-        else if (hemi == "right ACx") hemi <- "right"
-        else hemi <- "not_provided"
       }
       genotype <- "not_provided"
       if ("genotype" %in% colnames(raster_df)) {
         genotype <- unique(raster_df$genotype[c_mask])
         if (length(genotype) != 1) genotype <- "not_provided"
+      }
+      sex <- "not_provided"
+      if ("sex" %in% colnames(raster_df)) {
+        sex <- unique(raster_df$sex[c_mask])
+        if (length(sex) != 1) sex <- "not_provided"
       }
       region <- "not_provided"
       if ("region" %in% colnames(raster_df)) {
@@ -120,6 +123,7 @@ load.rasters.as.neurons <- function(
         id_num = c,
         recording_name = recording_name,
         genotype = genotype,
+        sex = sex,
         hemi = hemi,
         region = region,
         age = age,
@@ -151,6 +155,7 @@ make.plot.title <- function(
     recording_name <- id_data$recording_name
     id_num <- id_data$id_num
     genotype <- id_data$genotype
+    sex <- id_data$sex
     hemi <- id_data$hemi
     region <- id_data$region
     age <- id_data$age
@@ -161,7 +166,7 @@ make.plot.title <- function(
     plot_title <- paste0(
       plot_title,
       ", neuron ", recording_name, ", #", id_num, 
-      ", ", genotype, ", ", hemi, " hemi, ", region, ", ", age
+      ", ", genotype, ", ", sex, ", ", hemi, " hemi, ", region, ", ", age
     )
     
     return(plot_title)
