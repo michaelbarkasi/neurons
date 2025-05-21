@@ -259,6 +259,7 @@ double dg_sigma_formula_scalar(
   
 }
 
+// Function to find sigma by root bisection 
 double dg_find_sigma_RootBisection(
     const double& threshold,      // threshold for dichotomization
     const double& cov             // desired covarance after dichotomization
@@ -307,23 +308,26 @@ double dg_find_sigma_RootBisection(
   
 }
 
-NumericMatrix makePositiveDefinite(const NumericMatrix& NumX) {
-  
-  MatrixXd X = to_eMat(NumX);
-  SelfAdjointEigenSolver<MatrixXd> solver(X);
-  VectorXd eigenvalues = solver.eigenvalues();
-  MatrixXd eigenvectors = solver.eigenvectors();
-  
-  // Ensure all eigenvalues are positive
-  for (int i = 0; i < eigenvalues.size(); ++i) {
-    if (eigenvalues(i) < 1e-10) {  // Adjust small or negative values
-      eigenvalues(i) = 1e-10;
+// Function to make a matrix positive definite
+NumericMatrix makePositiveDefinite(
+    const NumericMatrix& NumX
+  ) {
+    
+    MatrixXd X = to_eMat(NumX);
+    SelfAdjointEigenSolver<MatrixXd> solver(X);
+    VectorXd eigenvalues = solver.eigenvalues();
+    MatrixXd eigenvectors = solver.eigenvectors();
+    
+    // Ensure all eigenvalues are positive
+    for (int i = 0; i < eigenvalues.size(); ++i) {
+      if (eigenvalues(i) < 1e-10) {  // Adjust small or negative values
+        eigenvalues(i) = 1e-10;
+      }
     }
+    
+    // Reconstruct the matrix
+    return to_NumMat(eigenvectors * eigenvalues.asDiagonal() * eigenvectors.transpose());
   }
-  
-  // Reconstruct the matrix
-  return to_NumMat(eigenvectors * eigenvalues.asDiagonal() * eigenvectors.transpose());
-}
 
 /*
  * ***********************************************************************************
@@ -332,30 +336,35 @@ NumericMatrix makePositiveDefinite(const NumericMatrix& NumX) {
 
 // Constructor
 neuron::neuron(
-  const int id_num, 
-  const std::string recording_name, 
-  const std::string type, 
-  const std::string hemi,
-  bool sim, 
-  std::string unit_time, 
-  std::string unit_sample_rate, 
-  std::string unit_data, 
-  double t_per_bin, 
-  const double sample_rate
-) 
-  : id_num(id_num), 
+    const int id_num, 
+    const std::string recording_name, 
+    const std::string type, 
+    const std::string genotype,
+    const std::string hemi,
+    const std::string region,
+    const std::string age,
+    bool sim, 
+    std::string unit_time, 
+    std::string unit_sample_rate, 
+    std::string unit_data, 
+    double t_per_bin, 
+    const double sample_rate
+  ) : id_num(id_num), 
     recording_name(recording_name), 
     type(type), 
+    genotype(genotype),
     hemi(hemi), 
+    region(region),
+    age(age),
     sim(sim), 
     unit_time(unit_time), 
     unit_sample_rate(unit_sample_rate), 
     unit_data(unit_data), 
     t_per_bin(t_per_bin), 
     sample_rate(sample_rate)
-{ 
-  // No initialization operations
-}
+  { 
+      // No initialization operations
+  }
 
 /*
  * ***********************************************************************************
@@ -471,7 +480,10 @@ List neuron::fetch_id_data() const {
     _["id_num"] = id_num,
     _["recording_name"] = recording_name,
     _["type"] = type,
+    _["genotype"] = genotype,
     _["hemi"] = hemi,
+    _["region"] = region,
+    _["age"] = age,
     _["sim"] = sim,
     _["unit_time"] = unit_time,
     _["unit_sample_rate"] = unit_sample_rate,
@@ -779,6 +791,7 @@ void neuron::dg_parameters(
    
   }
 
+// Make dichotomized Gaussian simulation of neuron
 neuron neuron::dg_simulation(
     const int& trials,
     const bool& verbose
@@ -825,8 +838,73 @@ neuron neuron::dg_simulation(
     my_sim.unit_time = "bin";
     my_sim.t_per_bin = 1.0;
     
-    // Return simulated neuron
-    return(my_sim);
+    // return simulation 
+    return my_sim;
+    
+  }
+
+// Estimate autocorrelation parameters for a neuron with dichotomized Gaussian simulations
+NumericMatrix neuron::estimate_autocorr_params(
+    const int& trials_per_sim, 
+    const int& num_sims,
+    const std::string& bin_count_action,
+    const double& A0,
+    const double& tau0,
+    const double& ctol,
+    const int& max_evals,
+    const bool& verbose
+  ) {
+    
+    if (verbose) {
+      Rcpp::Rcout << "Estimating autocorrelation parameters for neuron " << id_num << ", " << recording_name << " ..." << std::endl;
+    }
+    
+    // Find parameters for dichotomized Gaussian simulation
+    dg_parameters(
+      false // verbose?
+    );
+    
+    // Initialize matrix to hold results 
+    NumericMatrix sim_results(num_sims, 9); 
+    
+    for (int s = 0; s < num_sims; s++) {
+      
+      // Simulate neuron with dichotomized Gaussian
+      neuron my_sim = dg_simulation(
+        trials_per_sim, 
+        false // verbose?
+      );
+      
+      // Set exponential decay function (EDF) parameters 
+      my_sim.set_edf_initials(A0, tau0);
+      my_sim.set_edf_termination(ctol, max_evals);
+      
+      // Compute autocorrelation
+      my_sim.compute_autocorrelation(bin_count_action);
+      
+      // Fit autocorrelation 
+      my_sim.fit_autocorrelation();
+      
+      // Fetch results 
+      VectorXd autocorr_edf_tail_eigen = my_sim.autocorr_edf.tail(my_sim.autocorr_edf.size() - 1);
+      NumericVector autocorr_edf_tail = to_NumVec(autocorr_edf_tail_eigen);
+      NumericVector sim_results_row = {
+        my_sim.lambda, 
+        my_sim.lambda_bin, 
+        my_sim.A, 
+        my_sim.tau, 
+        my_sim.bias_term,
+        my_sim.autocorr_edf[0],
+        max(autocorr_edf_tail),
+        mean(autocorr_edf_tail),
+        min(autocorr_edf_tail)
+        };
+      
+      sim_results.row(s) = sim_results_row;
+      
+    }
+    
+    return sim_results;
     
   }
 
@@ -837,7 +915,7 @@ neuron neuron::dg_simulation(
 RCPP_EXPOSED_CLASS(neuron)
 RCPP_MODULE(neuron) {
   class_<neuron>("neuron")
-  .constructor<int, std::string, std::string, std::string, bool, std::string, std::string, std::string, double, double>()
+  .constructor<int, std::string, std::string, std::string, std::string, std::string, std::string, bool, std::string, std::string, std::string, double, double>()
   .method("set_edf_initials", &neuron::set_edf_initials)
   .method("set_edf_termination", &neuron::set_edf_termination)
   .method("load_trial_data_R", &neuron::load_trial_data_R)
@@ -853,6 +931,7 @@ RCPP_MODULE(neuron) {
   .method("compute_autocorrelation", &neuron::compute_autocorrelation)
   .method("fit_autocorrelation", &neuron::fit_autocorrelation)
   .method("dg_parameters", &neuron::dg_parameters)
-  .method("dg_simulation", &neuron::dg_simulation); 
+  .method("dg_simulation", &neuron::dg_simulation)
+  .method("estimate_autocorr_params", &neuron::estimate_autocorr_params);
 }
 
