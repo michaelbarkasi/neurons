@@ -213,7 +213,7 @@ NumericVector dg_sigma_formula(
     if (dim != sigma.ncol()) {Rcpp::stop("Covariance matrix must be square");}
     if (dim != cov.size()) {Rcpp::stop("Covariance vector must have the same length as sigma diagonal");}
     
-    // Find probability of a point being below the threshold along both dimensions
+    // Find probability of a point being below the threshold along all dimensions
     NumericVector upper = Rcpp::rep(threshold, dim); 
     double Phi2 = mvnorm_cdf(
       upper, 
