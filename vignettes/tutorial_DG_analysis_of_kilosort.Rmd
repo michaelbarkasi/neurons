@@ -15,4 +15,19 @@ options(width = 10000)
 demo_data <- "/Users/michaelbarkasi/Library/CloudStorage/OneDrive-WashingtonUniversityinSt.Louis/projects_Oviedo_lab/_lateralized_recurrent_pathways/dichot-gaussian/data_demo"
 ```
 
-Need to add functions to neurons package, including t
+```{r preprocess_kilosort4_data}
+# old recordings used 1520 ms of silence, once settled
+# ... settling seems to take 500 ms
+spike.rasters.kilo4 <- preprocess.kilo4(
+  # ... for stimulus
+  #trial_time_start = -100, 
+  #trial_time_end = 1800 
+  # ... for silence
+  trial_time_start = 500, 
+  trial_time_end = 500 + 1520,
+  recording.folders = list.files(demo_data, full.names = TRUE),
+  pure_trials_only = TRUE,       # Keep only trials with no overlap? 
+  verbose = TRUE
+) 
+
+```

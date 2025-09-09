@@ -90,7 +90,7 @@ import.kilo4 <- function(
     }
     
     # Grab stimulus response info
-    stim_responsive_by_cluster <- c(readMat(paste0(folder_path_kilo4, "/includeVector.mat"))[[1]])
+    stim_responsive_by_cluster <- c(R.matlab::readMat(paste0(folder_path_kilo4, "/includeVector.mat"))[[1]])
     # ... note: cluster_id is 0-index in the tsv files while matlab is 1-indexed, but the data imported from 
     #      this matlab file is not explicitly indexed, uses implicit row indexing (e.g., first row is the first 
     #      cluster, second row the second cluster, etc). Below, when a cluster id is pulled from the tsv file (e.g., i), 

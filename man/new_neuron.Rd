@@ -24,7 +24,7 @@ new_neuron(
 \arguments{
 \item{id_num}{Numeric identifier for the neuron (default: 0).}
 
-\item{recording_name}{// Recording (if any) on which this neuron is based (default: "not_provided").}
+\item{recording_name}{Recording (if any) on which this neuron is based (default: "not_provided").}
 
 \item{type}{Modeled electrophysiology of neuron, e.g. "generic", "blackbox" "LIF", "McCullochPitts", "excitatory", "inhibitory", etc. (default: "generic").}
 
