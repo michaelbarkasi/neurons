@@ -1,0 +1,18 @@
+---
+title: "Dichotomized Gaussian analysis of KiloSort data"
+---
+
+This is an example vignette.
+
+```{r setup}
+# Set seed for reproducibility
+set.seed(12345) 
+# Load neurons package
+library(neurons) 
+# Set width of markdown code outputs
+options(width = 10000)
+# Set path to data 
+demo_data <- "/Users/michaelbarkasi/Library/CloudStorage/OneDrive-WashingtonUniversityinSt.Louis/projects_Oviedo_lab/_lateralized_recurrent_pathways/dichot-gaussian/data_demo"
+```
+
+Need to add functions to neurons package, including t
