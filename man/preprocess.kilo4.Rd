@@ -7,7 +7,7 @@
 preprocess.kilo4(
   trial_time_start = -100,
   trial_time_end = 2020,
-  recording.folders = list.files("data", full.names = TRUE),
+  recording.folder = "data",
   pure_trials_only = TRUE,
   verbose = TRUE
 )
@@ -17,7 +17,7 @@ preprocess.kilo4(
 
 \item{trial_time_end}{Time to end trial (ms), relative to stimulus onset}
 
-\item{recording.folders}{List of paths to the kilosort4 output folders}
+\item{recording.folder}{List of paths to the kilosort4 output folders}
 
 \item{pure_trials_only}{Keep only trials with no overlap?}
 

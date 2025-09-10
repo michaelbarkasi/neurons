@@ -1,7 +1,32 @@
 
 #' @useDynLib neurons, .registration = TRUE
 #' @import R.matlab
+#' @import hdf5r
+#' @import reticulate
 NULL
+
+load_mat <- function(path) {
+    # Read first few bytes to determine format
+    con <- file(path, "rb")
+    header <- readChar(con, nchars = 8, useBytes = TRUE)
+    close(con)
+    
+    if (startsWith(header, "MATLAB 5")) {
+      # old-style .mat file
+      out <- R.matlab::readMat(path)[[1]]
+    } else {
+      # new-style HDF5 .mat file
+      # Open the v7.3 MAT-file
+      file <- hdf5r::H5File$new(path, mode = "r")
+      out <- c(file[["/includeVector"]][,])
+      
+      # Release file
+      file$close_all()
+      
+    }
+    
+    out
+  }
 
 #' Import raw kilosort4 and trial data
 #' 
@@ -53,8 +78,9 @@ import.kilo4 <- function(
       file_name <- sub("\\..*", "", file_name)
       if (!(file_name %in% import_list)) next
       data_list[[file_name]] <- tryCatch({
-        np$load(file, allow_pickle = TRUE)
+        reticulate::import("numpy")$load(file, allow_pickle = TRUE)
       }, error = function(e) {
+        cat("\n\nError loading: ", file, "\n")
         NULL
       })
     }
@@ -69,7 +95,7 @@ import.kilo4 <- function(
     
     # Print report on the imported data
     if (verbose) {
-      cat("\nImported data:\n")
+      cat("\nImported data:", file, "\n")
       cat("--------------------\n")
       cat("--------------------\n")
       for (i in 1:length(data_list)) {
@@ -90,7 +116,7 @@ import.kilo4 <- function(
     }
     
     # Grab stimulus response info
-    stim_responsive_by_cluster <- c(R.matlab::readMat(paste0(folder_path_kilo4, "/includeVector.mat"))[[1]])
+    stim_responsive_by_cluster <- c(load_mat(paste0(folder_path_kilo4, "/includeVector.mat")))
     # ... note: cluster_id is 0-index in the tsv files while matlab is 1-indexed, but the data imported from 
     #      this matlab file is not explicitly indexed, uses implicit row indexing (e.g., first row is the first 
     #      cluster, second row the second cluster, etc). Below, when a cluster id is pulled from the tsv file (e.g., i), 
@@ -215,18 +241,19 @@ import.kilo4 <- function(
 #' 
 #' @param trial_time_start Time to begin trial (ms), relative to stimulus onset
 #' @param trial_time_end Time to end trial (ms), relative to stimulus onset
-#' @param recording.folders List of paths to the kilosort4 output folders
+#' @param recording.folder List of paths to the kilosort4 output folders
 #' @param pure_trials_only Keep only trials with no overlap?
 #' @param verbose Print report on imported data?
 #' @returns A list with three elements: spikes (data frame with one row per spike), timeXtrial (list of matrices with rows as sample times and columns as trials), and cluster.key (data frame with one row per neuron)
 preprocess.kilo4 <- function(
     trial_time_start = -100,       # Time to begin trial (ms), relative to stimulus onset
     trial_time_end = 2020,         # Time to end trial (ms), relative to stimulus onset
-    recording.folders = list.files("data", full.names = TRUE),
+    recording.folder = "data",
     pure_trials_only = TRUE,       # Keep only trials with no overlap? 
     verbose = TRUE
   ) {
     
+    recording.folders <- list.files(recording.folder, full.names = TRUE)
     n_recordings <- length(recording.folders)
     time_range <- trial_time_end - trial_time_start
     
@@ -300,8 +327,9 @@ preprocess.kilo4 <- function(
       kilosort_data <- kilosort.data[[rf]]$spikes
       single_cells_mask <- good_mua(kilosort_data)
       cell_numbers <- sort(unique(kilosort_data$spike_clusters[single_cells_mask]))
+      if (length(cell_numbers) == 0) next
       # Combine with recording name 
-      raster_names <- c(raster_names, paste0(sub("^data/", "", rf), "_", cell_numbers))
+      raster_names <- c(raster_names, paste0(sub(paste0(recording.folder, "/"), "", rf), "_", cell_numbers))
       # Grab max trial number 
       matrix_col_num <- c(matrix_col_num, rep(kilosort.data.maxtrial[rf], length(cell_numbers)))
     }
@@ -337,7 +365,7 @@ preprocess.kilo4 <- function(
       # For each cell, extract data as matrices with rows as sample times, columns as trials
       for (cn in cell_numbers) {
         # ... grab raster name 
-        rn <- paste0(sub("^data/", "", rf), "_", cn)
+        rn <- paste0(sub(paste0(recording.folder, "/"), "", rf), "_", cn)
         # ... grab spikes which belong to that cell and are in a valid trial
         spike_idx <- which(kilosort_data$spike_clusters == cn)
         # For each spike ...
@@ -353,30 +381,31 @@ preprocess.kilo4 <- function(
       # Build single "sparse" raster with extra data columns
       # Subset the raw kilosort_data data to include only spikes which belong to some good cell and are in a valid trial
       single_notna <- single_cells_mask & !is.na(kilosort_data$trial_number)
-      kilosort_data_parsed_spikes_good <- kilosort_data[single_notna, ]
-      original_cluster_nums <- kilosort_data$spike_clusters[single_notna]
-      # ... rename the columns
-      colnames(kilosort_data_parsed_spikes_good) <- c("cell", "sample", "cluster_group", "stim_responsive", "trial", "time_in_ms")
-      # ... reorder and subset columns
-      kilosort_data_parsed_spikes_good <- kilosort_data_parsed_spikes_good[, c("trial", "sample", "cell", "time_in_ms")]
-      # ... add recording name, cluster, genotype, and hemisphere information
-      kilosort_data_parsed_spikes_good$recording_name <- sub("^data/", "", rf)
-      kilosort_data_parsed_spikes_good$cluster <- original_cluster_nums
-      kilosort_data_parsed_spikes_good$genotype <- "not_provided"
-      kilosort_data_parsed_spikes_good$hemisphere <- "not_provided"
-      # ... replace cell numbers with new cell numbers
-      replaced <- rep(FALSE, nrow(kilosort_data_parsed_spikes_good))
-      for (cn in cell_numbers) { 
-        rn <- paste0(sub("^data/", "", rf), "_", cn)
-        cell_mask <- !replaced & kilosort_data_parsed_spikes_good$cell == cn
-        kilosort_data_parsed_spikes_good$cell[cell_mask] <- cell_numbers_good[rn]
-        replaced <- replaced | cell_mask
+      if (sum(single_notna) > 0) {
+        kilosort_data_parsed_spikes_good <- kilosort_data[single_notna, ]
+        original_cluster_nums <- kilosort_data$spike_clusters[single_notna]
+        # ... rename the columns
+        colnames(kilosort_data_parsed_spikes_good) <- c("cell", "sample", "cluster_group", "stim_responsive", "trial", "time_in_ms")
+        # ... reorder and subset columns
+        kilosort_data_parsed_spikes_good <- kilosort_data_parsed_spikes_good[, c("trial", "sample", "cell", "time_in_ms")]
+        # ... add recording name, cluster, genotype, and hemisphere information
+        kilosort_data_parsed_spikes_good$recording_name <- sub(paste0(recording.folder, "/"), "", rf)
+        kilosort_data_parsed_spikes_good$cluster <- original_cluster_nums
+        kilosort_data_parsed_spikes_good$genotype <- "not_provided"
+        kilosort_data_parsed_spikes_good$hemisphere <- "not_provided"
+        # ... replace cell numbers with new cell numbers
+        replaced <- rep(FALSE, nrow(kilosort_data_parsed_spikes_good))
+        for (cn in cell_numbers) { 
+          rn <- paste0(sub(paste0(recording.folder, "/"), "", rf), "_", cn)
+          cell_mask <- !replaced & kilosort_data_parsed_spikes_good$cell == cn
+          kilosort_data_parsed_spikes_good$cell[cell_mask] <- cell_numbers_good[rn]
+          replaced <- replaced | cell_mask
+        }
+        kilosort_data_parsed_spikes <- rbind(
+          kilosort_data_parsed_spikes,
+          kilosort_data_parsed_spikes_good
+        )
       }
-      kilosort_data_parsed_spikes <- rbind(
-        kilosort_data_parsed_spikes,
-        kilosort_data_parsed_spikes_good
-      )
-      
     }
     
     # Make cluster key 

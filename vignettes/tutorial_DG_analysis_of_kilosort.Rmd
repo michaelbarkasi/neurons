@@ -25,9 +25,8 @@ spike.rasters.kilo4 <- preprocess.kilo4(
   # ... for silence
   trial_time_start = 500, 
   trial_time_end = 500 + 1520,
-  recording.folders = list.files(demo_data, full.names = TRUE),
+  recording.folder = demo_data,
   pure_trials_only = TRUE,       # Keep only trials with no overlap? 
   verbose = TRUE
 ) 
-
 ```
