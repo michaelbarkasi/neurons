@@ -2,7 +2,7 @@
 % Please edit documentation in R/preprocessing.R
 \name{import.kilo4}
 \alias{import.kilo4}
-\title{Import raw kilosort4 and trial data}
+\title{Import raw kilosort4 data}
 \usage{
 import.kilo4(
   folder_path,
@@ -30,5 +30,13 @@ import.kilo4(
 A list with two data frames: spikes (rows are spikes) and stim (rows are stimulus onset times)
 }
 \description{
-Base function to import raw kilosort4 and trial data.
+Base function to import raw kilosort4 and accompanying stimulus data. The function looks for a csv file stim_data_file and looks for the following files in folder_path/kilosort4:
+\describe{
+   \item{spike_positions.npy}{2D array giving the x and y position of each spike}
+   \item{spike_clusters.npy}{integer giving the cluster number of each spike}
+   \item{spike_times.npy}{sample number the spike occurred at}
+   \item{cluster_group.tsv}{2D array giving status of each cluster (0=noise, 1=MUA, 2=Good, 3=unsorted), hand-curated}
+   \item{cluster_info.tsv}{2D array giving the automatic output of kilosort4}
+   \item{includeVector.mat}{MATLAB file giving whether each cluster is stimulus-responsive (1) or not (0)}
+}
 }

@@ -28,9 +28,17 @@ load_mat <- function(path) {
     out
   }
 
-#' Import raw kilosort4 and trial data
+#' Import raw kilosort4 data
 #' 
-#' Base function to import raw kilosort4 and trial data.
+#' Base function to import raw kilosort4 and accompanying stimulus data. The function looks for a csv file stim_data_file and looks for the following files in folder_path/kilosort4:
+#' \describe{
+#'    \item{spike_positions.npy}{2D array giving the x and y position of each spike}
+#'    \item{spike_clusters.npy}{integer giving the cluster number of each spike}
+#'    \item{spike_times.npy}{sample number the spike occurred at}
+#'    \item{cluster_group.tsv}{2D array giving status of each cluster (0=noise, 1=MUA, 2=Good, 3=unsorted), hand-curated}
+#'    \item{cluster_info.tsv}{2D array giving the automatic output of kilosort4}
+#'    \item{includeVector.mat}{MATLAB file giving whether each cluster is stimulus-responsive (1) or not (0)}
+#' }
 #' 
 #' @param folder_path Path to the kilosort4 output files
 #' @param stim_data_file Path to the stimulus event data file
@@ -95,22 +103,19 @@ import.kilo4 <- function(
     
     # Print report on the imported data
     if (verbose) {
-      cat("\nImported data:", file, "\n")
-      cat("--------------------\n")
-      cat("--------------------\n")
+      cat("\n---")
+      cat("\nImported data:", gsub(sub("/[^/]*$", "", folder_path), "", file))
       for (i in 1:length(data_list)) {
-        cat("\n") 
-        cat(names(data_list)[i], "\n")
-        cat("--------------------\n")
-        cat("class: ", class(data_list[[i]]), "\n")
+        cat("\n", names(data_list)[i])
+        cat(", class: ", class(data_list[[i]]))
         if (length(dim(data_list[[i]])) > 0) {
-          cat("dim: ", dim(data_list[[i]]), "\n")
+          cat(", dim: ", dim(data_list[[i]]))
           if (length(colnames(data_list[[i]])) > 0) {
             n <- min(5, dim(data_list[[i]])[2])
-            cat("col names (head): ", paste(colnames(data_list[[i]])[1:n], collapse = ", "), "\n")
+            cat(", col names (1st 5): ", paste(colnames(data_list[[i]])[1:n], collapse = ", "))
           }
         } else {
-          cat("length: ", length(data_list[[i]]), "\n")
+          cat(", length: ", length(data_list[[i]]))
         }
       }
     }
@@ -242,14 +247,21 @@ import.kilo4 <- function(
 #' @param trial_time_start Time to begin trial (ms), relative to stimulus onset
 #' @param trial_time_end Time to end trial (ms), relative to stimulus onset
 #' @param recording.folder List of paths to the kilosort4 output folders
+#' @param meta_data Data frame with metadata for each recording (e.g., genotype, hemisphere), one recording per row; row names should match recording names and all columns should be covariates for later analysis
 #' @param pure_trials_only Keep only trials with no overlap?
 #' @param verbose Print report on imported data?
-#' @returns A list with three elements: spikes (data frame with one row per spike), timeXtrial (list of matrices with rows as sample times and columns as trials), and cluster.key (data frame with one row per neuron)
+#' @returns A list with three elements: 
+#'  \describe{
+#'    \item{spikes}{data frame with one row per spike}
+#'    \item{timeXtrial}{list of matrices with rows as sample times and columns as trials, each element a zero if no spike at that time in that trial, and a one if a spike}
+#'    \item{cluster.key}{data frame with one row per neuron}
+#'  }
 preprocess.kilo4 <- function(
-    trial_time_start = -100,       # Time to begin trial (ms), relative to stimulus onset
-    trial_time_end = 2020,         # Time to end trial (ms), relative to stimulus onset
+    trial_time_start = -100,
+    trial_time_end = 2020,
     recording.folder = "data",
-    pure_trials_only = TRUE,       # Keep only trials with no overlap? 
+    meta_data = NULL,
+    pure_trials_only = TRUE,
     verbose = TRUE
   ) {
     
@@ -388,11 +400,13 @@ preprocess.kilo4 <- function(
         colnames(kilosort_data_parsed_spikes_good) <- c("cell", "sample", "cluster_group", "stim_responsive", "trial", "time_in_ms")
         # ... reorder and subset columns
         kilosort_data_parsed_spikes_good <- kilosort_data_parsed_spikes_good[, c("trial", "sample", "cell", "time_in_ms")]
-        # ... add recording name, cluster, genotype, and hemisphere information
-        kilosort_data_parsed_spikes_good$recording_name <- sub(paste0(recording.folder, "/"), "", rf)
+        # ... add recording name, cluster, and covariate information
+        recordingname <- sub(paste0(recording.folder, "/"), "", rf)
+        kilosort_data_parsed_spikes_good$recording_name <- recordingname
         kilosort_data_parsed_spikes_good$cluster <- original_cluster_nums
-        kilosort_data_parsed_spikes_good$genotype <- "not_provided"
-        kilosort_data_parsed_spikes_good$hemisphere <- "not_provided"
+        if (!is.null(meta_data)) {
+          for (covariate in colnames(meta_data)) kilosort_data_parsed_spikes_good[[covariate]] <- meta_data[recordingname, covariate]
+        }
         # ... replace cell numbers with new cell numbers
         replaced <- rep(FALSE, nrow(kilosort_data_parsed_spikes_good))
         for (cn in cell_numbers) { 
@@ -413,8 +427,6 @@ preprocess.kilo4 <- function(
     recording_name_col <- c()
     cell_col <- c()
     cluster_col <- c()
-    genotype_col <- c()
-    hemisphere_col <- c()
     num_of_spikes_col <- c()
     num_of_trials_col <- c()
     for (c in cell_nums) {
@@ -422,16 +434,16 @@ preprocess.kilo4 <- function(
       recording_name <- unique(kilosort_data_parsed_spikes$recording_name[mask])
       cell_col <- c(cell_col, c)
       cluster <- unique(kilosort_data_parsed_spikes$cluster[mask])
-      genotype <- unique(kilosort_data_parsed_spikes$genotype[mask])
-      hemisphere <- unique(kilosort_data_parsed_spikes$hemisphere[mask])
       if (length(recording_name) != 1) stop("Recording name not unique")
       if (length(cluster) != 1) stop("Cluster not unique")
-      if (length(genotype) != 1) stop("Genotype not unique")
-      if (length(hemisphere) != 1) stop("Hemisphere not unique")
+      if (!is.null(meta_data)) {
+        for (covariate in colnames(meta_data)) {
+          this_covariate <- unique(kilosort_data_parsed_spikes[mask,covariate])
+          if (length(this_covariate) != 1) stop(paste0(covariate, " not unique"))
+        }
+      }
       recording_name_col <- c(recording_name_col, recording_name)
       cluster_col <- c(cluster_col, cluster)
-      genotype_col <- c(genotype_col, genotype)
-      hemisphere_col <- c(hemisphere_col, hemisphere)
       num_of_spikes <- sum(mask)
       num_of_trials <- length(unique(kilosort_data_parsed_spikes$trial[mask]))
       num_of_spikes_col <- c(num_of_spikes_col, num_of_spikes)
@@ -441,8 +453,6 @@ preprocess.kilo4 <- function(
       recording.name = recording_name_col,
       cell = cell_col,
       cluster = cluster_col,
-      genotype = genotype_col,
-      hemisphere = hemisphere_col,
       num.of.spikes = num_of_spikes_col,
       num.of.responsive.trials = num_of_trials_col
     )

@@ -502,3 +502,111 @@ estimate.autocorr.params <- function(
     ))
     
   }
+
+#' Function to analyze autocorrelation estimates with bootstrapping
+#' 
+#' This function takes the output from \code{estimate.autocorr.params} and performs a bootstrap analysis to estimate the distribution of the mean time constant (tau) for different levels of specified covariates.
+#' 
+#' @param ests Output from \code{estimate.autocorr.params}, or a list of such outputs.
+#' @param covariate Character string or vector of character strings specifying the covariate(s) to analyze (e.g., "hemi").
+#' @param n_bs Number of bootstrap resamples to perform (default: 1e4).
+#' @param bins_per_sec Number of bins per second used when computing autocorrelation (default: 50, corresponding to 20 ms bins).
+#' @return A data frame with bootstrap resamples of the mean tau for each combination of covariate levels.
+#' @export
+analyze.autocorr <- function(
+    ests,
+    covariate,
+    n_bs = 1e4,
+    bins_per_sec = 50
+  ) {
+    
+    # Check input types
+    error_message <- "Input is not a valid estimate.autocorr.params output or list of such output."
+    if (class(ests) == "list") {
+      if ("n_sims_per_neurons" %in% names(ests)) {
+        if (!(all(covariate %in% names(ests$neuron_id)))) {
+          stop("Covariate not found in neuron_id.")
+        }
+        # ... this is single input, wrap in list
+        ests <- list(ests)
+      } else {
+        # ... check if list of proper inputs 
+        for (i in seq_along(ests)) {
+          if (!("n_sims_per_neurons" %in% names(ests[[i]]))) {
+            stop(error_message)
+          }
+          if (!(all(covariate %in% names(ests[[i]]$neuron_id)))) {
+            stop("Covariate not found in neuron_id.")
+          }
+        }
+      }
+    } else {
+      stop(error_message)
+    }
+    
+    # Combine batches into big data frame
+    ests_all <- data.frame()
+    for (i in seq_along(ests)) {
+      
+      # Grab estimate list 
+      est <- ests[[i]]
+      
+      # Expand neuron_id 
+      est$neuron_id <- est$neuron_id[rep(1:nrow(est$neuron_id), each = est$n_sims_per_neurons), ]
+      
+      # Combine with estimates 
+      est$estimates <- cbind(est$estimates, est$neuron_id)
+      
+      # Add to big data frame
+      ests_all <- rbind(ests_all, est$estimates)
+      
+    }
+    
+    # Get covariate levels and their interactions
+    est_covariates <- list() 
+    est_covariate_levels <- list()
+    for (c in c(covariate)) {
+      est_covariates[[c]] <- ests_all[,c]
+      est_covariate_levels[[c]] <- unique(ests_all[,c])
+    }
+    cov_X <- do.call(expand.grid, list(est_covariate_levels, stringsAsFactors = FALSE))
+    n_interX <- nrow(cov_X)
+    
+    # Run bootstraps 
+    resamples <- matrix(NA, nrow = n_bs, ncol = n_interX)
+    n_est <- nrow(ests_all)
+    interX_names <- c()
+    for (i in 1:n_interX) {
+      
+      lvl <- cov_X[i,]
+      interX_names <- c(interX_names, paste0(lvl, collapse = "_"))
+      lvl_mask <- rep(TRUE, n_est)
+      for (c in c(covariate)) {
+        lvl_mask <- lvl_mask & ests_all[,c] == lvl[[c]]
+      }
+      
+      if (any(lvl_mask)) {
+        lvl_lambda_Hz <- ests_all[lvl_mask, "lambda_bin"] * bins_per_sec 
+        lvl_tau_ests <- ests_all[lvl_mask, "tau"]
+        
+        n_cells <- length(unique(ests_all$id_num))
+        
+        for (j in 1:n_bs) {
+          # Net effect is to resample from each neuron's estimates in a way that 
+          #   accounts for the uncertainty estimated by the DG. E.g., if there are n neurons, 
+          #   each resample has a 1/n chance of drawing from a given neuron N; but, as N
+          #   is represented by n_sims values from the DG simulations, the probability of a given value
+          #   being drawn to represent N is determined by the simulations. 
+          resamples[j,i] <- mean(sample(lvl_tau_ests, n_cells, replace = TRUE))
+        }
+      }
+      
+    }
+    resamples <- as.data.frame(resamples)
+    colnames(resamples) <- interX_names
+    
+    resamples <- resamples[, colSums(!is.na(resamples)) > 0]
+    
+    return(resamples)
+    
+  }

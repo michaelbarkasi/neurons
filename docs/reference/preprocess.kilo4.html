@@ -24,7 +24,7 @@
     <li><a class="dropdown-item" href="../articles/install.html">Installation instructions</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Tutorials</h6></li>
-    <li><a class="dropdown-item" href="../articles/tutorial_DG_analysis_of_kilosort.html">Dichotomized Gaussian analysis of KiloSort data</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial_DG_analysis_of_kilosort.html">Dichotomized Gaussian analysis of KiloSort4 data</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Legal</h6></li>
     <li><a class="dropdown-item" href="../articles/license.html">Dependency licenses</a></li>
@@ -55,7 +55,7 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">preprocess.kilo4</span><span class="op">(</span></span>
 <span>  trial_time_start <span class="op">=</span> <span class="op">-</span><span class="fl">100</span>,</span>
 <span>  trial_time_end <span class="op">=</span> <span class="fl">2020</span>,</span>
-<span>  recording.folders <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="st">"data"</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  recording.folder <span class="op">=</span> <span class="st">"data"</span>,</span>
 <span>  pure_trials_only <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -73,7 +73,7 @@
 <dd><p>Time to end trial (ms), relative to stimulus onset</p></dd>
 
 
-<dt id="arg-recording-folders">recording.folders<a class="anchor" aria-label="anchor" href="#arg-recording-folders"></a></dt>
+<dt id="arg-recording-folder">recording.folder<a class="anchor" aria-label="anchor" href="#arg-recording-folder"></a></dt>
 <dd><p>List of paths to the kilosort4 output folders</p></dd>
 
 
@@ -87,8 +87,17 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list with three elements: spikes (data frame with one row per spike), timeXtrial (list of matrices with rows as sample times and columns as trials), and cluster.key (data frame with one row per neuron)</p>
-    </div>
+    <p>A list with three elements:</p><dl><dt>spikes</dt>
+<dd><p>data frame with one row per spike</p></dd>
+
+   <dt>timeXtrial</dt>
+<dd><p>list of matrices with rows as sample times and columns as trials, each element a zero if no spike at that time in that trial, and a one if a spike</p></dd>
+
+   <dt>cluster.key</dt>
+<dd><p>data frame with one row per neuron</p></dd>
+
+
+</dl></div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

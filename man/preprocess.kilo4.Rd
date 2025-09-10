@@ -8,6 +8,7 @@ preprocess.kilo4(
   trial_time_start = -100,
   trial_time_end = 2020,
   recording.folder = "data",
+  meta_data = NULL,
   pure_trials_only = TRUE,
   verbose = TRUE
 )
@@ -19,12 +20,19 @@ preprocess.kilo4(
 
 \item{recording.folder}{List of paths to the kilosort4 output folders}
 
+\item{meta_data}{Data frame with metadata for each recording (e.g., genotype, hemisphere), one recording per row; row names should match recording names and all columns should be covariates for later analysis}
+
 \item{pure_trials_only}{Keep only trials with no overlap?}
 
 \item{verbose}{Print report on imported data?}
 }
 \value{
-A list with three elements: spikes (data frame with one row per spike), timeXtrial (list of matrices with rows as sample times and columns as trials), and cluster.key (data frame with one row per neuron)
+A list with three elements: 
+ \describe{
+   \item{spikes}{data frame with one row per spike}
+   \item{timeXtrial}{list of matrices with rows as sample times and columns as trials, each element a zero if no spike at that time in that trial, and a one if a spike}
+   \item{cluster.key}{data frame with one row per neuron}
+ }
 }
 \description{
 Function to preprocess kilosort4 data for use with neurons package functions.
