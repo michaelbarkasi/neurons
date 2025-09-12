@@ -90,6 +90,8 @@ spike.rasters.kilo4 <- preprocess.kilo4(
   trial_time_end = 500 + 1520, # ms
   recording.folder = demo_data,
   meta_data = kilo4_metadata, 
+  min_spikes = 100,
+  min_trials = 100,
   pure_trials_only = TRUE, 
   good_cells_only = TRUE,
   stim_responsive_only = FALSE,
