@@ -33,7 +33,7 @@ This tutorial uses data recorded by multi-channel probes from the auditory corte
 demo_data <- "/Users/michaelbarkasi/Library/CloudStorage/OneDrive-WashingtonUniversityinSt.Louis/projects_Oviedo_lab/_lateralized_recurrent_pathways/dichot-gaussian/data_demo"
 ```
 
-The function **preprocess.kilo4** will be used to process the data. This function expects **data_path** to point to a folder the subfolders of which each contain a single kilosort4 output. This output should be in its own folder **kilosort4**. While kilosort outputs many files, only six are needed: 
+The function **preprocess.kilo4** (from the neurons package) will be used to process the data. This function expects **data_path** to point to a folder the subfolders of which each contain a single kilosort4 output. This output should be in its own folder **kilosort4**. While kilosort outputs many files, only six are needed: 
 
 - **spike_positions.npy**: 2D array giving the x and y position of each spike  
 - **spike_clusters.npy**: integer giving the cluster number of each spike  
@@ -49,9 +49,10 @@ More of the kilosort4 output files can be included, but only the above files (mi
   <p class="caption">Folder structure necessary for <b>preprocess.kilo4</b> function.</p>
 </div>
 
-Meta data must also be pulled from the recordings. For this tutorial, the csv file with that data in the neurons package itself. It can be loaded with the regular **read.csv** function in R. 
+Meta data can also be pulled from the recordings. For this tutorial, the csv file with that data is in the neurons package itself. It can be loaded with the regular **read.csv** function in R. 
 
 ```{r load_metadata} 
+# Load 
 kilo4_metadata <- read.csv(
   system.file(
     "extdata", 
@@ -59,9 +60,12 @@ kilo4_metadata <- read.csv(
     package = "neurons"
     )
   )
+
+# Preview
+print(head(kilo4_metadata))
 ```
 
-For the purpose of statistical analysis, covariates of interest are all that's needed from the meta data file. The neurons package (as of v1.0) can only handle certain covariates, and expects them to have specific names. It will also expect the data frame holding those covariates to have rows labeled with recording names that match the format of the recording names in the data. 
+For statistical analysis, covariates of interest are all that's needed from the meta data file. The neurons package (as of v1.0) can only handle certain covariates, and expects them to have specific names (type, genotype, sex, hemi, region, age). The package also expects the data frame holding those covariates to have rows labeled with recording names that match the format of the recording names in the data. 
 
 ```{r reformat_metadata}
 # Format and apply recording names to metadata as row names
@@ -76,22 +80,24 @@ kilo4_metadata <- kilo4_metadata[,c("HEMISPHERE","STRAIN","AGE","SEX")]
 
 # Rename columns to match what's expected by neurons package 
 colnames(kilo4_metadata) <- c("hemi", "genotype", "age", "sex")
+
+# Preview 
+print(head(kilo4_metadata))
 ```
 
 <h1>Preprocess data into spike rasters</h1>
 
-The function **preprocess.kilo4** converts raw cluster spike times into spike rasters of a standardized format expected by the neurons package. The recordings must be partitioned into trials, which **preprocess.kilo4** does with start and stop times relative to a stimulus. For example, information about responses to stimuli can be analyzed by setting the start time to something negative (before the stimulus) and the end time to something positive (after the stimulus). However, for estimating autocorrelation, it's the spontaneous activity during a period of silence after the stimulus which must be analyzed. In this case, the start time should be some time after the stimulus (to allow for settling) and the end time some time later. 
+The function **preprocess.kilo4** converts raw cluster spike times into spike rasters of a standardized format expected by the neurons package. The recordings must be partitioned into trials, which **preprocess.kilo4** does with start and stop times relative to a stimulus. For example, information about responses to stimuli can be analyzed by setting the start time to something negative (before the stimulus) and the end time to something positive (after the stimulus). However, for estimating autocorrelation, it's the spontaneous activity during a period of silence after the stimulus which should be analyzed. In this case, the start time should be some time after the stimulus (to allow for settling) and the end time some time later. 
 
 ```{r preprocess_kilosort4_data}
-# old recordings used 1520 ms of silence, once settled
-# ... settling seems to take 500 ms
 spike.rasters.kilo4 <- preprocess.kilo4(
   trial_time_start = 500,      # ms
   trial_time_end = 500 + 1520, # ms
   recording.folder = demo_data,
   meta_data = kilo4_metadata, 
-  min_spikes = 100,
-  min_trials = 100,
+  max_spikes = 1e4,
+  min_spikes = 1e2,
+  min_trials = 1e2,
   pure_trials_only = TRUE, 
   good_cells_only = TRUE,
   stim_responsive_only = FALSE,
@@ -101,7 +107,9 @@ spike.rasters.kilo4 <- preprocess.kilo4(
 
 A path (such as **demo_data**) for the actual data must be passed to **preprocess.kilo4**. Meta data (such as **kilo4_metadata**) can also be provided, but is not necessary. If left out, the preprocessed output will simply lack information about covariates. 
 
-In addition to the start and stop times and pointers to the data, **preprocess.kilo4** has four Boolean variables, **pure_trials_only**, **good_cells_only**, **stim_responsive_only**, and **verbose**. The first, **pure_trials_only**, controls whether trials which overlap with another (i.e., have a start time before the end time of the previous trial) are included in the data. The second, **good_cells_only**, controls whether spike clusters are included without passing hand curation. Likewise, the third, **stim_responsive_only** controls whether spike clusters are included without being responsive to stimului. Finally, if **verbose** is set to TRUE, the function will print out information about the files it is finding and parsing. 
+In addition to the start and stop times and pointers to the data, **preprocess.kilo4** has four Boolean variables, **pure_trials_only**, **good_cells_only**, **stim_responsive_only**, and **verbose**. The first, **pure_trials_only**, controls whether trials which overlap with another (i.e., have a start time before the end time of any previous trials) are included in the data. The second, **good_cells_only**, controls whether spike clusters are included without passing hand curation. Likewise, the third, **stim_responsive_only** controls whether spike clusters are included without being responsive to stimului. Finally, if **verbose** is set to TRUE, the function will print out information about the files it is finding and parsing. 
+
+A floor can be set for the minimum number of spikes (**min_spikes**) and trials (**min_trials**) a cell must have to be included in the output. Cells with fewer spikes or trials will be excluded. Similarly, a ceiling can be set for spikes (**max_spikes**).
 
 The output **spike.rasters.kilo4** is a list with three elements: **spikes**, **timeXtrial**, and **cluster.key**. The first element, **spikes**, is a data frame giving a sparse representation of the spike rasters from each recording. Each row is a spike, with columns giving information such as cell number, time, and genotype. Here are the first few rows of the **spikes** data frame:
 
@@ -109,23 +117,92 @@ The output **spike.rasters.kilo4** is a list with three elements: **spikes**, **
 print(head(spike.rasters.kilo4$spikes))
 ```
 
-The second element, **timeXtrial**, is a list of matrices, one per cell, with rows corresponding to time bins and columns to trials. Each entry is a binary indicator of whether the cell fired in that time bin during that trial. The third element, **cluster.key**, is a data frame with rows representing cells, columns giving information such as cell number, genotype, and number of spikes. 
+The second element, **timeXtrial**, is a list of matrices, one per cell, with rows corresponding to time bins and columns to trials. Each entry is a binary indicator of whether the cell fired in that time bin during that trial. (No example shown here.)
+
+The third element, **cluster.key**, is a data frame with rows representing cells, columns giving information such as cell number, genotype, and number of spikes. Here are the first few rows of the **cluster.key** data frame:
 
 ```{r}
-print(spike.rasters.kilo4$cluster.key)
+print(head(spike.rasters.kilo4$cluster.key))
 ```
+
+Important summary information can be pulled from the **cluster.key** data frame. For example, how many cells were included in the output?
+
+```{r summary_info}
+n_cells <- nrow(spike.rasters.kilo4$cluster.key)
+cat("Number of cells included:", n_cells)
+```
+
+The number of cells and summary statistics such as mean spike and trial count per covariate combination can be pulled as well: (Age left off for simplicity.)
+
+```{r summary_info_advanced}
+# Get all combinations of covariates
+covariate_combos <- expand.grid(
+  genotype = unique(spike.rasters.kilo4$cluster.key$genotype),
+  hemi = unique(spike.rasters.kilo4$cluster.key$hemi),
+  sex = unique(spike.rasters.kilo4$cluster.key$sex)
+)
+
+n_cells <- rep(NA, nrow(covariate_combos))
+mean_spikes <- rep(NA, nrow(covariate_combos))
+mean_trials <- rep(NA, nrow(covariate_combos))
+
+# Loop through combinations and print summary stats
+for (cv in 1:nrow(covariate_combos)) {
+  combo <- covariate_combos[cv, ]
+  subset_key <- spike.rasters.kilo4$cluster.key[
+    spike.rasters.kilo4$cluster.key$genotype == combo$genotype &
+    spike.rasters.kilo4$cluster.key$hemi == combo$hemi &
+    spike.rasters.kilo4$cluster.key$sex == combo$sex, 
+  ]
+  if (nrow(subset_key) > 0) {
+    n_cells[cv] <- nrow(subset_key)
+    mean_spikes[cv] <- round(mean(subset_key$num.of.spikes),1)
+    mean_trials[cv] <- round(mean(subset_key$num.of.responsive.trials),1)
+  }
+}
+
+# Print results 
+print(data.frame(covariate_combos, n_cells, mean_spikes, mean_trials))
+```
+
+<h1>Making neurons</h1>
 
 With the kilosort4 data preprocessed into spike rasters, the next step is to convert them into a special class of object from the neuron package, **neuron**. 
 
 ```{r create_neuron_objects}
-neurons.kilo4 <- load.rasters.as.neurons(spike.rasters.kilo4$spikes, sample_rt = 1e3)
+neurons.kilo4 <- load.rasters.as.neurons(
+  spike.rasters.kilo4$spikes, 
+  sample_rt = 1e3
+  )
 ```
 
-We want to load the spike rasters as **neuron**s because **neurons**s come with built-in methods for estimating autocorrelation parameters with dichotomized Gaussian simulations. 
+We want to load the spike rasters as **neuron**s because **neurons**s come with built-in methods for plotting rasters, plotting autocorrelation, and estimating autocorrelation parameters with dichotomized Gaussian simulations. 
+
+For example, here is the raster from one of the C57, RH cells: 
+
+```{r plot_raster}
+test <- process.autocorr(neurons.kilo4)
+i <- 1
+plot.raster(neurons.kilo4[[i]])
+neurons.kilo4[[i]]$set_edf_initials(0.001, 1.0)
+neurons.kilo4[[i]]$set_edf_termination(1e-8, 1000)
+neurons.kilo4[[i]]$compute_autocorrelation("sum")
+neurons.kilo4[[i]]$fit_autocorrelation()
+print(neurons.kilo4[[i]]$fetch_EDF_parameters())
+plot.autocorrelation(neurons.kilo4[[i]])
+i <- 2
+plot.raster(neurons.kilo4[[i]])
+neurons.kilo4[[i]]$set_edf_initials(0.001, 1.0)
+neurons.kilo4[[i]]$set_edf_termination(1e-8, 1000)
+neurons.kilo4[[i]]$compute_autocorrelation("sum")
+neurons.kilo4[[i]]$fit_autocorrelation()
+print(neurons.kilo4[[i]]$fetch_EDF_parameters())
+plot.autocorrelation(neurons.kilo4[[i]])
+```
 
 ```{r estimate_autocorr}
 # ... set number of sims to run per neuron
-n_sims <- 1000
+n_sims <- 100
 # ... set number of trials to simulate per neuron
 n_trials <- 500
 # ... run estimates on data
@@ -149,8 +226,7 @@ Run analysis:
 autocorr_results <- analyze.autocorr(
   autocor.ests.kilo4,
   covariate = c("hemi","genotype"),
-  n_bs = 1e4,
-  bins_per_sec = 50
+  n_bs = 1e4
 )
 
 df <- data.frame(
@@ -175,4 +251,40 @@ ggplot2::ggplot(df, ggplot2::aes(x = value, fill = group)) +
     legend.text = ggplot2::element_text(size = legend_size),
     legend.position = "bottom"
   )
+
+test_est <- autocor.ests.kilo4
+test_est$n_sims_per_neurons <- 1
+test_est$estimates <- test
+
+autocorr_results2 <- analyze.autocorr(
+  test_est,
+  covariate = c("hemi","genotype"),
+  n_bs = 1e4
+)
+
+df2 <- data.frame(
+  value = unlist(autocorr_results2, use.names = FALSE),
+  group = rep(names(autocorr_results2), each = nrow(autocorr_results2))
+)
+
+# Plot
+title_size <- 20 
+axis_size <- 12 
+legend_size <- 10
+ggplot2::ggplot(df2, ggplot2::aes(x = value, fill = group)) +
+  ggplot2::geom_density(alpha = 0.6) +
+  #scale_y_continuous(transform = "log1p") +
+  ggplot2::labs(title = "Expected Time Constant", x = "ms", y = "Density") +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(
+    plot.title = ggplot2::element_text(hjust = 0.5, size = title_size),
+    axis.title = ggplot2::element_text(size = axis_size),
+    axis.text = ggplot2::element_text(size = axis_size),
+    legend.title = ggplot2::element_text(size = legend_size),
+    legend.text = ggplot2::element_text(size = legend_size),
+    legend.position = "bottom"
+  )
+
+print(colMeans(autocorr_results))
+print(colMeans(autocorr_results2))
 ```

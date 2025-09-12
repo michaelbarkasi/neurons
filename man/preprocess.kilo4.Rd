@@ -9,6 +9,7 @@ preprocess.kilo4(
   trial_time_end = 2020,
   recording.folder = "data",
   meta_data = NULL,
+  max_spikes = Inf,
   min_spikes = 0,
   min_trials = 0,
   pure_trials_only = TRUE,
@@ -25,6 +26,8 @@ preprocess.kilo4(
 \item{recording.folder}{List of paths to the kilosort4 output folders}
 
 \item{meta_data}{Data frame with metadata for each recording (e.g., genotype, hemisphere), one recording per row; row names should match recording names and all columns should be covariates for later analysis}
+
+\item{max_spikes}{Maximum number of total spikes for a cell to be kept}
 
 \item{min_spikes}{Minimum number of total spikes for a cell to be kept}
 

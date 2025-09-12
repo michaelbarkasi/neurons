@@ -258,6 +258,7 @@ import.kilo4 <- function(
 #' @param trial_time_end Time to end trial (ms), relative to stimulus onset
 #' @param recording.folder List of paths to the kilosort4 output folders
 #' @param meta_data Data frame with metadata for each recording (e.g., genotype, hemisphere), one recording per row; row names should match recording names and all columns should be covariates for later analysis
+#' @param max_spikes Maximum number of total spikes for a cell to be kept
 #' @param min_spikes Minimum number of total spikes for a cell to be kept
 #' @param min_trials Minimum number of trials for a cell to be kept
 #' @param pure_trials_only Keep only trials with no overlap?
@@ -275,6 +276,7 @@ preprocess.kilo4 <- function(
     trial_time_end = 2020,
     recording.folder = "data",
     meta_data = NULL,
+    max_spikes = Inf,
     min_spikes = 0,
     min_trials = 0,
     pure_trials_only = TRUE,
@@ -475,7 +477,7 @@ preprocess.kilo4 <- function(
       # Check number of spikes and number of trials
       num_of_spikes <- sum(mask)
       num_of_trials <- length(unique(kilosort_data_parsed_spikes$trial[mask]))
-      if (num_of_spikes >= min_spikes && num_of_trials >= min_trials) {
+      if (num_of_spikes >= min_spikes && num_of_trials >= min_trials && num_of_spikes <= max_spikes) {
         # Set new cell number 
         new_cell_counter <- new_cell_counter + 1
         # Extend columns 
