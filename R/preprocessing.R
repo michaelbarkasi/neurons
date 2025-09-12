@@ -206,11 +206,11 @@ import.kilo4 <- function(
       # Mark trial as good 
       stim_data$trial_status[i] <- 0
       
-      # Grab indexes for trialing and leading trials 
-      trialing_trials <- 1:(i-1)
+      # Grab indexes for trailing and leading trials 
+      trailing_trials <- 1:(i-1)
       
-      # All trialing trials must have ended before the current trial started
-      if (any(stim_data$trial_end[trialing_trials] >= stim_data$trial_start[i])) {
+      # All trailing trials must have ended before the current trial started
+      if (any(stim_data$trial_end[trailing_trials] >= stim_data$trial_start[i])) {
         stim_data$trial_status[i] <- 1
       }
       

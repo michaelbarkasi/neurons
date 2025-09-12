@@ -75,53 +75,47 @@
 
     
     
-<p>This example tutorial will show how to run the dichotomized Gaussian
-analysis of autocorrelation on KiloSort4 data. The main aim of this
-analysis is to estimate the network time constant of single neurons in
-the left and right hemisphere of various genotypes of mice. We care
-about the network time constant because it’s an estimate of recurrence.
-Specifically, a higher network time constant indicates that a neuron
-receives a larger number of projections back on itself. Intuitively, the
-longer into the future a spike now increases the probability of a spike
-later, the stronger the connections from that neuron back onto itself
-must be.</p>
+<p>This tutorial shows how to use the neurons package to run a
+dichotomized Gaussian (DG) analysis of autocorrelation on KiloSort4
+data. The aim of this DG analysis of autocorrelation is to estimate the
+network time constant of single neurons in the left and right hemisphere
+of various genotypes of mice. Network time constants provide an estimate
+of recurrence. Specifically, a higher network time constant indicates
+that a neuron receives a larger number of projections back on itself.
+Intuitively, the longer into the future a spike <em>now</em> increases
+the probability of a spike <em>later</em>, the stronger the connections
+from that neuron back onto itself must be.</p>
 <h1>
 Setup
 </h1>
-<p>The first step is to set up the R environment by setting a
-random-number generator seed and loading the neurons package.</p>
+<p>The first step is to set up the R environment by clearing the
+workspace, setting a random-number generator seed, and loading the
+neurons package.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Clear the R workspace to start fresh</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span>list <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ls.html" class="external-link">ls</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
 <span><span class="co"># Set seed for reproducibility</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">12345</span><span class="op">)</span> </span>
+<span></span>
 <span><span class="co"># Load neurons package</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span> </span></code></pre></div>
-<p>The output of some of the functions used here will be wide, so we
-want to set the R markdown environment to allow for wide outputs without
-line wrapping.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Set width of markdown code outputs</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>width <span class="op">=</span> <span class="fl">10000</span><span class="op">)</span></span></code></pre></div>
 <h1>
 Load data
 </h1>
-<p>The data is the output from kilosort4, plus a csv file with stimulus
-event information. For this tutorial, we will use the data that was
-recorded as of September 2, 2025. I’ve put a slightly curated version of
-the data in the following directory. I also removed the recording
-“2025-04-06_13-26-57” because each cell in it had only one responsive
-trial and “2025-07-03_11-45-06” because it had no data in it. You will
-need to provide your own path to the data.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>This tutorial uses data recorded by multi-channel probes from the
+auditory cortex of mice with spike clusters extracted with kilosort4,
+plus a csv file with stimulus event information. A path to the data must
+be provided.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Set path to data </span></span>
 <span><span class="va">demo_data</span> <span class="op">&lt;-</span> <span class="st">"/Users/michaelbarkasi/Library/CloudStorage/OneDrive-WashingtonUniversityinSt.Louis/projects_Oviedo_lab/_lateralized_recurrent_pathways/dichot-gaussian/data_demo"</span></span></code></pre></div>
-<p>Before loading the data, we need to ensure that it’s in the correct
-format. The function <strong>preprocess.kilo4</strong> expects
-<strong>data_path</strong> to point to a folder the subfolders of which
-each contain a single kilosort4 output. This output should be in its own
-folder <strong>kilosort4</strong>. While kilosort outputs many files,
-only six are needed:</p>
+<p>The function <strong>preprocess.kilo4</strong> will be used to
+process the data. This function expects <strong>data_path</strong> to
+point to a folder the subfolders of which each contain a single
+kilosort4 output. This output should be in its own folder
+<strong>kilosort4</strong>. While kilosort outputs many files, only six
+are needed:</p>
 <ul>
 <li>
 <strong>spike_positions.npy</strong>: 2D array giving the x and y
@@ -146,20 +140,19 @@ output of kilosort4; not needed if cluster_group.tsv has data.</li>
 <strong>includeVector.mat</strong>: MATLAB file giving whether each
 cluster is stimulus-responsive (1) or not (0)</li>
 </ul>
-<p>In addition, along with the kilosort4 subfolder, there should be a
-file <strong>StimulusStamps.csv</strong> in each recording folder. For
-example, here is the file structure of the demo data as it appears on my
-computer:</p>
+<p>More of the kilosort4 output files can be included, but only the
+above files (minus <strong>cluster_info.tsv</strong>) are required. In
+addition, along with the kilosort4 subfolder, there should be a file
+<strong>StimulusStamps.csv</strong> in each recording folder.</p>
 <div class="figure">
 <img src="fig_folderstructure.png" alt="Image showing folder structure necessary for &lt;b&gt;preprocess.kilo4&lt;/b&gt; function." width="90%"><p class="caption">
 Folder structure necessary for <b>preprocess.kilo4</b> function.
 </p>
 </div>
-<p>We also need to pull in meta data on the recordings. For this
-tutorial, I’ve put the csv file with that data in the neurons package
-itself. It can be loaded with the regular <strong>read.csv</strong>
-function in R.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<p>Meta data must also be pulled from the recordings. For this tutorial,
+the csv file with that data in the neurons package itself. It can be
+loaded with the regular <strong>read.csv</strong> function in R.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">kilo4_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
 <span>    <span class="st">"extdata"</span>, </span>
@@ -168,185 +161,69 @@ function in R.</p>
 <span>    <span class="op">)</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <p>For the purpose of statistical analysis, covariates of interest are
-all that’s needed from the meta data file. The neurons package will
-expect certain covariates to have specific names. It will also expect
-the data frame holding those covariates to have rows labeled with
-recording names that match the format of the recording names in the
-data.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+all that’s needed from the meta data file. The neurons package (as of
+v1.0) can only handle certain covariates, and expects them to have
+specific names. It will also expect the data frame holding those
+covariates to have rows labeled with recording names that match the
+format of the recording names in the data.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Format and apply recording names to metadata as row names</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">kilo4_metadata</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span>
 <span>  <span class="va">kilo4_metadata</span><span class="op">$</span><span class="va">DAY</span>, </span>
 <span>  <span class="st">"_"</span>,</span>
 <span>  <span class="va">kilo4_metadata</span><span class="op">$</span><span class="va">Neuralynx_ID</span></span>
 <span>  <span class="op">)</span></span>
+<span></span>
 <span><span class="co"># Keep only the relevant columns (covariates of interest)</span></span>
 <span><span class="va">kilo4_metadata</span> <span class="op">&lt;-</span> <span class="va">kilo4_metadata</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"HEMISPHERE"</span>,<span class="st">"STRAIN"</span>,<span class="st">"AGE"</span>,<span class="st">"SEX"</span><span class="op">)</span><span class="op">]</span></span>
+<span></span>
 <span><span class="co"># Rename columns to match what's expected by neurons package </span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">kilo4_metadata</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hemi"</span>, <span class="st">"genotype"</span>, <span class="st">"age"</span>, <span class="st">"sex"</span><span class="op">)</span></span></code></pre></div>
 <h1>
 Preprocess data into spike rasters
 </h1>
-<p>With this setup, we can now preprocess the data using the
-<strong>preprocess.kilo4</strong> function. This function needs a path
-(such as <strong>demo_data</strong>) for the actual data. Meta data
-(such as <strong>kilo4_metadata</strong>) can also be provided, but is
-not necessary. If left out, the preprocessed output will simply lack
-information about covariates.</p>
-<p>The main purpose of <strong>preprocess.kilo4</strong> is to convert
-the raw spike times into spike rasters of a standardized format expected
-by the neurons package. The key step here is partitioning the recordings
-into trials, which <strong>preprocess.kilo4</strong> does with start and
-stop times relative to a stimulus. For example, if we want to analyze
-information about responses to stimuli, we would want to set the start
-time to something negataive (before the stimulus) and the end time to
-something positive (after the stimulus), like so:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>trial_time_start <span class="ot">=</span> <span class="sc">-</span><span class="dv">100</span>, </span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>trial_time_end <span class="ot">=</span> <span class="dv">1800</span> </span></code></pre></div>
-<p>However, for estimating autocorrelation, we want to analyze the
-spontaneous activity during a period of silence after the stimulus. In
-this case, we want to set the start time to be some time after the
-stimulus (to allow for settling) and the end time to be some time later.
-Previous data from patch-clamp recordings used 1520 ms of silence after
-period of settling. So, to analyze the new data, we will do the same,
-using a 500 ms settling period. So we set the start and end times like
-so:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<p>The function <strong>preprocess.kilo4</strong> converts raw cluster
+spike times into spike rasters of a standardized format expected by the
+neurons package. The recordings must be partitioned into trials, which
+<strong>preprocess.kilo4</strong> does with start and stop times
+relative to a stimulus. For example, information about responses to
+stimuli can be analyzed by setting the start time to something negative
+(before the stimulus) and the end time to something positive (after the
+stimulus). However, for estimating autocorrelation, it’s the spontaneous
+activity during a period of silence after the stimulus which must be
+analyzed. In this case, the start time should be some time after the
+stimulus (to allow for settling) and the end time some time later.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># old recordings used 1520 ms of silence, once settled</span></span>
 <span><span class="co"># ... settling seems to take 500 ms</span></span>
 <span><span class="va">spike.rasters.kilo4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/preprocess.kilo4.html">preprocess.kilo4</a></span><span class="op">(</span></span>
-<span>  trial_time_start <span class="op">=</span> <span class="fl">500</span>, </span>
-<span>  trial_time_end <span class="op">=</span> <span class="fl">500</span> <span class="op">+</span> <span class="fl">1520</span>,</span>
+<span>  trial_time_start <span class="op">=</span> <span class="fl">500</span>,      <span class="co"># ms</span></span>
+<span>  trial_time_end <span class="op">=</span> <span class="fl">500</span> <span class="op">+</span> <span class="fl">1520</span>, <span class="co"># ms</span></span>
 <span>  recording.folder <span class="op">=</span> <span class="va">demo_data</span>,</span>
 <span>  meta_data <span class="op">=</span> <span class="va">kilo4_metadata</span>, </span>
 <span>  pure_trials_only <span class="op">=</span> <span class="cn">TRUE</span>, </span>
 <span>  good_cells_only <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  stim_responsive_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span> </span></code></pre></div>
-<pre><code><span><span class="co">## </span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-02-06_15-53-03/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  183219</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  183219 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  183219</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  29 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  76 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-04-03_11-18-50/kilosort4/cluster_group.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  408776</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  408776 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  408776</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  110 2, col names (1st 5):  cluster_id, KSLabel</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-04-03_11-38-39/kilosort4/cluster_group.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  401485</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  401485 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  401485</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  114 2, col names (1st 5):  cluster_id, KSLabel</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-04-05_11-50-43/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  570256</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  570256 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  570256</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  27 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  90 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-04-06_13-51-14/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  464033</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  464033 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  464033</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  16 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  53 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-04-11_18-09-55/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  763996</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  763996 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  763996</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  11 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  90 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-04-25_12-42-03/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  621464</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  621464 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  621464</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  0 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  58 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-06-02_15-13-06/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  430992</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  430992 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  430992</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  0 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  53 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-06-03_13-59-05/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  141998</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  141998 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  141998</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  0 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  42 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-06-06_14-52-03/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  199674</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  199674 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  199674</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  0 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  51 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-06-12_16-11-15/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  294730</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  294730 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  294730</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  0 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  58 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-06-20_14-29-41/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  77670</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  77670 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  77670</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  0 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  38 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-06-25_12-33-31/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  218798</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  218798 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  218798</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  0 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  32 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-07-09_14-56-27/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  185570</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  185570 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  185570</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  0 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  30 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-07-24_12-48-13/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  116852</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  116852 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  116852</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  0 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  27 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span>
-<span><span class="co">## ---</span></span>
-<span><span class="co">## Imported data: /2025-07-30_09-28-20/kilosort4/cluster_info.tsv</span></span>
-<span><span class="co">##  spike_clusters, class:  array, dim:  118866</span></span>
-<span><span class="co">##  spike_positions, class:  matrix array, dim:  118866 2</span></span>
-<span><span class="co">##  spike_times, class:  array, dim:  118866</span></span>
-<span><span class="co">##  cluster_group, class:  data.frame, dim:  0 2, col names (1st 5):  cluster_id, group</span></span>
-<span><span class="co">##  cluster_info, class:  data.frame, dim:  22 11, col names (1st 5):  cluster_id, Amplitude, ContamPct, KSLabel, amp</span></span></code></pre>
-<p>Notice that in addition to the start and stop times and pointers to
-the data, we also have three Boolean variables,
-<strong>pure_trials_only</strong>, <strong>good_cells_only</strong>, and
-<strong>verbose</strong>. The first, <strong>pure_trials_only</strong>,
-controls whether trials which overlap with another (i.e., have a start
-time before the end time of the previous trial) are included in the
-data. The second, <strong>good_cells_only</strong>, controls whether
-spike clusters are included only if they were hand currated. We need
-this set to TRUE, as the autocorrelation analysis requires very clean
-data. Finally, if <strong>verbose</strong> is set to TRUE, the function
-will print out information about the files it is finding and
-parsing.</p>
+<p>A path (such as <strong>demo_data</strong>) for the actual data must
+be passed to <strong>preprocess.kilo4</strong>. Meta data (such as
+<strong>kilo4_metadata</strong>) can also be provided, but is not
+necessary. If left out, the preprocessed output will simply lack
+information about covariates.</p>
+<p>In addition to the start and stop times and pointers to the data,
+<strong>preprocess.kilo4</strong> has four Boolean variables,
+<strong>pure_trials_only</strong>, <strong>good_cells_only</strong>,
+<strong>stim_responsive_only</strong>, and <strong>verbose</strong>. The
+first, <strong>pure_trials_only</strong>, controls whether trials which
+overlap with another (i.e., have a start time before the end time of the
+previous trial) are included in the data. The second,
+<strong>good_cells_only</strong>, controls whether spike clusters are
+included without passing hand curation. Likewise, the third,
+<strong>stim_responsive_only</strong> controls whether spike clusters
+are included without being responsive to stimului. Finally, if
+<strong>verbose</strong> is set to TRUE, the function will print out
+information about the files it is finding and parsing.</p>
 <p>The output <strong>spike.rasters.kilo4</strong> is a list with three
 elements: <strong>spikes</strong>, <strong>timeXtrial</strong>, and
 <strong>cluster.key</strong>. The first element,
@@ -354,7 +231,7 @@ elements: <strong>spikes</strong>, <strong>timeXtrial</strong>, and
 of the spike rasters from each recording. Each row is a spike, with
 columns giving information such as cell number, time, and genotype. Here
 are the first few rows of the <strong>spikes</strong> data frame:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">spike.rasters.kilo4</span><span class="op">$</span><span class="va">spikes</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##      trial   sample cell time_in_ms      recording_name cluster hemi genotype age sex</span></span>
 <span><span class="co">## 3458     1 11143.25   11   501.5949 2025-02-06_15-53-03      40   RH      C57 P79   F</span></span>
@@ -370,7 +247,7 @@ that time bin during that trial. The third element,
 <strong>cluster.key</strong>, is a data frame with rows representing
 cells, columns giving information such as cell number, genotype, and
 number of spikes.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">spike.rasters.kilo4</span><span class="op">$</span><span class="va">cluster.key</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##                             recording.name cell cluster num.of.spikes num.of.responsive.trials hemi  genotype age sex</span></span>
 <span><span class="co">## 2025-02-06_15-53-03    2025-02-06_15-53-03   11      40           276                       28   RH       C57 P79   F</span></span>
@@ -596,88 +473,99 @@ number of spikes.</p>
 <span><span class="co">## 2025-04-05_11-50-43.17 2025-04-05_11-50-43  217      67           396                      227   RH Mecp2 HET P64   F</span></span>
 <span><span class="co">## 2025-04-05_11-50-43.18 2025-04-05_11-50-43  213      35           259                      138   RH Mecp2 HET P64   F</span></span>
 <span><span class="co">## 2025-04-05_11-50-43.19 2025-04-05_11-50-43  218      69            51                       45   RH Mecp2 HET P64   F</span></span>
-<span><span class="co">## 2025-04-06_13-51-14    2025-04-06_13-51-14  224      25          2344                      455   RH Mecp2 HET P65   F</span></span>
-<span><span class="co">## 2025-04-06_13-51-14.1  2025-04-06_13-51-14  228      51          8081                      401   RH Mecp2 HET P65   F</span></span>
-<span><span class="co">## 2025-04-06_13-51-14.2  2025-04-06_13-51-14  226      42          3123                      449   RH Mecp2 HET P65   F</span></span>
-<span><span class="co">## 2025-04-06_13-51-14.3  2025-04-06_13-51-14  227      43          2433                      449   RH Mecp2 HET P65   F</span></span>
-<span><span class="co">## 2025-04-06_13-51-14.4  2025-04-06_13-51-14  225      29          2436                      457   RH Mecp2 HET P65   F</span></span>
-<span><span class="co">## 2025-04-06_13-51-14.5  2025-04-06_13-51-14  229      61          1929                      428   RH Mecp2 HET P65   F</span></span>
-<span><span class="co">## 2025-04-11_18-09-55    2025-04-11_18-09-55  231      22          2289                      259   RH Mecp2 HET P59   F</span></span>
-<span><span class="co">## 2025-04-11_18-09-55.1  2025-04-11_18-09-55  233      89          1785                      287   RH Mecp2 HET P59   F</span></span>
-<span><span class="co">## 2025-04-11_18-09-55.2  2025-04-11_18-09-55  230       3           542                      124   RH Mecp2 HET P59   F</span></span>
-<span><span class="co">## 2025-04-11_18-09-55.3  2025-04-11_18-09-55  232      76           502                      180   RH Mecp2 HET P59   F</span></span>
-<span><span class="co">## 2025-04-25_12-42-03    2025-04-25_12-42-03  240      50         52259                      456   RH Shank3 KO P54   M</span></span>
-<span><span class="co">## 2025-04-25_12-42-03.1  2025-04-25_12-42-03  234      14         68952                      456   RH Shank3 KO P54   M</span></span>
-<span><span class="co">## 2025-04-25_12-42-03.2  2025-04-25_12-42-03  239      46         28069                      456   RH Shank3 KO P54   M</span></span>
-<span><span class="co">## 2025-04-25_12-42-03.3  2025-04-25_12-42-03  235      17          6942                      456   RH Shank3 KO P54   M</span></span>
-<span><span class="co">## 2025-04-25_12-42-03.4  2025-04-25_12-42-03  236      28            14                        5   RH Shank3 KO P54   M</span></span>
-<span><span class="co">## 2025-04-25_12-42-03.5  2025-04-25_12-42-03  237      33             7                        7   RH Shank3 KO P54   M</span></span>
-<span><span class="co">## 2025-04-25_12-42-03.6  2025-04-25_12-42-03  238      34             5                        4   RH Shank3 KO P54   M</span></span>
-<span><span class="co">## 2025-06-02_15-13-06    2025-06-02_15-13-06  243       8           624                      171   LH Shank3 KO P87   M</span></span>
-<span><span class="co">## 2025-06-02_15-13-06.1  2025-06-02_15-13-06  244      13          3276                      220   LH Shank3 KO P87   M</span></span>
-<span><span class="co">## 2025-06-02_15-13-06.2  2025-06-02_15-13-06  245      31           364                      133   LH Shank3 KO P87   M</span></span>
-<span><span class="co">## 2025-06-02_15-13-06.3  2025-06-02_15-13-06  242       4            75                       54   LH Shank3 KO P87   M</span></span>
-<span><span class="co">## 2025-06-02_15-13-06.4  2025-06-02_15-13-06  241       1           364                      150   LH Shank3 KO P87   M</span></span>
-<span><span class="co">## 2025-06-02_15-13-06.5  2025-06-02_15-13-06  246      33             2                        2   LH Shank3 KO P87   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05    2025-06-03_13-59-05  250      15          5629                      274   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05.1  2025-06-03_13-59-05  248      10           285                      155   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05.2  2025-06-03_13-59-05  258      32           586                      167   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05.3  2025-06-03_13-59-05  247       0          1133                      274   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05.4  2025-06-03_13-59-05  259      34            58                       48   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05.5  2025-06-03_13-59-05  256      30            73                       62   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05.6  2025-06-03_13-59-05  255      28            83                       66   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05.7  2025-06-03_13-59-05  253      24           268                      169   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05.8  2025-06-03_13-59-05  254      26           115                       94   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05.9  2025-06-03_13-59-05  257      31           420                      197   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05.10 2025-06-03_13-59-05  252      22           103                       66   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05.11 2025-06-03_13-59-05  249      11           208                       99   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05.12 2025-06-03_13-59-05  251      21            82                       69   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-03_13-59-05.13 2025-06-03_13-59-05  260      41            80                       67   LH Shank3 KO P88   M</span></span>
-<span><span class="co">## 2025-06-06_14-52-03    2025-06-06_14-52-03  262       6          1334                      297   LH Shank3 KO P90   F</span></span>
-<span><span class="co">## 2025-06-06_14-52-03.1  2025-06-06_14-52-03  261       5           299                      174   LH Shank3 KO P90   F</span></span>
-<span><span class="co">## 2025-06-06_14-52-03.2  2025-06-06_14-52-03  263      21            10                        8   LH Shank3 KO P90   F</span></span>
-<span><span class="co">## 2025-06-12_16-11-15    2025-06-12_16-11-15  267      28            26                       17   LH Shank3 KO P75   M</span></span>
-<span><span class="co">## 2025-06-12_16-11-15.1  2025-06-12_16-11-15  272      55           365                      195   LH Shank3 KO P75   M</span></span>
-<span><span class="co">## 2025-06-12_16-11-15.2  2025-06-12_16-11-15  264       1             4                        1   LH Shank3 KO P75   M</span></span>
-<span><span class="co">## 2025-06-12_16-11-15.3  2025-06-12_16-11-15  266      27           203                       83   LH Shank3 KO P75   M</span></span>
-<span><span class="co">## 2025-06-12_16-11-15.4  2025-06-12_16-11-15  271      54           707                      184   LH Shank3 KO P75   M</span></span>
-<span><span class="co">## 2025-06-12_16-11-15.5  2025-06-12_16-11-15  269      37            28                       26   LH Shank3 KO P75   M</span></span>
-<span><span class="co">## 2025-06-12_16-11-15.6  2025-06-12_16-11-15  265      15            78                       47   LH Shank3 KO P75   M</span></span>
-<span><span class="co">## 2025-06-12_16-11-15.7  2025-06-12_16-11-15  270      46           819                      233   LH Shank3 KO P75   M</span></span>
-<span><span class="co">## 2025-06-12_16-11-15.8  2025-06-12_16-11-15  268      29            50                       31   LH Shank3 KO P75   M</span></span>
-<span><span class="co">## 2025-06-20_14-29-41    2025-06-20_14-29-41  274       2           514                      160   LH Shank3 KO P83   F</span></span>
-<span><span class="co">## 2025-06-20_14-29-41.1  2025-06-20_14-29-41  281      23           381                      178   LH Shank3 KO P83   F</span></span>
-<span><span class="co">## 2025-06-20_14-29-41.2  2025-06-20_14-29-41  282      32           288                      135   LH Shank3 KO P83   F</span></span>
-<span><span class="co">## 2025-06-20_14-29-41.3  2025-06-20_14-29-41  275       3           763                      206   LH Shank3 KO P83   F</span></span>
-<span><span class="co">## 2025-06-20_14-29-41.4  2025-06-20_14-29-41  284      36           149                      102   LH Shank3 KO P83   F</span></span>
-<span><span class="co">## 2025-06-20_14-29-41.5  2025-06-20_14-29-41  278      15           104                       83   LH Shank3 KO P83   F</span></span>
-<span><span class="co">## 2025-06-20_14-29-41.6  2025-06-20_14-29-41  283      35           179                      121   LH Shank3 KO P83   F</span></span>
-<span><span class="co">## 2025-06-20_14-29-41.7  2025-06-20_14-29-41  280      19           444                      175   LH Shank3 KO P83   F</span></span>
-<span><span class="co">## 2025-06-20_14-29-41.8  2025-06-20_14-29-41  276       6           644                      200   LH Shank3 KO P83   F</span></span>
-<span><span class="co">## 2025-06-20_14-29-41.9  2025-06-20_14-29-41  273       1            86                       69   LH Shank3 KO P83   F</span></span>
-<span><span class="co">## 2025-06-20_14-29-41.10 2025-06-20_14-29-41  279      16            99                       79   LH Shank3 KO P83   F</span></span>
-<span><span class="co">## 2025-06-20_14-29-41.11 2025-06-20_14-29-41  277      13            44                       37   LH Shank3 KO P83   F</span></span>
-<span><span class="co">## 2025-06-25_12-33-31    2025-06-25_12-33-31  288      16           803                      238   LH       C57 P65   F</span></span>
-<span><span class="co">## 2025-06-25_12-33-31.1  2025-06-25_12-33-31  289      19           537                      213   LH       C57 P65   F</span></span>
-<span><span class="co">## 2025-06-25_12-33-31.2  2025-06-25_12-33-31  285       4           294                      195   LH       C57 P65   F</span></span>
-<span><span class="co">## 2025-06-25_12-33-31.3  2025-06-25_12-33-31  290      31           273                      183   LH       C57 P65   F</span></span>
-<span><span class="co">## 2025-06-25_12-33-31.4  2025-06-25_12-33-31  287      11            39                        8   LH       C57 P65   F</span></span>
-<span><span class="co">## 2025-06-25_12-33-31.5  2025-06-25_12-33-31  286       9           132                        8   LH       C57 P65   F</span></span>
-<span><span class="co">## 2025-07-09_14-56-27    2025-07-09_14-56-27  291       3          2587                      449   LH       C57 P79   F</span></span>
-<span><span class="co">## 2025-07-09_14-56-27.1  2025-07-09_14-56-27  292      13            26                       21   LH       C57 P79   F</span></span>
-<span><span class="co">## 2025-07-24_12-48-13    2025-07-24_12-48-13  295      14          5865                      232   LH       C57 P68   M</span></span>
-<span><span class="co">## 2025-07-24_12-48-13.1  2025-07-24_12-48-13  293       4           699                      226   LH       C57 P68   M</span></span>
-<span><span class="co">## 2025-07-24_12-48-13.2  2025-07-24_12-48-13  296      15           286                      153   LH       C57 P68   M</span></span>
-<span><span class="co">## 2025-07-24_12-48-13.3  2025-07-24_12-48-13  294       9             1                        1   LH       C57 P68   M</span></span></code></pre>
+<span><span class="co">## 2025-04-06_13-26-57    2025-04-06_13-26-57  232      44             2                        1   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-26-57.1  2025-04-06_13-26-57  230      39             9                        1   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-26-57.2  2025-04-06_13-26-57  234      55            32                        1   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-26-57.3  2025-04-06_13-26-57  233      46             8                        1   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-26-57.4  2025-04-06_13-26-57  228      31             6                        1   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-26-57.5  2025-04-06_13-26-57  225       9            11                        1   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-26-57.6  2025-04-06_13-26-57  231      41             7                        1   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-26-57.7  2025-04-06_13-26-57  229      35             5                        1   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-26-57.8  2025-04-06_13-26-57  227      27             2                        1   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-26-57.9  2025-04-06_13-26-57  224       6             5                        1   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-26-57.10 2025-04-06_13-26-57  226      14             2                        1   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-51-14    2025-04-06_13-51-14  235      25          2344                      455   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-51-14.1  2025-04-06_13-51-14  239      51          8081                      401   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-51-14.2  2025-04-06_13-51-14  237      42          3123                      449   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-51-14.3  2025-04-06_13-51-14  238      43          2433                      449   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-51-14.4  2025-04-06_13-51-14  236      29          2436                      457   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-06_13-51-14.5  2025-04-06_13-51-14  240      61          1929                      428   RH Mecp2 HET P65   F</span></span>
+<span><span class="co">## 2025-04-11_18-09-55    2025-04-11_18-09-55  242      22          2289                      259   RH Mecp2 HET P59   F</span></span>
+<span><span class="co">## 2025-04-11_18-09-55.1  2025-04-11_18-09-55  244      89          1785                      287   RH Mecp2 HET P59   F</span></span>
+<span><span class="co">## 2025-04-11_18-09-55.2  2025-04-11_18-09-55  241       3           542                      124   RH Mecp2 HET P59   F</span></span>
+<span><span class="co">## 2025-04-11_18-09-55.3  2025-04-11_18-09-55  243      76           502                      180   RH Mecp2 HET P59   F</span></span>
+<span><span class="co">## 2025-04-25_12-42-03    2025-04-25_12-42-03  251      50         52259                      456   RH Shank3 KO P54   M</span></span>
+<span><span class="co">## 2025-04-25_12-42-03.1  2025-04-25_12-42-03  245      14         68952                      456   RH Shank3 KO P54   M</span></span>
+<span><span class="co">## 2025-04-25_12-42-03.2  2025-04-25_12-42-03  250      46         28069                      456   RH Shank3 KO P54   M</span></span>
+<span><span class="co">## 2025-04-25_12-42-03.3  2025-04-25_12-42-03  246      17          6942                      456   RH Shank3 KO P54   M</span></span>
+<span><span class="co">## 2025-04-25_12-42-03.4  2025-04-25_12-42-03  247      28            14                        5   RH Shank3 KO P54   M</span></span>
+<span><span class="co">## 2025-04-25_12-42-03.5  2025-04-25_12-42-03  248      33             7                        7   RH Shank3 KO P54   M</span></span>
+<span><span class="co">## 2025-04-25_12-42-03.6  2025-04-25_12-42-03  249      34             5                        4   RH Shank3 KO P54   M</span></span>
+<span><span class="co">## 2025-06-02_15-13-06    2025-06-02_15-13-06  254       8           624                      171   LH Shank3 KO P87   M</span></span>
+<span><span class="co">## 2025-06-02_15-13-06.1  2025-06-02_15-13-06  255      13          3276                      220   LH Shank3 KO P87   M</span></span>
+<span><span class="co">## 2025-06-02_15-13-06.2  2025-06-02_15-13-06  256      31           364                      133   LH Shank3 KO P87   M</span></span>
+<span><span class="co">## 2025-06-02_15-13-06.3  2025-06-02_15-13-06  253       4            75                       54   LH Shank3 KO P87   M</span></span>
+<span><span class="co">## 2025-06-02_15-13-06.4  2025-06-02_15-13-06  252       1           364                      150   LH Shank3 KO P87   M</span></span>
+<span><span class="co">## 2025-06-02_15-13-06.5  2025-06-02_15-13-06  257      33             2                        2   LH Shank3 KO P87   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05    2025-06-03_13-59-05  261      15          5629                      274   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05.1  2025-06-03_13-59-05  259      10           285                      155   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05.2  2025-06-03_13-59-05  269      32           586                      167   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05.3  2025-06-03_13-59-05  258       0          1133                      274   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05.4  2025-06-03_13-59-05  270      34            58                       48   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05.5  2025-06-03_13-59-05  267      30            73                       62   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05.6  2025-06-03_13-59-05  266      28            83                       66   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05.7  2025-06-03_13-59-05  264      24           268                      169   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05.8  2025-06-03_13-59-05  265      26           115                       94   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05.9  2025-06-03_13-59-05  268      31           420                      197   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05.10 2025-06-03_13-59-05  263      22           103                       66   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05.11 2025-06-03_13-59-05  260      11           208                       99   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05.12 2025-06-03_13-59-05  262      21            82                       69   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-03_13-59-05.13 2025-06-03_13-59-05  271      41            80                       67   LH Shank3 KO P88   M</span></span>
+<span><span class="co">## 2025-06-06_14-52-03    2025-06-06_14-52-03  273       6          1334                      297   LH Shank3 KO P90   F</span></span>
+<span><span class="co">## 2025-06-06_14-52-03.1  2025-06-06_14-52-03  272       5           299                      174   LH Shank3 KO P90   F</span></span>
+<span><span class="co">## 2025-06-06_14-52-03.2  2025-06-06_14-52-03  274      21            10                        8   LH Shank3 KO P90   F</span></span>
+<span><span class="co">## 2025-06-12_16-11-15    2025-06-12_16-11-15  278      28            26                       17   LH Shank3 KO P75   M</span></span>
+<span><span class="co">## 2025-06-12_16-11-15.1  2025-06-12_16-11-15  283      55           365                      195   LH Shank3 KO P75   M</span></span>
+<span><span class="co">## 2025-06-12_16-11-15.2  2025-06-12_16-11-15  275       1             4                        1   LH Shank3 KO P75   M</span></span>
+<span><span class="co">## 2025-06-12_16-11-15.3  2025-06-12_16-11-15  277      27           203                       83   LH Shank3 KO P75   M</span></span>
+<span><span class="co">## 2025-06-12_16-11-15.4  2025-06-12_16-11-15  282      54           707                      184   LH Shank3 KO P75   M</span></span>
+<span><span class="co">## 2025-06-12_16-11-15.5  2025-06-12_16-11-15  280      37            28                       26   LH Shank3 KO P75   M</span></span>
+<span><span class="co">## 2025-06-12_16-11-15.6  2025-06-12_16-11-15  276      15            78                       47   LH Shank3 KO P75   M</span></span>
+<span><span class="co">## 2025-06-12_16-11-15.7  2025-06-12_16-11-15  281      46           819                      233   LH Shank3 KO P75   M</span></span>
+<span><span class="co">## 2025-06-12_16-11-15.8  2025-06-12_16-11-15  279      29            50                       31   LH Shank3 KO P75   M</span></span>
+<span><span class="co">## 2025-06-20_14-29-41    2025-06-20_14-29-41  285       2           514                      160   LH Shank3 KO P83   F</span></span>
+<span><span class="co">## 2025-06-20_14-29-41.1  2025-06-20_14-29-41  292      23           381                      178   LH Shank3 KO P83   F</span></span>
+<span><span class="co">## 2025-06-20_14-29-41.2  2025-06-20_14-29-41  293      32           288                      135   LH Shank3 KO P83   F</span></span>
+<span><span class="co">## 2025-06-20_14-29-41.3  2025-06-20_14-29-41  286       3           763                      206   LH Shank3 KO P83   F</span></span>
+<span><span class="co">## 2025-06-20_14-29-41.4  2025-06-20_14-29-41  295      36           149                      102   LH Shank3 KO P83   F</span></span>
+<span><span class="co">## 2025-06-20_14-29-41.5  2025-06-20_14-29-41  289      15           104                       83   LH Shank3 KO P83   F</span></span>
+<span><span class="co">## 2025-06-20_14-29-41.6  2025-06-20_14-29-41  294      35           179                      121   LH Shank3 KO P83   F</span></span>
+<span><span class="co">## 2025-06-20_14-29-41.7  2025-06-20_14-29-41  291      19           444                      175   LH Shank3 KO P83   F</span></span>
+<span><span class="co">## 2025-06-20_14-29-41.8  2025-06-20_14-29-41  287       6           644                      200   LH Shank3 KO P83   F</span></span>
+<span><span class="co">## 2025-06-20_14-29-41.9  2025-06-20_14-29-41  284       1            86                       69   LH Shank3 KO P83   F</span></span>
+<span><span class="co">## 2025-06-20_14-29-41.10 2025-06-20_14-29-41  290      16            99                       79   LH Shank3 KO P83   F</span></span>
+<span><span class="co">## 2025-06-20_14-29-41.11 2025-06-20_14-29-41  288      13            44                       37   LH Shank3 KO P83   F</span></span>
+<span><span class="co">## 2025-06-25_12-33-31    2025-06-25_12-33-31  299      16           803                      238   LH       C57 P65   F</span></span>
+<span><span class="co">## 2025-06-25_12-33-31.1  2025-06-25_12-33-31  300      19           537                      213   LH       C57 P65   F</span></span>
+<span><span class="co">## 2025-06-25_12-33-31.2  2025-06-25_12-33-31  296       4           294                      195   LH       C57 P65   F</span></span>
+<span><span class="co">## 2025-06-25_12-33-31.3  2025-06-25_12-33-31  301      31           273                      183   LH       C57 P65   F</span></span>
+<span><span class="co">## 2025-06-25_12-33-31.4  2025-06-25_12-33-31  298      11            39                        8   LH       C57 P65   F</span></span>
+<span><span class="co">## 2025-06-25_12-33-31.5  2025-06-25_12-33-31  297       9           132                        8   LH       C57 P65   F</span></span>
+<span><span class="co">## 2025-07-09_14-56-27    2025-07-09_14-56-27  302       3          2587                      449   LH       C57 P79   F</span></span>
+<span><span class="co">## 2025-07-09_14-56-27.1  2025-07-09_14-56-27  303      13            26                       21   LH       C57 P79   F</span></span>
+<span><span class="co">## 2025-07-24_12-48-13    2025-07-24_12-48-13  306      14          5865                      232   LH       C57 P68   M</span></span>
+<span><span class="co">## 2025-07-24_12-48-13.1  2025-07-24_12-48-13  304       4           699                      226   LH       C57 P68   M</span></span>
+<span><span class="co">## 2025-07-24_12-48-13.2  2025-07-24_12-48-13  307      15           286                      153   LH       C57 P68   M</span></span>
+<span><span class="co">## 2025-07-24_12-48-13.3  2025-07-24_12-48-13  305       9             1                        1   LH       C57 P68   M</span></span></code></pre>
 <p>With the kilosort4 data preprocessed into spike rasters, the next
 step is to convert them into a special class of object from the neuron
 package, <strong>neuron</strong>.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">neurons.kilo4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load.rasters.as.neurons.html">load.rasters.as.neurons</a></span><span class="op">(</span><span class="va">spike.rasters.kilo4</span><span class="op">$</span><span class="va">spikes</span>, sample_rt <span class="op">=</span> <span class="fl">1e3</span><span class="op">)</span></span></code></pre></div>
 <p>We want to load the spike rasters as <strong>neuron</strong>s because
 <strong>neurons</strong>s come with built-in methods for estimating
 autocorrelation parameters with dichotomized Gaussian simulations.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># ... set number of sims to run per neuron</span></span>
 <span><span class="va">n_sims</span> <span class="op">&lt;-</span> <span class="fl">1000</span></span>
 <span><span class="co"># ... set number of trials to simulate per neuron</span></span>
@@ -695,7 +583,7 @@ autocorrelation parameters with dichotomized Gaussian simulations.</p>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <p>Run analysis:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">autocorr_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/analyze.autocorr.html">analyze.autocorr</a></span><span class="op">(</span></span>
 <span>  <span class="va">autocor.ests.kilo4</span>,</span>
 <span>  covariate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hemi"</span>,<span class="st">"genotype"</span><span class="op">)</span>,</span>
@@ -725,6 +613,7 @@ autocorrelation parameters with dichotomized Gaussian simulations.</p>
 <span>    legend.text <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>size <span class="op">=</span> <span class="va">legend_size</span><span class="op">)</span>,</span>
 <span>    legend.position <span class="op">=</span> <span class="st">"bottom"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
+<p><img src="tutorial_DG_analysis_of_kilosort_files/figure-html/stat_analysis-1.png" width="700"></p>
   </main>
 </div>
 
