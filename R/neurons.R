@@ -355,8 +355,6 @@ process.autocorr <- function(
     plot_time_cutoff = Inf
   ) {
     
-    # Output: Dataframe with one row per neuron
-    
     # Array to hold results
     autocor_results <- c()
     
@@ -433,7 +431,9 @@ process.autocorr <- function(
       test.sigma.assumption(as.data.frame(autocor_results))
     }
     
-    return(as.data.frame(autocor_results))
+    autocor_results <- as.data.frame(autocor_results)
+    rownames(autocor_results) <- NULL
+    return(autocor_results)
     
   }
 
