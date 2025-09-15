@@ -116,7 +116,7 @@ load.rasters.as.neurons <- function(
       colnames(raster) <- c("time", "trial")
       raster <- raster[raster$time <= time_cutoff,]
       
-      # Extract recording name and hemisphere
+      # Extract meta data
       recording_name <- "not_provided"
       if ("recording_name" %in% colnames(raster_df)) {
         recording_name <- unique(raster_df$recording_name[c_mask])
@@ -195,9 +195,14 @@ make.plot.title <- function(
     # Make plot title 
     plot_title <- paste0(
       plot_title,
-      ", neuron ", recording_name, ", #", id_num, 
-      ", ", genotype, ", ", sex, ", ", hemi, " hemi, ", region, ", ", age
+      ", neuron ", recording_name, ", #", id_num
     )
+    # Add covariates
+    for (var in c(genotype, sex, hemi, region, age)) {
+      if (var != "not provided" && var != "not_provided") {
+        plot_title <- paste0(plot_title, ", ", var)
+      }
+    }
     
     return(plot_title)
     
@@ -248,7 +253,11 @@ plot.autocorrelation <- function(
         x = "Lag (bins)",
         y = "Autocorrelation"
       ) + 
-      ggplot2::theme_minimal()
+      ggplot2::theme_minimal() + 
+      ggplot2::theme(
+        panel.background = ggplot2::element_rect(fill = "white", colour = NA),
+        plot.background  = ggplot2::element_rect(fill = "white", colour = NA)
+      )
     return(plt)
     
   }
@@ -291,6 +300,11 @@ plot.raster <- function(
       ggplot2::theme_minimal()
     if (zero_as_onset && min(spike.raster$time) <= 0) plt <- plt + 
       ggplot2::geom_vline(xintercept = 0, linetype = "solid", linewidth = 1, color = "darkblue") 
+    plt <- plt + 
+      ggplot2::theme(
+        panel.background = ggplot2::element_rect(fill = "white", colour = NA),
+        plot.background  = ggplot2::element_rect(fill = "white", colour = NA)
+      )
     
     return(plt)
     
@@ -359,7 +373,9 @@ process.autocorr <- function(
     autocor_results <- c()
     
     # Loop through neurons in the list
-    for (nrn in neuron_list) {
+    for (i in seq_along(neuron_list)) {
+      
+      nrn <- neuron_list[[i]]
       
       # Set exponential decay function (EDF) parameters 
       nrn$set_edf_initials(A0, tau0)
@@ -414,7 +430,11 @@ process.autocorr <- function(
       
     }
     
+    autocor_results <- data.frame(names(neuron_list), autocor_results)
+    
+    rownames(autocor_results) <- NULL
     colnames(autocor_results) <- c(
+      "cell",
       "lambda_ms",
       "lambda_bin",
       "A", 
@@ -428,11 +448,9 @@ process.autocorr <- function(
     
     # Convert to data frame 
     if (check_autofiring_ratio) {
-      test.sigma.assumption(as.data.frame(autocor_results))
+      test.sigma.assumption(autocor_results)
     }
     
-    autocor_results <- as.data.frame(autocor_results)
-    rownames(autocor_results) <- NULL
     return(autocor_results)
     
   }
