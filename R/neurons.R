@@ -554,8 +554,11 @@ estimate.autocorr.params <- function(
 #' @param ests Output from \code{estimate.autocorr.params}, or a list of such outputs.
 #' @param covariate Character string or vector of character strings specifying the covariate(s) to analyze (e.g., "hemi").
 #' @param n_bs Number of bootstrap resamples to perform (default: 1e4).
-#' @return A data frame with bootstrap resamples of the mean tau for each combination of covariate levels.
-#' @export
+#' @return A list with two elements: 
+#'  \describe{
+#'    \item{resamples}{data frame with bootstrap resamples of the mean tau for each combination of covariate levels}
+#'    \item{distribution_plot}{ggplot object showing the distribution of mean tau for each combination of covariate levels}
+#'  }
 analyze.autocorr <- function(
     ests,
     covariate,
@@ -650,6 +653,38 @@ analyze.autocorr <- function(
     
     resamples <- resamples[, colSums(!is.na(resamples)) > 0]
     
-    return(resamples)
+    # Plot
+    df <- data.frame(
+      value = unlist(resamples, use.names = FALSE),
+      group = rep(names(resamples), each = nrow(resamples))
+    )
+    
+    # Plot
+    title_size <- 20 
+    axis_size <- 12 
+    legend_size <- 10
+    distribution_plot <- ggplot2::ggplot(df, ggplot2::aes(x = value, fill = group)) +
+      ggplot2::geom_density(alpha = 0.6) +
+      #scale_y_continuous(transform = "log1p") +
+      ggplot2::labs(title = "Expected Time Constant", x = "ms", y = "Density") +
+      ggplot2::theme_minimal() + 
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = title_size),
+        axis.title = ggplot2::element_text(size = axis_size),
+        axis.text = ggplot2::element_text(size = axis_size),
+        legend.title = ggplot2::element_text(size = legend_size),
+        legend.text = ggplot2::element_text(size = legend_size),
+        legend.position = "bottom"
+      ) + ggplot2::theme(
+        panel.background = ggplot2::element_rect(fill = "white", colour = NA),
+        plot.background  = ggplot2::element_rect(fill = "white", colour = NA)
+      )
+    
+    return(
+      list(
+        resamples = resamples,
+        distribution_plot = distribution_plot
+      )
+    )
     
   }

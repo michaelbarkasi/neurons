@@ -7,9 +7,9 @@ title: "Estimating network time constants using dichotomized Gaussians"
 options(width = 10000)
 ```
 
-This tutorial shows how to use the neurons package to run a dichotomized Gaussian (DG) analysis of autocorrelation on KiloSort4 data. The aim of this DG analysis of autocorrelation is to estimate the network time constant of single neurons in the left and right hemisphere of various genotypes of mice. Network time constants provide an estimate of recurrence. Specifically, a higher network time constant indicates that a neuron receives a larger number of projections back on itself. Intuitively, the longer into the future a spike *now* increases the probability of a spike *later*, the stronger the connections from that neuron back onto itself must be. 
+Intro here.
 
-<h1>Setup</h1>
+<h2>Load spike rasters</h2>
 
 The first step is to set up the R environment by clearing the workspace, setting a random-number generator seed, and loading the neurons package.
 
@@ -24,9 +24,7 @@ set.seed(12345)
 library(neurons) 
 ```
 
-<h1>Load data spike rasters</h1>
-
-The function **preprocess.kilo4** converts raw cluster spike times into spike rasters of a standardized format expected by the neurons package. The recordings must be partitioned into trials, which **preprocess.kilo4** does with start and stop times relative to a stimulus. For example, information about responses to stimuli can be analyzed by setting the start time to something negative (before the stimulus) and the end time to something positive (after the stimulus). However, for estimating autocorrelation, it's the spontaneous activity during a period of silence after the stimulus which should be analyzed. In this case, the start time should be some time after the stimulus (to allow for settling) and the end time some time later. 
+Rasters from patch-clamp data.
 
 ```{r load rasters}
 spike.rasters.exper <- read.csv(
@@ -38,72 +36,12 @@ spike.rasters.exper <- read.csv(
   )
 ```
 
-<h1>Making neurons</h1>
+<h3>Making neurons</h3>
 
-With the kilosort4 data preprocessed into spike rasters, the next step is to convert them into a special class of object from the neuron package, **neuron**. 
+With the data preprocessed into spike rasters, the next step is to convert them into a special class of object from the neuron package, **neuron**. 
 
 ```{r create_neuron_objects}
 neurons.exper <- load.rasters.as.neurons(spike.rasters.exper)
 ```
 
-We want to load the spike rasters as **neuron**s because **neurons**s come with built-in methods for plotting rasters, plotting autocorrelation, and estimating autocorrelation parameters with dichotomized Gaussian simulations. 
-
-For example, here is the raster from one of the C57, RH cells: 
-
-```{r plot_raster}
-# example rasters here
-```
-
-```{r estimate_autocorr}
-# ... set number of sims to run per neuron
-n_sims <- 100
-# ... set number of trials to simulate per neuron
-n_trials <- 500
-# ... run estimates on data
-autocor.ests.exper <- estimate.autocorr.params(
-  neuron_list = neurons.exper,
-  n_trials_per_sim = n_trials, 
-  n_sims_per_neurons = n_sims, 
-  bin_count_action = "sum",
-  A0 = 0.001,
-  tau0 = 1.0,
-  ctol = 1e-8,
-  max_evals = 500,
-  verbose = FALSE
-  )
-```
-
-Run analysis: 
-
-```{r stat_analysis}
-autocorr_results0 <- analyze.autocorr(
-  autocor.ests.exper,
-  covariate = c("hemi"),
-  n_bs = 1e4
-)
-
-df0 <- data.frame(
-  value = unlist(autocorr_results0, use.names = FALSE),
-  group = rep(names(autocorr_results0), each = nrow(autocorr_results0))
-)
-
-# Plot
-title_size <- 20
-axis_size <- 12
-legend_size <- 10
-ggplot2::ggplot(df0, ggplot2::aes(x = value, fill = group)) +
-  ggplot2::geom_density(alpha = 0.6) +
-  #scale_y_continuous(transform = "log1p") +
-  ggplot2::labs(title = "Expected Time Constant", x = "ms", y = "Density") +
-  ggplot2::theme_minimal() + 
-  ggplot2::theme(
-    plot.title = ggplot2::element_text(hjust = 0.5, size = title_size),
-    axis.title = ggplot2::element_text(size = axis_size),
-    axis.text = ggplot2::element_text(size = axis_size),
-    legend.title = ggplot2::element_text(size = legend_size),
-    legend.text = ggplot2::element_text(size = legend_size),
-    legend.position = "bottom"
-  )
-
-
-```
+We want to load the spike rasters as **neuron**s because **neuron**s come with built-in methods for plotting rasters, plotting autocorrelation, and estimating autocorrelation parameters with dichotomized Gaussian simulations. 

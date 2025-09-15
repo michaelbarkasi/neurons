@@ -276,7 +276,7 @@ print(neurons.kilo4[[example_cell_high_autocor]]$fetch_EDF_parameters())
 print(neurons.kilo4[[example_cell_low_autocor]]$fetch_EDF_parameters())
 ```
 
-The amplitude, <b>A</b>, gives the autocorrelation at lag time 1 (minus the bias), while the time constant, <b>τ</b> (tau), gives the rate of decay in autocorrelation as lag time increases. Notice how the high-autocorrelation cell has a time constant of 129ms and an amplitude of 0.068, while the low-autocorrelation cell has a time constant of only 20ms and an amplitude of 0.0017. 
+The amplitude, <b>A</b>, gives the autocorrelation at lag time 1 (minus the bias), while the time constant, $\tau$ (tau), gives the rate of decay in autocorrelation as lag time increases. Notice how the high-autocorrelation cell has a time constant of 129ms and an amplitude of 0.068, while the low-autocorrelation cell has a time constant of only 20ms and an amplitude of 0.0017. 
 
 In practice, the individual steps shown above do not need to be run with separate method calls. The neurons package provides a function, [process.autocorr](../reference/process.autocorr.html), which does all of these steps in one call for a list of neurons.
 
@@ -285,11 +285,13 @@ autocor.results.batch <- process.autocorr(neurons.kilo4)
 print(head(autocor.results.batch))
 ```
 
-<h2>Estimating autocorrelation with dichotomized Gaussians</h2>
+<h2>Estimating autocorrelation</h2>
 
-Recall that the aim is to estimate the network time constant for covariates of interest, e.g., <b>τ</b> in the right vs left hemisphere of C57 (wild-type) mice, or <b>τ</b> in the right hemisphere of C57 vs Shank3 KO mice. At first glance, the output of [process.autocorr](../reference/process.autocorr.html) appears to provide all that's needed for this statistical analysis. Why not simply take the <b>τ</b> estimates listed in the output of [process.autocorr](../reference/process.autocorr.html) and run an ANOVA? 
+Recall that the aim is to estimate the network time constant for covariates of interest, e.g., $\tau$ in the right vs left hemisphere of C57 (wild-type) mice, or $\tau$ in the right hemisphere of C57 vs Shank3 KO mice. At first glance, the output of [process.autocorr](../reference/process.autocorr.html) appears to provide all that's needed for this statistical analysis. Why not simply take the $\tau$ estimates listed in the output of [process.autocorr](../reference/process.autocorr.html) and run an ANOVA? 
 
-The problem is that recurrence is very noisy, the amount of data available from which to extract a signal through all that noise is relatively low, and <b>τ</b> itself is an imperfect measure of the network time constant. To see the problem, consider the lone cluster from a C57 mouse. Obviously a single data point is not enough to estimate the true value of a variable, but even this single data point is a highly unreliable estimate of the true network time constant of the cell. Consider what happens when slightly different initial conditions are used in the fit of the exponential decay model. First, set the initial amplitude to 0.001 (the default value in neurons): 
+<h3>The problem</h3>
+
+The problem is that recurrence is very noisy, the amount of data available from which to extract a signal through all that noise is relatively low, and $\tau$ itself is an imperfect measure of the network time constant. To see the problem, consider the lone cluster from a C57 mouse in the demo data. Obviously a single data point is not enough to estimate the true value of a variable, but even this single data point is a highly unreliable estimate of the true network time constant of this one individual cell. Consider what happens when slightly different initial conditions are used in the fit of the exponential decay model. First, set the initial amplitude to 0.001 (the default value in neurons): 
 
 ```{r fit_variability1}
 # Set cell number
@@ -304,7 +306,7 @@ neurons.kilo4[[C57_cell_num]]$fit_autocorrelation()
 print(neurons.kilo4[[C57_cell_num]]$fetch_EDF_parameters())
 ```
 
-Now, set the initial amplitude to 0.01:
+With this initial condition, $\tau$ is 283 ms. Now, set the initial amplitude to 0.01:
 
 ```{r fit_variability2}
 # Fit exponential decay model to autocorrelation to estimate the network time constant (tau)
@@ -315,6 +317,26 @@ neurons.kilo4[[C57_cell_num]]$fit_autocorrelation()
 # Fetch and print estimated exponential decay parameters
 print(neurons.kilo4[[C57_cell_num]]$fetch_EDF_parameters())
 ```
+
+With this initial condition, $\tau$ is now 2 ms. What's happening? 
+
+To get a grip on what drives these varying different estimates, consider the autocorrelation plot resulting from the second fit with a high initial amplitude and low $\tau$: 
+
+```{r fit_variability2_plot}
+example_autocor_C57_low <- plot.autocorrelation(neurons.kilo4[[C57_cell_num]]) 
+print(example_autocor_C57_low)
+```
+
+Notice the blue line, which gives the computed autocorrelation as a function of lag. The exponential component of the blue line is clearly small, with its initial peak amplitude $A$ only slightly larger than its baseline bias. Given the exponential decay model (the red line):
+
+ \[y = A * \exp(-\text{lag}/\tau) + \text{bias}\] 
+
+this behavior can be accomodated in two ways: either neuron 37 has a low baseline autocorrelation that decays slowly (low $A$, high $\tau$), or it has a high baseline autocorrelation that decays quickly (high $A$, low $\tau$). These are the two solutions the optimization algorithm finds, depending on the initial conditions. The upshot is that the data is simply too noisy to decide between them. More generally, unless *both* autocorrelation and the network time constant are relatively high (e.g., as with neuron 25 with $\tau=129$ and $A=0.07$), noise will quickly dominate and the estimated $\tau$ will depend on initial conditions.
+
+<h3>Dichotomized Gaussians</h3>
+
+Thus, exponential decay fits to computed autocorrelation are often not reliable estimates of the network time constant, even for individual neurons. Any statistical method for estimating the group network time constant for a covariate of interest based on these unreliable individual estimates (e.g., bootstrapping) will only amplify the noise. 
+The solution is to estimate the network time constant from simulations, not the observed data itself. Specifically, [Dichotomized Gaussians](tutorial_tau_est_DG.html) can be used to generate simulated spike trains consistent with the observed data. The exponential decay model can be fit to each simulation, yielding a distribution of possible $\tau$ values for each neuron. For the purpose of speed, this tutorial runs only 100 simulations per neuron, but in practice, 1000 or more simulations should be run. 
 
 ```{r estimate_autocorr}
 # ... set number of sims to run per neuron
@@ -335,40 +357,101 @@ autocor.ests.kilo4 <- estimate.autocorr.params(
   )
 ```
 
-Run analysis: 
+With the simulations run, the final step is to estimate the network time constant for covariates of interest. The function [analyze.autocorr](../reference/analyze.autocorr.html) does this by bootstrapping over the tau values obtained from the simulations. If there are $n$ neurons in a covariate level, $m$ simulations have been run per neuron, then each bootstrap resample consists of the mean of $n$ draws with replacement from the pool of $nm$ $\tau$ values. For this tutorial, 10k bootstrap resamples are used.
 
 ```{r stat_analysis}
+# Run analysis
 autocorr_results <- analyze.autocorr(
   autocor.ests.kilo4,
   covariate = c("hemi","genotype"),
   n_bs = 1e4
 )
+```
 
-df <- data.frame(
-  value = unlist(autocorr_results, use.names = FALSE),
-  group = rep(names(autocorr_results), each = nrow(autocorr_results))
+The function [analyze.autocorr](../reference/analyze.autocorr.html) returns a list with two objects. The first is **resamples**, a data frame holding the tau values for each covariate from each simulation. 
+
+```{r resamples}
+print(head(autocorr_results$resamples))
+```
+
+The second is **distribution_plot**, a ggplot2 object visualizing the bootstrap distributions of tau for each covariate.
+
+```{r plot_distribution}
+print(autocorr_results$distribution_plot)
+``` 
+
+<h2>Code summary</h2> 
+
+The essential steps to run this analysis are as follows: 
+
+```{r code_summary, eval=FALSE}
+# Setup
+rm(list = ls())
+set.seed(12345) 
+library(neurons) 
+
+# Load and format metadata
+kilo4_metadata <- read.csv(
+  system.file(
+    "extdata", 
+    "meta_data_kilo4demo.csv", 
+    package = "neurons"
+    )
+  )
+rownames(kilo4_metadata) <- paste0(
+  kilo4_metadata$DAY, 
+  "_",
+  kilo4_metadata$Neuralynx_ID
+  )
+kilo4_metadata <- kilo4_metadata[,c("HEMISPHERE","STRAIN","AGE","SEX")]
+colnames(kilo4_metadata) <- c("hemi", "genotype", "age", "sex")
+
+# Load data spike and stimulus data
+spike.rasters.kilo4 <- preprocess.kilo4(
+  trial_time_start = 500,      # ms
+  trial_time_end = 500 + 1520, # ms
+  recording.folder = system.file(
+    "extdata", 
+    "kilo4demo", 
+    package = "neurons"
+    ),
+  meta_data = kilo4_metadata, 
+  max_spikes = 1e4,
+  min_spikes = 1e2,
+  min_trials = 1e2,
+  pure_trials_only = TRUE, 
+  good_cells_only = TRUE,
+  stim_responsive_only = TRUE,
+  verbose = FALSE
+) 
+
+# Make neurons
+neurons.kilo4 <- load.rasters.as.neurons(
+  spike.rasters.kilo4$spikes, 
+  sample_rt = 1e3
+  )
+
+# Set number of sims to run per neuron
+n_sims <- 100
+# Set number of trials to simulate per neuron
+n_trials <- 500
+# Run estimates on data
+autocor.ests.kilo4 <- estimate.autocorr.params(
+  neuron_list = neurons.kilo4,
+  n_trials_per_sim = n_trials, 
+  n_sims_per_neurons = n_sims, 
+  bin_count_action = "sum",
+  A0 = 0.001,
+  tau0 = 1.0,
+  ctol = 1e-8,
+  max_evals = 500,
+  verbose = FALSE
+  )
+
+# Run analysis
+autocorr_results <- analyze.autocorr(
+  autocor.ests.kilo4,
+  covariate = c("hemi","genotype"),
+  n_bs = 1e4
 )
-
-# Plot
-title_size <- 20 
-axis_size <- 12 
-legend_size <- 10
-example_stats1 <- ggplot2::ggplot(df, ggplot2::aes(x = value, fill = group)) +
-  ggplot2::geom_density(alpha = 0.6) +
-  #scale_y_continuous(transform = "log1p") +
-  ggplot2::labs(title = "Expected Time Constant", x = "ms", y = "Density") +
-  ggplot2::theme_minimal() + 
-  ggplot2::theme(
-    plot.title = ggplot2::element_text(hjust = 0.5, size = title_size),
-    axis.title = ggplot2::element_text(size = axis_size),
-    axis.text = ggplot2::element_text(size = axis_size),
-    legend.title = ggplot2::element_text(size = legend_size),
-    legend.text = ggplot2::element_text(size = legend_size),
-    legend.position = "bottom"
-  ) + ggplot2::theme(
-  panel.background = ggplot2::element_rect(fill = "white", colour = NA),
-  plot.background  = ggplot2::element_rect(fill = "white", colour = NA)
-)
-
-print(example_stats1)
 ```
