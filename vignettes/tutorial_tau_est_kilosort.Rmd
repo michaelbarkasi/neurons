@@ -30,14 +30,18 @@ Provide the file path to the output from kilosort4. Recordings from the left and
 
 ```{r datapath}
 # Set path to data 
-demo_data <- "/Users/michaelbarkasi/Library/CloudStorage/OneDrive-WashingtonUniversityinSt.Louis/projects_Oviedo_lab/_lateralized_recurrent_pathways/dichot-gaussian/data_demo"
+demo_data <- system.file(
+    "extdata", 
+    "kilo4demo", 
+    package = "neurons"
+    )
 ```
 
 The function used to process kilosort4 output is [preprocess.kilo4](../reference/preprocess.kilo4.html). This function expects its argument **data_path** to point to a folder the subfolders of which each contain a single kilosort4 output. This output should be in its own folder **/kilosort4**. The following four files are needed:
 
 - **spike_positions.npy**: 2D array giving the x and y position of each spike  
 - **spike_clusters.npy**: integer giving the cluster number of each spike  
-- **spike_times.npy**: sample number the spike occurred at  
+- **spike_times.npy**: sample number at which the spike occurred 
 - **cluster_group.tsv** or **cluster_KSLabel.tsv** or **cluster_info.tsv**: 2D array giving status of each cluster (0=noise, 1=MUA, 2=Good, 3=unsorted)
 
 In addition, a MATLAB file **includeVector.mat** specifying whether each cluster is stimulus-responisve (1) or not (0) should be included in the kilosort4 folder. Finally, along with the kilosort4 subfolder, there should be a file **StimulusStamps.csv** in each recording folder. 
@@ -49,7 +53,7 @@ In addition, a MATLAB file **includeVector.mat** specifying whether each cluster
 
 <h3>Covariate data</h3>
 
-Metadata about the recordings is needed to supply covariates. For this tutorial, a csv file with that data is in the neurons package itself. It is loaded with the regular [read.csv](https://www.rdocumentation.org/packages/utils/versions/3.6.2/topics/read.table) function in R. 
+Metadata about the recordings (formatted as a dataframe) is needed to supply covariates.  
 
 ```{r load_metadata} 
 # Load 
@@ -127,13 +131,13 @@ Finally, if **verbose** is set to TRUE, the function will print out information 
 
 <h3>Raster format</h3>
 
-The output of [preprocess.kilo4](../reference/preprocess.kilo4.html), in this case **spike.rasters.kilo4**, is a list with three elements: **spikes**, **timeXtrial**, and **cluster.key**. The first element, **spikes**, is a dataframe giving a sparse representation of the spike rasters from each recording. Each row is a spike, with columns giving information such as cell number, time, and genotype. 
+The output of [preprocess.kilo4](../reference/preprocess.kilo4.html), in this case **spike.rasters.kilo4**, is a list with three elements: **spikes**, **timeXtrial**, and **cluster.key**. The first element, **spikes**, is a single dataframe giving a sparse representation of the spike rasters (plus covariates) from all recordings. Each row is a spike, with columns giving information such as cell number, time, and genotype. 
 
 ```{r}
 print(head(spike.rasters.kilo4$spikes))
 ```
 
-The second element, **timeXtrial**, is a list of matrices, one per cell, with rows corresponding to time bins and columns to trials. Each entry is a binary indicator of whether the cell fired in that time bin during that trial. Thus, **timeXtrial** contains the rasters of **spikes** in a traditional format. 
+The second element, **timeXtrial**, is a list of matrices, one per cell, with rows corresponding to time bins and columns to trials. Each entry is a binary indicator of whether the cell fired in that time bin during that trial. Thus, **timeXtrial** contains the rasters of **spikes** in a verbose format. 
 
 The third element, **cluster.key**, is a dataframe with rows representing clusters (i.e., "cells") and columns giving information such as cell number, genotype, and number of spikes. 
 
@@ -191,9 +195,9 @@ print(data.frame(covariate_combos, n_cells, mean_spikes, mean_trials))
 
 Thus, for Mecp2 HET mice, 26 clusters from the right hemisphere of females passed the quality control, with none from males or the left hemisphere. For Shank3 KO mice, 9 clusters passed from the left hemisphere of males and 1 from the left hemisphere of females, with none from the right hemisphere. For C57 (wild-type) mice, 1 cluster passed from the left hemisphere of females, with none from males or the right hemisphere. 
 
-<h2>Estimate autocorrelation parameters</h2>
+<h2>Converting to neurons</h2>
 
-With the kilosort4 data preprocessed into spike rasters, the next step is to use the function [load.rasters.as.neurons](../reference/load.rasters.as.neurons.html) to convert these rasters into a special class of object from the neuron package, **neuron**. 
+With the kilosort4 data preprocessed into spike rasters, the next step is to use the function [load.rasters.as.neurons](../reference/load.rasters.as.neurons.html) to convert these rasters into a special class of object from the neuron package, **neuron**. This function will convert all clusters appearing in the raster into individual **neuron** objects and return them in a list.
 
 ```{r create_neuron_objects}
 neurons.kilo4 <- load.rasters.as.neurons(
@@ -274,14 +278,43 @@ print(neurons.kilo4[[example_cell_low_autocor]]$fetch_EDF_parameters())
 
 The amplitude, <b>A</b>, gives the autocorrelation at lag time 1 (minus the bias), while the time constant, <b>τ</b> (tau), gives the rate of decay in autocorrelation as lag time increases. Notice how the high-autocorrelation cell has a time constant of 129ms and an amplitude of 0.068, while the low-autocorrelation cell has a time constant of only 20ms and an amplitude of 0.0017. 
 
-In practice, the individual steps shown above do not need to be run with separate methods calls. The neurons package provides a function, [process.autocorr](../reference/process.autocorr.html), which does all of these steps in one call for a list of neurons.
+In practice, the individual steps shown above do not need to be run with separate method calls. The neurons package provides a function, [process.autocorr](../reference/process.autocorr.html), which does all of these steps in one call for a list of neurons.
 
 ```{r process_autocorr_as_batch}
 autocor.results.batch <- process.autocorr(neurons.kilo4)
 print(head(autocor.results.batch))
 ```
 
-<h3>Estimating parameters with dichotomized Gaussian simulations</h3>
+<h2>Estimating autocorrelation with dichotomized Gaussians</h2>
+
+Recall that the aim is to estimate the network time constant for covariates of interest, e.g., <b>τ</b> in the right vs left hemisphere of C57 (wild-type) mice, or <b>τ</b> in the right hemisphere of C57 vs Shank3 KO mice. At first glance, the output of [process.autocorr](../reference/process.autocorr.html) appears to provide all that's needed for this statistical analysis. Why not simply take the <b>τ</b> estimates listed in the output of [process.autocorr](../reference/process.autocorr.html) and run an ANOVA? 
+
+The problem is that recurrence is very noisy, the amount of data available from which to extract a signal through all that noise is relatively low, and <b>τ</b> itself is an imperfect measure of the network time constant. To see the problem, consider the lone cluster from a C57 mouse. Obviously a single data point is not enough to estimate the true value of a variable, but even this single data point is a highly unreliable estimate of the true network time constant of the cell. Consider what happens when slightly different initial conditions are used in the fit of the exponential decay model. First, set the initial amplitude to 0.001 (the default value in neurons): 
+
+```{r fit_variability1}
+# Set cell number
+C57_cell_num <- 37
+
+# Fit exponential decay model to autocorrelation to estimate the network time constant (tau)
+neurons.kilo4[[C57_cell_num]]$set_edf_initials(0.001, 1.0)
+neurons.kilo4[[C57_cell_num]]$set_edf_termination(1e-8, 1000)
+neurons.kilo4[[C57_cell_num]]$fit_autocorrelation()
+
+# Fetch and print estimated exponential decay parameters
+print(neurons.kilo4[[C57_cell_num]]$fetch_EDF_parameters())
+```
+
+Now, set the initial amplitude to 0.01:
+
+```{r fit_variability2}
+# Fit exponential decay model to autocorrelation to estimate the network time constant (tau)
+neurons.kilo4[[C57_cell_num]]$set_edf_initials(0.01, 1.0)
+neurons.kilo4[[C57_cell_num]]$set_edf_termination(1e-8, 1000)
+neurons.kilo4[[C57_cell_num]]$fit_autocorrelation()
+
+# Fetch and print estimated exponential decay parameters
+print(neurons.kilo4[[C57_cell_num]]$fetch_EDF_parameters())
+```
 
 ```{r estimate_autocorr}
 # ... set number of sims to run per neuron
