@@ -24,6 +24,32 @@ std::vector<double> to_dVec(const NumericVector& vec);
 VectorXd to_eVec(const std::vector<double>& vec);
 NumericVector to_NumVec(const VectorXd& vec);
 NumericVector to_NumVec(const std::vector<double>& vec);
+MatrixXd to_eMat(const NumericMatrix& X);
+NumericMatrix to_NumMat(const MatrixXd& M);
+
+// Empirical correlation between two vectors
+double empirical_corr(
+    const VectorXd& x,
+    const VectorXd& y
+  );
+
+// Empirical correlation between two variables sampled many times 
+double empirical_corr_multisample(
+    const MatrixXd& X, // Rows as intratrial samples, columns as trials
+    const MatrixXd& Y  // Rows as intratrial samples, columns as trials
+  );
+  
+// Estimate correlation across lags
+VectorXd empirical_corr_lagged(
+    const MatrixXd& TS1, // Time series 1, rows as time points, columns as trials
+    const MatrixXd& TS2  // Time series 2, rows as time points, columns as trials
+  );
+
+// Estimate correlation across lags, raw version (no mean subtraction, no normalization by std)
+VectorXd empirical_corr_lagged_raw(
+    const MatrixXd& TS1, // Time series 1, rows as time points, columns as trials
+    const MatrixXd& TS2  // Time series 2, rows as time points, columns as trials
+  );
 
 // Exponential decay function (with gradients) for modelling
 double EDF_autocorr(
@@ -187,7 +213,8 @@ class neuron {
     
     // Member functions for data analysis
     void compute_autocorrelation(
-      const std::string& bin_count_action // action must be 'sum', 'boolean', or 'mean'
+      const std::string& bin_count_action, // action must be 'sum', 'boolean', or 'mean'
+      const bool& use_raw                  // whether to use raw autocorrelation (true) or standard centered and normalized correlation (false)
     ); 
     static double bounded_MSE_EDF_autocorr(
       // Objective function for fitting EDF model to autocorrelation
@@ -206,6 +233,7 @@ class neuron {
         const double& tau0,
         const double& ctol,
         const int& max_evals,
+        const bool& use_raw,
         const bool& verbose
     );
 

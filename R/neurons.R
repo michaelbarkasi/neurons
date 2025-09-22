@@ -219,13 +219,15 @@ make.plot.title <- function(
 #' @param plot_title Title for the plot (default: "Est. autocorr").
 #' @param bias_term Bias term to plot as a horizontal line (default: 0).
 #' @param plot_time_cutoff Maximum lag (in bins) to display on the x-axis (default: Inf).
+#' @param return_plot Logical indicating whether to return the ggplot object (TRUE) or print it (FALSE) (default: FALSE).
 #' @return A ggplot object showing the estimated and fitted autocorrelation.
 #' @export
 plot.autocorrelation <- function(
     nrn,
     plot_title = "Est. autocorr",
     bias_term = 0,
-    plot_time_cutoff = Inf
+    plot_time_cutoff = Inf,
+    return_plot = FALSE
   ) {
     
     # Make title
@@ -234,7 +236,7 @@ plot.autocorrelation <- function(
     # Fetch estimated and fitted autocorrelation 
     autocorr <- nrn$fetch_autocorr_R()
     autocorr_edf <- nrn$fetch_autocorr_edf_R()
-   
+    
     # Make data frame for plotting 
     df_temp <- data.frame(
       autocorrelation = autocorr[2:length(autocorr)],
@@ -245,8 +247,7 @@ plot.autocorrelation <- function(
     
     # Make plot
     plt <- ggplot2::ggplot(df_temp) +
-      ggplot2::geom_line(ggplot2::aes(x = bin, y = autocorrelation), color = "blue") +  
-      ggplot2::geom_line(ggplot2::aes(x = bin, y = autocorrelation_fitted), color = "red") +  
+      ggplot2::geom_line(ggplot2::aes(x = bin, y = autocorrelation), color = "blue") + 
       ggplot2::geom_hline(yintercept = bias_term, linewidth = 2, linetype = "dotted", color = "darkgray") +
       ggplot2::labs(
         title = plot_title,
@@ -258,7 +259,15 @@ plot.autocorrelation <- function(
         panel.background = ggplot2::element_rect(fill = "white", colour = NA),
         plot.background  = ggplot2::element_rect(fill = "white", colour = NA)
       )
-    return(plt)
+    if (length(autocorr_edf) > 1) {
+      plt <- plt + ggplot2::geom_line(ggplot2::aes(x = bin, y = autocorrelation_fitted), color = "red")
+    }
+    if (return_plot) {
+      return(plt)
+    } else {
+      print(plt)
+      return(invisible(NULL))
+    }
     
   }
 
@@ -272,12 +281,14 @@ plot.autocorrelation <- function(
 #' @param nrn Neuron object for which to plot spike raster.
 #' @param plot_title Title for the plot (default: "Spike raster").
 #' @param zero_as_onset Logical indicating whether to plot a vertical line at time zero to indicate stimulus onset (default: TRUE).
+#' @param return_plot Logical indicating whether to return the ggplot object (TRUE) or print it (FALSE) (default: FALSE).
 #' @return A ggplot object showing the spike raster.
 #' @export
 plot.raster <- function(
     nrn,  
     plot_title = "Spike raster",
-    zero_as_onset = TRUE
+    zero_as_onset = TRUE,
+    return_plot = FALSE
   ) {
     
     # Grab raster and time bounds
@@ -306,7 +317,12 @@ plot.raster <- function(
         plot.background  = ggplot2::element_rect(fill = "white", colour = NA)
       )
     
-    return(plt)
+    if (return_plot) {
+      return(plt)
+    } else {
+      print(plt)
+      return(invisible(NULL))
+    }
     
   }
 
@@ -355,6 +371,7 @@ test.sigma.assumption <- function(
 #' @param check_autofiring_ratio Logical indicating whether to check the assumption that autocorrelation values are below the mean firing rate with \code{test.sigma.assumption} function (default: FALSE).
 #' @param print_plots Logical indicating whether to print autocorrelation plots for each neuron (default: FALSE).
 #' @param plot_time_cutoff Maximum lag (in bins) to display on the x-axis of plots (default: Inf).
+#' @param use_raw Logical indicating whether to use raw autocorrelation (true) or standard centered and normalized correlation (false) (default: TRUE).
 #' @return A data frame with one row per neuron and columns for lambda (mean spike rate per ms and per bin), amplitude (A), time constant (tau), bias term, first autocorrelation value, maximum autocorrelation value, mean autocorrelation value, and minimum autocorrelation value.
 #' @export
 process.autocorr <- function(
@@ -366,7 +383,8 @@ process.autocorr <- function(
     max_evals = 500,
     check_autofiring_ratio = FALSE,
     print_plots = FALSE,
-    plot_time_cutoff = Inf
+    plot_time_cutoff = Inf,
+    use_raw = TRUE
   ) {
     
     # Array to hold results
@@ -382,7 +400,7 @@ process.autocorr <- function(
       nrn$set_edf_termination(ctol, max_evals)
       
       # Compute autocorrelation
-      nrn$compute_autocorrelation(bin_count_action)
+      nrn$compute_autocorrelation(bin_count_action, use_raw)
       
       # Fit autocorrelation 
       nrn$fit_autocorrelation()
@@ -424,7 +442,7 @@ process.autocorr <- function(
         sim <- id_data$sim
         if (sim) recording_name <- paste(recording_name, "(sim)")
         
-        plot(plot.autocorrelation(nrn, "Est. autocorr", bias_term, plot_time_cutoff))
+        print(plot.autocorrelation(nrn, "Est. autocorr", bias_term, plot_time_cutoff))
         
       }
       
@@ -467,6 +485,7 @@ process.autocorr <- function(
 #' @param tau0 Initial guess for time constant parameter of exponential decay function (default: 1.0).
 #' @param ctol Convergence tolerance for fitting exponential decay function (default: 1e-8).
 #' @param max_evals Maximum number of evaluations for fitting exponential decay function (default: 500).
+#' @param use_raw Logical indicating whether to use raw autocorrelation (true) or standard centered and normalized correlation (false) (default: TRUE).
 #' @param verbose Logical indicating whether to print progress messages (default: FALSE).
 #' @return A list containing a data frame of autocorrelation parameter estimates (one row per simulation), a data frame of neuron identifiers (one row per neuron), and the number of simulations run per neuron.
 #' @export
@@ -479,6 +498,7 @@ estimate.autocorr.params <- function(
     tau0 = 1.0,
     ctol = 1e-8,
     max_evals = 500,
+    use_raw = TRUE,
     verbose = FALSE
   ) {
     
@@ -501,6 +521,7 @@ estimate.autocorr.params <- function(
         tau0,
         ctol,
         max_evals,
+        use_raw,
         verbose
       )
       return(dg_estimates_nrn)
@@ -688,3 +709,44 @@ analyze.autocorr <- function(
     )
     
   }
+
+#' Compute autocorrelation of single neuron object
+#' 
+#' This function computes the autocorrelation of a single neuron object using specified parameters. It's a wrapper around the \code{compute_autocorrelation} method of the neuron class.
+#' 
+#' @param nrn Neuron object for which to compute autocorrelation.
+#' @param bin_count_action Method for counting spikes in each bin when computing autocorrelation; one of "boolean", "mean", or "sum" (default: "sum").
+#' @param use_raw Logical indicating whether to use raw autocorrelation (true) or standard centered and normalized correlation (false) (default: TRUE).
+#' @return None. Modifies neuron in place.
+#' @export
+compute.autocorr <- function(
+    nrn,
+    bin_count_action = "sum",
+    use_raw = TRUE
+  ) {
+    nrn <- nrn$compute_autocorrelation(bin_count_action, use_raw)
+  }
+
+#' Fit exponential decay function to autocorrelation of single neuron object
+#' 
+#' This function fits an exponential decay function to the autocorrelation of a single neuron object using specified parameters. It's a wrapper around the \code{fit_autocorrelation} method of the neuron class.
+#'
+#' @param nrn Neuron object for which to fit autocorrelation.
+#' @param A0 Initial guess for amplitude parameter of exponential decay function (default: 0.001).
+#' @param tau0 Initial guess for time constant parameter of exponential decay function (default: 1.0).
+#' @param ctol Convergence tolerance for fitting exponential decay function (default: 1e-8).
+#' @param max_evals Maximum number of evaluations for fitting exponential decay function (default: 500).
+#' @return None. Modifies neuron in place.
+#' @export
+fit.edf.autocorr <- function(
+    nrn,
+    A0 = 0.001,
+    tau0 = 1.0,
+    ctol = 1e-8,
+    max_evals = 500
+  ) {
+    nrn$set_edf_initials(A0, tau0)
+    nrn$set_edf_termination(ctol, max_evals)
+    nrn <- nrn$fit_autocorrelation()
+  }
+

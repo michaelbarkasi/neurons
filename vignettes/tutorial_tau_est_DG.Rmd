@@ -1,5 +1,5 @@
 ---
-title: "Estimating network time constants using dichotomized Gaussians"
+title: "Network time constants via dichotomized Gaussians"
 ---
 
 ```{r Rmdsetup, echo=FALSE}
@@ -7,11 +7,15 @@ title: "Estimating network time constants using dichotomized Gaussians"
 options(width = 10000)
 ```
 
-Intro here.
+The extent to which an individual neuron feeds back on itself in a recurrent loop can be estimated by its autocorrelation, i.e., the correlation between the neuron's membrane potential $v$ at time $t_1$ and at later time $t_2>t_1$. The more a spike *now* increases the probability of a spike *later*, the stronger the neuron's connection back onto itself. A neuron's autocorrelation, represented by the variable $R$, can be modeled with an exponential decay function $R = A\exp(-l/\tau) + b$, where $A$ is the *amplitude* (autocorrelation at the initial lag), $l$ is lag, $\tau$ is the *network time constant*, and $b$ is a constant (bias or baseline) term. The time constant $\tau$ is a measure of how quickly the neuron's autocorrelation decays back to baseline after a spike.
+
+Network time constants are difficult to estimate from experimental data, as demonstrated in [this tutorial](tutorial_tau_est_kilosort.html). The spiking activity of a neuron is indicative of its recurrence only if that neuron is receiving no other input. Thus, time constants must be estimated from periods of spontaneous activity. These periods are short and noisy, making time constant estimates from the empirical estimates of a neuron's autocorrelation unreliable. A way to improve the signal-to-noise ratio is needed, such as simulating many recordings. However, typical approaches to such simulations, such as bootstrapping, will only amplify the noise. A better approach is to use dichotomized Gaussians. 
+
+This tutorial shows how to use the neurons package to estimate network time constants using dichotomized Gaussians. Patch-clamp recordings will be used as an example dataset. The recordings are from layer 2/3 of the auditory cortex of mature wildtype mice, in both the left and right hemisphere. These recordings are used by [Neophytou et al. 2022](https://doi.org/10.1371/journal.pbio.3001803), who adapt and apply the dichotomized Gaussian approach of [Macke et al. 2009](https://doi.org/10.1162/neco.2008.02-08-713) to show that the right auditory cortex of mice has more recurrence than the left. This tutorial reproduces that analysis, with a few minor tweaks and improvements. 
 
 <h2>Load spike rasters</h2>
 
-The first step is to set up the R environment by clearing the workspace, setting a random-number generator seed, and loading the neurons package.
+Set up the R environment by clearing the workspace, setting a random-number generator seed, and loading the neurons package.
 
 ```{r Rsetup}
 # Clear the R workspace to start fresh
@@ -24,24 +28,62 @@ set.seed(12345)
 library(neurons) 
 ```
 
-Rasters from patch-clamp data.
+All of the data is contained in a single csv file, provided with the neurons package, as a compact spike raster. 
 
 ```{r load rasters}
-spike.rasters.exper <- read.csv(
+spike.rasters <- read.csv(
   system.file(
-    "extdata", 
-    "spike_rasters_2022data.csv", 
-    package = "neurons"
+      "extdata", 
+      "spike_rasters_2022data.csv", 
+      package = "neurons"
     )
   )
+print(head(spike.rasters))
 ```
 
-<h3>Making neurons</h3>
-
-With the data preprocessed into spike rasters, the next step is to convert them into a special class of object from the neuron package, **neuron**. 
+The data takes the form of a dataframe the rows of which each represent a single recorded spike. Each column gives relevant metadata, such as the time in the recording of the spike, the identity of the neuron that fired the spike, and the hemisphere in which that neuron was recorded. The function [load.rasters.as.neurons](../reference/load.rasters.as.neurons.html) will convert a compact raster of spikes like this one (a dataframe or file name to a csv importable as such) into **neuron** objects (one per cell), so long as it has the recognized columns: **cell**, **time_in_ms**, and **trial**. If the optional columns **recording_name**, **hemisphere**, **genotype**, **sex**, **region**, or **age** are included, they will be recognized and added as metadata to the neuron objects. 
 
 ```{r create_neuron_objects}
-neurons.exper <- load.rasters.as.neurons(spike.rasters.exper)
+neurons <- load.rasters.as.neurons(spike.rasters)
+cat("Number of cells discovered:", length(neurons))
 ```
 
-We want to load the spike rasters as **neuron**s because **neuron**s come with built-in methods for plotting rasters, plotting autocorrelation, and estimating autocorrelation parameters with dichotomized Gaussian simulations. 
+The **neuron** object class is native to C++ and integrated into neurons (an R package) via Rcpp. It comes with built-in methods for plotting rasters, plotting autocorrelation, and estimating autocorrelation parameters with dichotomized Gaussian simulations. Some of these methods can be accessed through R, but neurons provides R-native wrappers for the most useful ones. The neurons package also provides native R functions for plotting. Let's plot the rasters for two cells. The first has high autocorrelation, as can be seen from the long horizontal streaks of spikes:
+
+```{r plot_raster_high_autocor}
+cell_high <- 16
+plot.raster(neurons[[cell_high]]) 
+```
+
+The second has low autocorrelation, as can be seen from the more random distribution of spikes without long streaks:  
+
+```{r plot_raster_low_autocor}
+cell_low <- 1
+plot.raster(neurons[[cell_low]]) 
+```
+
+<h2>Compute autocorrelation from data</h2>
+
+There are two common definitions for the correlation $R_{XY}$ between two variables $X$ and $Y$. If $\text{E}[X]$ and $\text{E}[Y]$ are the expected values (means) of $X$ and $Y$, the first, sometimes called the *raw correlation*, is: 
+\[R_{XY} = \text{E}[XY]\]
+The second, sometimes called the *Pearson correlation*, centers and normalizes the raw correlation: 
+\[R_{XY} = \frac{\text{E}[XY] - \text{E}[X]\text{E}[Y]}{\sqrt{\text{E}[X^2] - \text{E}[X]^2}\sqrt{\text{E}[Y^2] - \text{E}[Y]^2}}\]
+These are definitions for theoretical *population* values, given in terms of expected value operators. Both definitions have empirical analogues which can be used to calculate a value directly from a finite sample. If $T$ is the number of samples, then the empirical raw correlation is given in terms of the dot product: 
+\[R_{XY} = \frac{X\cdot Y}{T} = \frac{1}{T}\sum_{i=1}^T X_i Y_i\]
+If $\mu_{XY}$ is the empirical mean of the product $XY$, the raw correlation can also be computed as $R_{XY} = \mu_{XY}$. The empirical Pearson correlation between two variables $X$ and $Y$ with means $\mu_X$ and $\mu_Y$ and standard deviations $\sigma_X$ and $\sigma_Y$ is given by:
+\[R_{XY} = \frac{\mu_{XY} - \mu_X\mu_Y}{\sigma_X \sigma_Y}\]
+
+If $X$ is a time series $X=\langle{}X_1, \ldots, X_t, \ldots, X_T\rangle{}$, then its autocorrelation $R_{XX}(l)$ is the correlation $R_{XY}$ between $X$ and a copy $Y=\langle{}X_{l+1}, X_{l+2}, X_{l+3}, \ldots \rangle{}$ of $X$ time shifted by some lag $l$. This lagged copy will be shorter than $X$ by $l$ samples, so computing the empirical autocorrelation requires adjusting the summation index and the normalization term accordingly. For example, the empirical raw autocorrelation at lag $l$ is given by:
+\[R_{XX}(l) = \frac{1}{T-l}\sum_{i=1}^{T-l} X_i Y_{i+l}\]
+
+```{r compute_autocorrelation_high}
+neurons[[cell_high]]$compute_autocorrelation("sum", TRUE)
+example_autocor_high_autocor <- plot.autocorrelation(neurons[[cell_high]])
+print(example_autocor_high_autocor)
+```
+
+<h2>Model autocorrelation decay</h2>
+
+<h2>Estimate network time constant</h2>
+
+[Don't discuss the problem, simply mention it and link to the other tutorial.]

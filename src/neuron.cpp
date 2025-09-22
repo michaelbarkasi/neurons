@@ -93,6 +93,123 @@ NumericMatrix to_NumMat(
     return X;
   }
 
+// Empirical correlation between two vectors
+double empirical_corr(
+    const VectorXd& x,
+    const VectorXd& y
+  ) {
+    // Check dimensions
+    int n = x.size();
+    if (y.size() != n) {Rcpp::stop("Vectors must be same length for empirical correlation calculation");}
+    // Calculate components
+    double mean_x = x.sum()/(double)n;
+    double mean_y = y.sum()/(double)n;
+    double mean_xy = x.dot(y)/(double)n;
+    double mean_x2 = x.dot(x)/(double)n;
+    double mean_y2 = y.dot(y)/(double)n;
+    double sd_x = sqrt(mean_x2 - mean_x * mean_x);
+    double sd_y = sqrt(mean_y2 - mean_y * mean_y);
+    // Return correlation estimate
+    double corr = (mean_xy - mean_x * mean_y)/(sd_x * sd_y);
+    return corr;
+  }
+
+// Empirical correlation between two variables sampled many times 
+double empirical_corr_multisample(
+    const MatrixXd& X, // Rows as intratrial samples, columns as trials
+    const MatrixXd& Y  // Rows as intratrial samples, columns as trials
+  ) {
+    
+    // Check dimensions
+    int n_trials = X.cols();
+    if (Y.cols() != n_trials) {Rcpp::stop("Matrices must have same number of columns (trials) for empirical correlation calculation");}
+    
+    // Calculate correlation within each trial
+    double corr = 0.0;
+    int n_trials_nonan = n_trials;
+    for (int n = 0; n < n_trials; n++) {
+      double corr_n = empirical_corr(X.col(n), Y.col(n));
+      if (std::isnan(corr_n)) {
+        n_trials_nonan -= 1;
+      } else {
+        corr += corr_n;
+      }
+    }
+    
+    // Return mean correlation across trials
+    return corr/(double)n_trials_nonan;
+    
+  }
+
+// Estimate correlation across lags
+VectorXd empirical_corr_lagged(
+    const MatrixXd& TS1, // Time series 1, rows as time points, columns as trials
+    const MatrixXd& TS2  // Time series 2, rows as time points, columns as trials
+  ) {
+    
+    // Check for matching dimensions 
+    const int max_lag = TS1.rows();
+    if (TS2.rows() != max_lag) {Rcpp::stop("Time series must have same number of time points (rows)");}
+    const int N_trial = TS1.cols();
+    if (TS2.cols() != N_trial) {Rcpp::stop("Time series must have same number of trials (columns)");}
+    
+    // Initialize vector to hold autocorrelation values
+    VectorXd lagged_corr(max_lag);
+    lagged_corr.setZero();
+    
+    // Compute correlation for all possible lags
+    for (int lag = 0; lag < max_lag; lag++) {
+      MatrixXd TS2_shifted = TS2(seq(0 + lag, max_lag), Eigen::all);
+      MatrixXd TS1_cut = TS1(seq(0, max_lag - lag), Eigen::all);
+      lagged_corr(lag) = empirical_corr_multisample(TS1_cut, TS2_shifted);
+    }
+    
+    // Return correlation 
+    return(lagged_corr); 
+    
+  }
+
+// Estimate correlation across lags, raw version (no mean subtraction, no normalization by std)
+VectorXd empirical_corr_lagged_raw(
+    const MatrixXd& TS1, // Time series 1, rows as time points, columns as trials
+    const MatrixXd& TS2  // Time series 2, rows as time points, columns as trials
+  ) {
+    
+    // Check for matching dimensions 
+    const int max_lag = TS1.rows();
+    if (TS2.rows() != max_lag) {Rcpp::stop("Time series must have same number of time points (rows)");}
+    const int N_trial = TS1.cols();
+    if (TS2.cols() != N_trial) {Rcpp::stop("Time series must have same number of trials (columns)");}
+    
+    // Initialize vector to hold autocorrelation values
+    VectorXd lagged_corr(max_lag);
+    lagged_corr.setZero();
+    
+    // Compute correlation for all possible lags
+    for (int lag = 0; lag < max_lag; lag++) {
+      
+      // Shift and cut
+      MatrixXd TS2_shifted = TS2(seq(0 + lag, max_lag), Eigen::all);
+      MatrixXd TS1_cut = TS1(seq(0, max_lag - lag), Eigen::all);
+      
+      // Sum over trials
+      for (int n = 0; n < N_trial; n++) {
+        lagged_corr(lag) += TS2_shifted.col(n).dot(TS1_cut.col(n));
+      }
+      // The normalization term is the number of overlapping samples at this lag. It's more transparent 
+      //   to define it in terms of max_bin instead of max_lag, but in this case max_bin == max_lag.
+      double normalization_term = 1.0/((double)max_lag - (double)lag);
+      lagged_corr(lag) *= normalization_term;
+      // Find mean proportion of co-active bins per trial
+      lagged_corr(lag) *= (1.0/N_trial);
+      
+    }
+    
+    // Return correlation 
+    return(lagged_corr); 
+    
+  }
+
 // EDF model 
 double EDF_autocorr(
     const double& lag,
@@ -577,7 +694,8 @@ NumericVector neuron::fetch_EDF_parameters() const {
 
 // Compute autocorrelation of trial data
 void neuron::compute_autocorrelation(
-    const std::string& bin_count_action
+    const std::string& bin_count_action,
+    const bool& use_raw
   ) {
     
     /*
@@ -624,26 +742,11 @@ void neuron::compute_autocorrelation(
       data = trial_data;
     }
     
-    // Pad the trial matrix with zeros
-    MatrixXd data_padded(2 * data.rows(), data.cols());
-    data_padded.topRows(data.rows()) = data;
-    data_padded.bottomRows(data.rows()).setZero();
-    
-    // (Re)initialize autocorr
-    autocorr.resize(max_lag);
-    autocorr.setZero();
-    
-    // Compute autocorrelation for all possible lags
-    for (int lag = 0; lag < max_lag; lag++) {
-      
-      double normalization_term = 1.0/((double)T_n - (double)lag + 1.0);
-      // Sum over trials
-      for (int n = 0; n < N_trial; n++) {
-        autocorr(lag) += normalization_term * data_padded(seq(0 + lag, T_n + lag - 1),n).dot(data.col(n));
-      }
-      // Find mean proportion of co-active bins per trial
-      autocorr(lag) *= (1.0/N_trial);
-      
+    // Find autocorrelation
+    if (use_raw) {
+      autocorr = empirical_corr_lagged_raw(data, data);
+    } else {
+      autocorr = empirical_corr_lagged(data, data);
     }
     
   }
@@ -859,6 +962,7 @@ NumericMatrix neuron::estimate_autocorr_params(
     const double& tau0,
     const double& ctol,
     const int& max_evals,
+    const bool& use_raw,
     const bool& verbose
   ) {
     
@@ -872,7 +976,7 @@ NumericMatrix neuron::estimate_autocorr_params(
       set_edf_initials(A0, tau0);
       set_edf_termination(ctol, max_evals);
       // ... compute autocorrelation
-      compute_autocorrelation(bin_count_action);
+      compute_autocorrelation(bin_count_action, use_raw);
       // ... fit autocorrelation 
       fit_autocorrelation();
     }
@@ -898,7 +1002,7 @@ NumericMatrix neuron::estimate_autocorr_params(
       my_sim.set_edf_termination(ctol, max_evals);
       
       // Compute autocorrelation
-      my_sim.compute_autocorrelation(bin_count_action);
+      my_sim.compute_autocorrelation(bin_count_action, use_raw);
       
       // Fit autocorrelation 
       my_sim.fit_autocorrelation();

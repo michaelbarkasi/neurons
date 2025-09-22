@@ -13,6 +13,7 @@ estimate.autocorr.params(
   tau0 = 1,
   ctol = 1e-08,
   max_evals = 500,
+  use_raw = TRUE,
   verbose = FALSE
 )
 }
@@ -32,6 +33,8 @@ estimate.autocorr.params(
 \item{ctol}{Convergence tolerance for fitting exponential decay function (default: 1e-8).}
 
 \item{max_evals}{Maximum number of evaluations for fitting exponential decay function (default: 500).}
+
+\item{use_raw}{Logical indicating whether to use raw autocorrelation (true) or standard centered and normalized correlation (false) (default: TRUE).}
 
 \item{verbose}{Logical indicating whether to print progress messages (default: FALSE).}
 }

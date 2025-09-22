@@ -5,13 +5,13 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Estimating network time constants using dichotomized Gaussians • neurons</title>
+<title>Network time constants via dichotomized Gaussians • neurons</title>
 <script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<meta property="og:title" content="Estimating network time constants using dichotomized Gaussians">
+<meta property="og:title" content="Network time constants via dichotomized Gaussians">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -40,8 +40,9 @@
     <li><a class="dropdown-item" href="../articles/install.html">Installation instructions</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Tutorials</h6></li>
-    <li><a class="dropdown-item" href="../articles/tutorial_tau_est_DG.html">Estimating network time constants using dichotomized Gaussians</a></li>
-    <li><a class="dropdown-item" href="../articles/tutorial_tau_est_kilosort.html">Estimating network time constants from KiloSort4 data</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial_synchrony_crosscorr.html">Spike synchrony via cross-correlation</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial_tau_est_DG.html">Network time constants via dichotomized Gaussians</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial_tau_est_kilosort.html">Network time constants from KiloSort4 data</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Legal</h6></li>
     <li><a class="dropdown-item" href="../articles/license.html">Dependency licenses</a></li>
@@ -67,7 +68,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Estimating network time constants using dichotomized Gaussians</h1>
+      <h1>Network time constants via dichotomized Gaussians</h1>
             
       
 
@@ -76,13 +77,58 @@
 
     
     
-<p>Intro here.</p>
+<p>The extent to which an individual neuron feeds back on itself in a
+recurrent loop can be estimated by its autocorrelation, i.e., the
+correlation between the neuron’s membrane potential
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>v</mi><annotation encoding="application/x-tex">v</annotation></semantics></math>
+at time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mn>1</mn></msub><annotation encoding="application/x-tex">t_1</annotation></semantics></math>
+and at later time
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>2</mn></msub><mo>&gt;</mo><msub><mi>t</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">t_2&gt;t_1</annotation></semantics></math>.
+The more a spike <em>now</em> increases the probability of a spike
+<em>later</em>, the stronger the neuron’s connection back onto itself. A
+neuron’s autocorrelation, represented by the variable
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>R</mi><annotation encoding="application/x-tex">R</annotation></semantics></math>,
+can be modeled with an exponential decay function
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo>=</mo><mi>A</mi><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mi>l</mi><mi>/</mi><mi>τ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">R = A\exp(-l/\tau) + b</annotation></semantics></math>,
+where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>
+is the <em>amplitude</em> (autocorrelation at the initial lag),
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math>
+is lag,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
+is the <em>network time constant</em>, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
+is a constant (bias or baseline) term. The time constant
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
+is a measure of how quickly the neuron’s autocorrelation decays back to
+baseline after a spike.</p>
+<p>Network time constants are difficult to estimate from experimental
+data, as demonstrated in <a href="tutorial_tau_est_kilosort.html">this
+tutorial</a>. The spiking activity of a neuron is indicative of its
+recurrence only if that neuron is receiving no other input. Thus, time
+constants must be estimated from periods of spontaneous activity. These
+periods are short and noisy, making time constant estimates from the
+empirical estimates of a neuron’s autocorrelation unreliable. A way to
+improve the signal-to-noise ratio is needed, such as simulating many
+recordings. However, typical approaches to such simulations, such as
+bootstrapping, will only amplify the noise. A better approach is to use
+dichotomized Gaussians.</p>
+<p>This tutorial shows how to use the neurons package to estimate
+network time constants using dichotomized Gaussians. Patch-clamp
+recordings will be used as an example dataset. The recordings are from
+layer 2/3 of the auditory cortex of mature wildtype mice, in both the
+left and right hemisphere. These recordings are used by <a href="https://doi.org/10.1371/journal.pbio.3001803" class="external-link">Neophytou et
+al. 2022</a>, who adapt and apply the dichotomized Gaussian approach of
+<a href="https://doi.org/10.1162/neco.2008.02-08-713" class="external-link">Macke et
+al. 2009</a> to show that the right auditory cortex of mice has more
+recurrence than the left. This tutorial reproduces that analysis, with a
+few minor tweaks and improvements.</p>
 <h2>
 Load spike rasters
 </h2>
-<p>The first step is to set up the R environment by clearing the
-workspace, setting a random-number generator seed, and loading the
-neurons package.</p>
+<p>Set up the R environment by clearing the workspace, setting a
+random-number generator seed, and loading the neurons package.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Clear the R workspace to start fresh</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span>list <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ls.html" class="external-link">ls</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -92,27 +138,152 @@ neurons package.</p>
 <span></span>
 <span><span class="co"># Load neurons package</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span> </span></code></pre></div>
-<p>Rasters from patch-clamp data.</p>
+<p>All of the data is contained in a single csv file, provided with the
+neurons package, as a compact spike raster.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">spike.rasters.exper</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">spike.rasters</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
-<span>    <span class="st">"extdata"</span>, </span>
-<span>    <span class="st">"spike_rasters_2022data.csv"</span>, </span>
-<span>    package <span class="op">=</span> <span class="st">"neurons"</span></span>
+<span>      <span class="st">"extdata"</span>, </span>
+<span>      <span class="st">"spike_rasters_2022data.csv"</span>, </span>
+<span>      package <span class="op">=</span> <span class="st">"neurons"</span></span>
 <span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<h3>
-Making neurons
-</h3>
-<p>With the data preprocessed into spike rasters, the next step is to
-convert them into a special class of object from the neuron package,
-<strong>neuron</strong>.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">neurons.exper</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load.rasters.as.neurons.html">load.rasters.as.neurons</a></span><span class="op">(</span><span class="va">spike.rasters.exper</span><span class="op">)</span></span></code></pre></div>
-<p>We want to load the spike rasters as <strong>neuron</strong>s because
-<strong>neuron</strong>s come with built-in methods for plotting
-rasters, plotting autocorrelation, and estimating autocorrelation
-parameters with dichotomized Gaussian simulations.</p>
+<span>  <span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">spike.rasters</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##   trial sample cell time_in_ms recording_name hemi genotype sex    age region</span></span>
+<span><span class="co">## 1     2   1181    1      118.1    20080930002   LH    CBA/J   M P30:60    ACx</span></span>
+<span><span class="co">## 2     3   1286    1      128.6    20080930002   LH    CBA/J   M P30:60    ACx</span></span>
+<span><span class="co">## 3     3  13537    1     1353.7    20080930002   LH    CBA/J   M P30:60    ACx</span></span>
+<span><span class="co">## 4     4    691    1       69.1    20080930002   LH    CBA/J   M P30:60    ACx</span></span>
+<span><span class="co">## 5     4   2404    1      240.4    20080930002   LH    CBA/J   M P30:60    ACx</span></span>
+<span><span class="co">## 6     4   3746    1      374.6    20080930002   LH    CBA/J   M P30:60    ACx</span></span></code></pre>
+<p>The data takes the form of a dataframe the rows of which each
+represent a single recorded spike. Each column gives relevant metadata,
+such as the time in the recording of the spike, the identity of the
+neuron that fired the spike, and the hemisphere in which that neuron was
+recorded. The function <a href="../reference/load.rasters.as.neurons.html">load.rasters.as.neurons</a>
+will convert a compact raster of spikes like this one (a dataframe or
+file name to a csv importable as such) into <strong>neuron</strong>
+objects (one per cell), so long as it has the recognized columns:
+<strong>cell</strong>, <strong>time_in_ms</strong>, and
+<strong>trial</strong>. If the optional columns
+<strong>recording_name</strong>, <strong>hemisphere</strong>,
+<strong>genotype</strong>, <strong>sex</strong>,
+<strong>region</strong>, or <strong>age</strong> are included, they will
+be recognized and added as metadata to the neuron objects.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">neurons</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load.rasters.as.neurons.html">load.rasters.as.neurons</a></span><span class="op">(</span><span class="va">spike.rasters</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Number of cells discovered:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Number of cells discovered: 41</span></span></code></pre>
+<p>The <strong>neuron</strong> object class is native to C++ and
+integrated into neurons (an R package) via Rcpp. It comes with built-in
+methods for plotting rasters, plotting autocorrelation, and estimating
+autocorrelation parameters with dichotomized Gaussian simulations. Some
+of these methods can be accessed through R, but neurons provides
+R-native wrappers for the most useful ones. The neurons package also
+provides native R functions for plotting. Let’s plot the rasters for two
+cells. The first has high autocorrelation, as can be seen from the long
+horizontal streaks of spikes:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cell_high</span> <span class="op">&lt;-</span> <span class="fl">16</span></span>
+<span><span class="fu"><a href="../reference/plot-raster.html">plot.raster</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="tutorial_tau_est_DG_files/figure-html/plot_raster_high_autocor-1.png" width="700"></p>
+<p>The second has low autocorrelation, as can be seen from the more
+random distribution of spikes without long streaks:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cell_low</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span><span class="fu"><a href="../reference/plot-raster.html">plot.raster</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_low</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="tutorial_tau_est_DG_files/figure-html/plot_raster_low_autocor-1.png" width="700"></p>
+<h2>
+Compute autocorrelation from data
+</h2>
+<p>There are two common definitions for the correlation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mrow><mi>X</mi><mi>Y</mi></mrow></msub><annotation encoding="application/x-tex">R_{XY}</annotation></semantics></math>
+between two variables
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>.
+If
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><mi>X</mi><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\text{E}[X]</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><mi>Y</mi><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\text{E}[Y]</annotation></semantics></math>
+are the expected values (means) of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>,
+the first, sometimes called the <em>raw correlation</em>, is:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>X</mi><mi>Y</mi></mrow></msub><mo>=</mo><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><mi>X</mi><mi>Y</mi><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">R_{XY} = \text{E}[XY]</annotation></semantics></math>
+The second, sometimes called the <em>Pearson correlation</em>, centers
+and normalizes the raw correlation:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>X</mi><mi>Y</mi></mrow></msub><mo>=</mo><mfrac><mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><mi>X</mi><mi>Y</mi><mo stretchy="true" form="postfix">]</mo></mrow><mo>−</mo><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><mi>X</mi><mo stretchy="true" form="postfix">]</mo></mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><mi>Y</mi><mo stretchy="true" form="postfix">]</mo></mrow></mrow><mrow><msqrt><mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msup><mi>X</mi><mn>2</mn></msup><mo stretchy="true" form="postfix">]</mo></mrow><mo>−</mo><mtext mathvariant="normal">E</mtext><msup><mrow><mo stretchy="true" form="prefix">[</mo><mi>X</mi><mo stretchy="true" form="postfix">]</mo></mrow><mn>2</mn></msup></mrow></msqrt><msqrt><mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msup><mi>Y</mi><mn>2</mn></msup><mo stretchy="true" form="postfix">]</mo></mrow><mo>−</mo><mtext mathvariant="normal">E</mtext><msup><mrow><mo stretchy="true" form="prefix">[</mo><mi>Y</mi><mo stretchy="true" form="postfix">]</mo></mrow><mn>2</mn></msup></mrow></msqrt></mrow></mfrac></mrow><annotation encoding="application/x-tex">R_{XY} = \frac{\text{E}[XY] - \text{E}[X]\text{E}[Y]}{\sqrt{\text{E}[X^2] - \text{E}[X]^2}\sqrt{\text{E}[Y^2] - \text{E}[Y]^2}}</annotation></semantics></math>
+These are definitions for theoretical <em>population</em> values, given
+in terms of expected value operators. Both definitions have empirical
+analogues which can be used to calculate a value directly from a finite
+sample. If
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math>
+is the number of samples, then the empirical raw correlation is given in
+terms of the dot product:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>X</mi><mi>Y</mi></mrow></msub><mo>=</mo><mfrac><mrow><mi>X</mi><mo>⋅</mo><mi>Y</mi></mrow><mi>T</mi></mfrac><mo>=</mo><mfrac><mn>1</mn><mi>T</mi></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>T</mi></munderover><msub><mi>X</mi><mi>i</mi></msub><msub><mi>Y</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">R_{XY} = \frac{X\cdot Y}{T} = \frac{1}{T}\sum_{i=1}^T X_i Y_i</annotation></semantics></math>
+If
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mrow><mi>X</mi><mi>Y</mi></mrow></msub><annotation encoding="application/x-tex">\mu_{XY}</annotation></semantics></math>
+is the empirical mean of the product
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><mi>Y</mi></mrow><annotation encoding="application/x-tex">XY</annotation></semantics></math>,
+the raw correlation can also be computed as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>X</mi><mi>Y</mi></mrow></msub><mo>=</mo><msub><mi>μ</mi><mrow><mi>X</mi><mi>Y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">R_{XY} = \mu_{XY}</annotation></semantics></math>.
+The empirical Pearson correlation between two variables
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+with means
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mi>X</mi></msub><annotation encoding="application/x-tex">\mu_X</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mi>Y</mi></msub><annotation encoding="application/x-tex">\mu_Y</annotation></semantics></math>
+and standard deviations
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>X</mi></msub><annotation encoding="application/x-tex">\sigma_X</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>Y</mi></msub><annotation encoding="application/x-tex">\sigma_Y</annotation></semantics></math>
+is given by:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>X</mi><mi>Y</mi></mrow></msub><mo>=</mo><mfrac><mrow><msub><mi>μ</mi><mrow><mi>X</mi><mi>Y</mi></mrow></msub><mo>−</mo><msub><mi>μ</mi><mi>X</mi></msub><msub><mi>μ</mi><mi>Y</mi></msub></mrow><mrow><msub><mi>σ</mi><mi>X</mi></msub><msub><mi>σ</mi><mi>Y</mi></msub></mrow></mfrac></mrow><annotation encoding="application/x-tex">R_{XY} = \frac{\mu_{XY} - \mu_X\mu_Y}{\sigma_X \sigma_Y}</annotation></semantics></math></p>
+<p>If
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+is a time series
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><mo>=</mo><mo stretchy="false" form="prefix">⟨</mo><mrow></mrow><msub><mi>X</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>X</mi><mi>t</mi></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>X</mi><mi>T</mi></msub><mo stretchy="false" form="postfix">⟩</mo><mrow></mrow></mrow><annotation encoding="application/x-tex">X=\langle{}X_1, \ldots, X_t, \ldots, X_T\rangle{}</annotation></semantics></math>,
+then its autocorrelation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>X</mi><mi>X</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>l</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">R_{XX}(l)</annotation></semantics></math>
+is the correlation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mrow><mi>X</mi><mi>Y</mi></mrow></msub><annotation encoding="application/x-tex">R_{XY}</annotation></semantics></math>
+between
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+and a copy
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo>=</mo><mo stretchy="false" form="prefix">⟨</mo><mrow></mrow><msub><mi>X</mi><mrow><mi>l</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>X</mi><mrow><mi>l</mi><mo>+</mo><mn>2</mn></mrow></msub><mo>,</mo><msub><mi>X</mi><mrow><mi>l</mi><mo>+</mo><mn>3</mn></mrow></msub><mo>,</mo><mi>…</mi><mo stretchy="false" form="postfix">⟩</mo><mrow></mrow></mrow><annotation encoding="application/x-tex">Y=\langle{}X_{l+1}, X_{l+2}, X_{l+3}, \ldots \rangle{}</annotation></semantics></math>
+of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+time shifted by some lag
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math>.
+This lagged copy will be shorter than
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math>
+samples, so computing the empirical autocorrelation requires adjusting
+the summation index and the normalization term accordingly. For example,
+the empirical raw autocorrelation at lag
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math>
+is given by:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>X</mi><mi>X</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>l</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><mrow><mi>T</mi><mo>−</mo><mi>l</mi></mrow></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>T</mi><mo>−</mo><mi>l</mi></mrow></munderover><msub><mi>X</mi><mi>i</mi></msub><msub><mi>Y</mi><mrow><mi>i</mi><mo>+</mo><mi>l</mi></mrow></msub></mrow><annotation encoding="application/x-tex">R_{XX}(l) = \frac{1}{T-l}\sum_{i=1}^{T-l} X_i Y_{i+l}</annotation></semantics></math></p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">compute_autocorrelation</span><span class="op">(</span><span class="st">"sum"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">example_autocor_high_autocor</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot-autocorrelation.html">plot.autocorrelation</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
+<p><img src="tutorial_tau_est_DG_files/figure-html/compute_autocorrelation_high-1.png" width="700"></p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">example_autocor_high_autocor</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## NULL</span></span></code></pre>
+<h2>
+Model autocorrelation decay
+</h2>
+<h2>
+Estimate network time constant
+</h2>
+<p>[Don’t discuss the problem, simply mention it and link to the other
+tutorial.]</p>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>
