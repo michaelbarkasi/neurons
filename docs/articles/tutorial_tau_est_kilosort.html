@@ -603,13 +603,13 @@ dataframe holding the tau values for each covariate from each
 simulation.</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocorr_results</span><span class="op">$</span><span class="va">resamples</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##   RH_Mecp2 HET LH_Shank3 KO   LH_C57</span></span>
-<span><span class="co">## 1     49.07323     19.95455 144.0332</span></span>
-<span><span class="co">## 2     54.45702     32.71918 153.5447</span></span>
-<span><span class="co">## 3     50.03234     15.36389 151.4923</span></span>
-<span><span class="co">## 4     88.35588     42.26768 138.3690</span></span>
-<span><span class="co">## 5     56.32463     14.98439 142.5947</span></span>
-<span><span class="co">## 6     57.84893     19.10891 148.4267</span></span></code></pre>
+<pre><code><span><span class="co">##   RH_Mecp2 HET LH_Shank3 KO    LH_C57</span></span>
+<span><span class="co">## 1     8.190125     3.735382 0.1842621</span></span>
+<span><span class="co">## 2     8.757684     4.876228 0.1518301</span></span>
+<span><span class="co">## 3     7.696670     4.751786 0.1559093</span></span>
+<span><span class="co">## 4     9.948605     3.604340 0.1486919</span></span>
+<span><span class="co">## 5    10.022726     5.366028 0.1496516</span></span>
+<span><span class="co">## 6     8.180089     2.076745 0.1377863</span></span></code></pre>
 <p>The second is <strong>distribution_plot</strong>, a ggplot2 object
 visualizing the bootstrap distributions of tau for each covariate.</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">

@@ -245,7 +245,7 @@ double mvnorm_cdf(
     double prob = as<double>(
       pmvnorm( // by default, lower = -Inf and mean = 0.
         Named("upper") = upper, 
-        Named("corr") = sigma, // "corr", or "sigma"? "corr" seems to return expected results
+        Named("sigma") = sigma, // EDIT: should be sigma. "corr", or "sigma"? "corr" seems to return expected results
         Named("keepAttr") = false
       )
     );
@@ -345,7 +345,7 @@ NumericVector dg_sigma_formula(
       threshold, 
       0.0,     // mean
       1.0,     // sd
-      false    // return cdf
+      false    // return inverse? No, return cdf
     );
     
     // desired sigma will be the one which sends all elements to zero
@@ -362,7 +362,7 @@ NumericVector dg_sigma_formula(
 double dg_sigma_formula_scalar(
     const double& threshold,      // threshold for dichotomization
     const double& cov,            // desired covarance after dichotomization
-    const double& sigma           // correlation coefficient
+    const double& sigma           // Gaussian covariance
   ) {
     
     // Construct covariance matrix sigma (2x2)
@@ -894,9 +894,10 @@ void neuron::dg_parameters(
     // Resize sigma_gauss
     sigma_gauss.resize(max_lag);
     
-    // Find sigma_gauss for each lag
+    // Find the covariance sigma_gauss for each lag
     for (int i = 0; i < max_lag; i++) {
-      sigma_gauss[i] = dg_find_sigma_RootBisection(gamma, autocorr_edf[i]);
+      sigma_gauss[i] = dg_find_sigma_RootBisection(gamma, autocorr_edf[i] - lambda_bin*lambda_bin);
+      // EDIT: Assuming raw correlation, need to cover it into covariance
     }
    
   }
@@ -909,11 +910,11 @@ neuron neuron::dg_simulation(
    
     if (verbose) {Rcpp::Rcout << "Running dichotomized Gaussian simulation of neuron " << id_num << ", " << recording_name << " ..." << std::endl;}
     
-    // Check that sigma_guass has been computed
+    // Check that the covariance matrix sigma_guass has been computed
     int max_lag = sigma_gauss.size();
     if (max_lag == 0) {Rcpp::stop("sigma_gauss must be computed before dg_simulation");}
     
-    // Add 1 to front of sigma_gauss 
+    // Add 1 to front of sigma_gauss, for lag = 0, which is covariance with itself, which is sd^2 = 1^2 = 1
     std::vector<double> sigma_gauss1(max_lag + 1);
     sigma_gauss1[0] = 1.0;
     for (int i = 0; i < max_lag; i++) {
@@ -922,11 +923,11 @@ neuron neuron::dg_simulation(
     
     // Make random draws
     NumericMatrix sigma_gauss_matrix = makePositiveDefinite(toeplitz(sigma_gauss1, sigma_gauss1));
-    NumericVector mu = rep(0.0, max_lag + 1);
+    NumericVector mu = rep(0.0, max_lag + 1); // Drawing from MVN with mean = 0 and sd = 1
     NumericMatrix simulated_trials_transpose = mvnorm_random(
       trials, 
       mu,
-      sigma_gauss_matrix
+      sigma_gauss_matrix // Must be covariance matrix (positive definite)
     ); 
     
     // Take transpose, mvrnorm puts "points" (trials) as rows

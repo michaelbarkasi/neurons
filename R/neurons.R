@@ -240,9 +240,11 @@ plot.autocorrelation <- function(
     # Make data frame for plotting 
     df_temp <- data.frame(
       autocorrelation = autocorr[2:length(autocorr)],
-      autocorrelation_fitted = autocorr_edf[2:length(autocorr_edf)],
       bin = seq(from = 1, to = length(autocorr) - 1, by = 1)
     )
+    if (length(autocorr_edf) > 1) {
+      df_temp$autocorrelation_fitted <- autocorr_edf[2:length(autocorr_edf)]
+    }
     df_temp <- df_temp[df_temp$bin <= plot_time_cutoff,]
     
     # Make plot

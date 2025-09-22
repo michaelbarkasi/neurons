@@ -91,14 +91,14 @@ NumericMatrix toeplitz(
 NumericVector dg_sigma_formula(
     const double& threshold,      // threshold for dichotomization
     const NumericVector& cov,     // desired covarance after dichotomization
-    const NumericMatrix& sigma    // covariance matrix
+    const NumericMatrix& sigma    // covariance matrix of Gaussian
   );
 
 // Wrapper for use with find-root-bisection algorithm 
 double dg_sigma_formula_scalar(
     const double& threshold,      // threshold for dichotomization
     const double& cov,            // desired covarance after dichotomization
-    const double& sigma           // covariance matrix
+    const double& sigma           // Gaussian covariance
   );
 
 // Function to find sigma by root bisection 
