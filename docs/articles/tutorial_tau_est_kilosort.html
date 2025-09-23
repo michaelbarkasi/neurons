@@ -592,7 +592,7 @@ values for
 For this tutorial, 10k bootstrap resamples are used.</p>
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Run analysis</span></span>
-<span><span class="va">autocorr_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/analyze.autocorr.html">analyze.autocorr</a></span><span class="op">(</span></span>
+<span><span class="va">autocor.results.bootstraps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/analyze.autocorr.html">analyze.autocorr</a></span><span class="op">(</span></span>
 <span>  <span class="va">autocor.ests</span>,</span>
 <span>  covariate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hemi"</span>,<span class="st">"genotype"</span><span class="op">)</span>,</span>
 <span>  n_bs <span class="op">=</span> <span class="fl">1e4</span></span>
@@ -602,18 +602,18 @@ list with two objects. The first is <strong>resamples</strong>, a
 dataframe holding the tau values for each covariate from each
 simulation.</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocorr_results</span><span class="op">$</span><span class="va">resamples</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##   RH_Mecp2 HET LH_Shank3 KO    LH_C57</span></span>
-<span><span class="co">## 1     8.190125     3.735382 0.1842621</span></span>
-<span><span class="co">## 2     8.757684     4.876228 0.1518301</span></span>
-<span><span class="co">## 3     7.696670     4.751786 0.1559093</span></span>
-<span><span class="co">## 4     9.948605     3.604340 0.1486919</span></span>
-<span><span class="co">## 5    10.022726     5.366028 0.1496516</span></span>
-<span><span class="co">## 6     8.180089     2.076745 0.1377863</span></span></code></pre>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.bootstraps</span><span class="op">$</span><span class="va">resamples</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##   RH_Mecp2 HET LH_Shank3 KO   LH_C57</span></span>
+<span><span class="co">## 1     38.11365     19.25625 147.5579</span></span>
+<span><span class="co">## 2     49.92346     40.49058 152.0409</span></span>
+<span><span class="co">## 3     41.93270     16.43599 147.9702</span></span>
+<span><span class="co">## 4     68.01246     38.22506 146.0300</span></span>
+<span><span class="co">## 5     48.25960     16.17896 145.3818</span></span>
+<span><span class="co">## 6     53.68753     24.62177 139.0337</span></span></code></pre>
 <p>The second is <strong>distribution_plot</strong>, a ggplot2 object
 visualizing the bootstrap distributions of tau for each covariate.</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">autocorr_results</span><span class="op">$</span><span class="va">distribution_plot</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">autocor.results.bootstraps</span><span class="op">$</span><span class="va">distribution_plot</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tutorial_tau_est_kilosort_files/figure-html/plot_distribution-1.png" width="700"></p>
 <h2>
 Code summary
@@ -680,7 +680,7 @@ Code summary
 <span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Run analysis</span></span>
-<span><span class="va">autocorr_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/analyze.autocorr.html">analyze.autocorr</a></span><span class="op">(</span></span>
+<span><span class="va">autocor.results.bootstraps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/analyze.autocorr.html">analyze.autocorr</a></span><span class="op">(</span></span>
 <span>  <span class="va">autocor.ests</span>,</span>
 <span>  covariate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hemi"</span>,<span class="st">"genotype"</span><span class="op">)</span>,</span>
 <span>  n_bs <span class="op">=</span> <span class="fl">1e4</span></span>

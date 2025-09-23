@@ -226,8 +226,8 @@ However, just as there is a predictable relationship between the threshold $\gam
 
 Let's derive this relationship. Suppose we know the autocorrelation $R_{X_{i_1}X_{i_2}}$ between two time bins $X_{i_1}$ and $X_{i_2}$ separated by lag $l$ and know that the neuron $X$ spikes with rate $\lambda$ across all time bins. We want to find the correlation $R_{V_{i_1}V_{i_2}}$ between the corresponding Gaussian variables $V_{i_1}$ and $V_{i_2}$ which, when thresholded by $\gamma = \Phi^{-1}(1-\lambda)$, gives back the correlation $R_{X_{i_1}X_{i_2}}$. 
 
-Let $\Phi_2(x,K_V)$ be the cumulative distribution function of a multivariate normal distribution ($\mu_{V_i}=0$, $\sigma_{V_i}$ for all components $i$) with covariance $K$, evaluated at $x$ for all components: 
-\[\Phi_2(x,K_V) = P(V_1\leq x, V_2\leq x, \ldots | V_1, V_2, \ldots \sim \text{MVN}(\mu=0,\sigma=1,K=K_V))\]
+Let $\Phi_2(x,K_V)$ be the cumulative distribution function of a multivariate normal distribution ($\mu_{V_i}=0$, $\sigma_{V_i}=1$ for all components $i$) with covariance $K$, evaluated at $x$ for all components: 
+\[\Phi_2(x,K_V) = P(V_1\leq x, V_2\leq x, \ldots \;|\; V_1, V_2, \ldots \sim \text{MVN}(\mu=0,\sigma=1,K=K_V))\]
 That is, $\Phi_2(x,K_V)$ is the probability that all components of a multivariate normal distribution with covariance $K_V$ are less than or equal to $x$.
 
 By definition, the empirical raw autocorrelation $R_{X_{i_1}X_{i_2}}$ can be written in terms of autocovariance, represented by the variable $K$, as follows: 

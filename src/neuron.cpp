@@ -245,7 +245,7 @@ double mvnorm_cdf(
     double prob = as<double>(
       pmvnorm( // by default, lower = -Inf and mean = 0.
         Named("upper") = upper, 
-        Named("sigma") = sigma, // EDIT: should be sigma. "corr", or "sigma"? "corr" seems to return expected results
+        Named("sigma") = sigma, 
         Named("keepAttr") = false
       )
     );
@@ -323,7 +323,7 @@ NumericMatrix toeplitz(
 NumericVector dg_sigma_formula(
     const double& threshold,      // threshold for dichotomization
     const NumericVector& cov,     // desired covarance after dichotomization
-    const NumericMatrix& sigma    // covariance matrix
+    const NumericMatrix& sigma    // covariance matrix of multivariate Gaussian
   ) {
     // We know threshold and cov. By finding the sigma which sends this function 
     //   to zero, we can find the covariance needed for dichotomized Gaussian simulation
@@ -896,8 +896,8 @@ void neuron::dg_parameters(
     
     // Find the covariance sigma_gauss for each lag
     for (int i = 0; i < max_lag; i++) {
-      sigma_gauss[i] = dg_find_sigma_RootBisection(gamma, autocorr_edf[i] - lambda_bin*lambda_bin);
-      // EDIT: Assuming raw correlation, need to cover it into covariance
+      sigma_gauss[i] = dg_find_sigma_RootBisection(gamma, autocorr_edf[i] - lambda*lambda);
+      // EDIT: Assuming raw correlation, need to convert it into covariance
     }
    
   }

@@ -302,7 +302,7 @@ With the simulations run, the final step is to estimate the network time constan
 
 ```{r stat_analysis}
 # Run analysis
-autocorr_results <- analyze.autocorr(
+autocor.results.bootstraps <- analyze.autocorr(
   autocor.ests,
   covariate = c("hemi","genotype"),
   n_bs = 1e4
@@ -312,13 +312,13 @@ autocorr_results <- analyze.autocorr(
 The function [analyze.autocorr](../reference/analyze.autocorr.html) returns a list with two objects. The first is **resamples**, a dataframe holding the tau values for each covariate from each simulation. 
 
 ```{r resamples}
-print(head(autocorr_results$resamples))
+print(head(autocor.results.bootstraps$resamples))
 ```
 
 The second is **distribution_plot**, a ggplot2 object visualizing the bootstrap distributions of tau for each covariate.
 
 ```{r plot_distribution}
-print(autocorr_results$distribution_plot)
+print(autocor.results.bootstraps$distribution_plot)
 ``` 
 
 <h2>Code summary</h2> 
@@ -386,7 +386,7 @@ autocor.ests <- estimate.autocorr.params(
   )
 
 # Run analysis
-autocorr_results <- analyze.autocorr(
+autocor.results.bootstraps <- analyze.autocorr(
   autocor.ests,
   covariate = c("hemi","genotype"),
   n_bs = 1e4
