@@ -488,7 +488,6 @@ process.autocorr <- function(
 #' @param ctol Convergence tolerance for fitting exponential decay function (default: 1e-8).
 #' @param max_evals Maximum number of evaluations for fitting exponential decay function (default: 500).
 #' @param use_raw Logical indicating whether to use raw autocorrelation (true) or standard centered and normalized correlation (false) (default: TRUE).
-#' @param verbose Logical indicating whether to print progress messages (default: FALSE).
 #' @return A list containing a data frame of autocorrelation parameter estimates (one row per simulation), a data frame of neuron identifiers (one row per neuron), and the number of simulations run per neuron.
 #' @export
 estimate.autocorr.params <- function(
@@ -500,8 +499,7 @@ estimate.autocorr.params <- function(
     tau0 = 1.0,
     ctol = 1e-8,
     max_evals = 500,
-    use_raw = TRUE,
-    verbose = FALSE
+    use_raw = TRUE
   ) {
     
     # Pre-allocate matrix 
@@ -524,7 +522,7 @@ estimate.autocorr.params <- function(
         ctol,
         max_evals,
         use_raw,
-        verbose
+        FALSE
       )
       return(dg_estimates_nrn)
     }

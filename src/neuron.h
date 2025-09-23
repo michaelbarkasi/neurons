@@ -18,6 +18,22 @@ using namespace Eigen;
 // Build sequence of numbered string prefixes
 CharacterVector enum_prefix(std::string prefix, int n);
 
+// Rolling mean
+VectorXd roll_mean(
+    const VectorXd& series,    // 1D vector of points to take rolling mean
+    int filter_ws              // Size of window for taking rolling mean
+  );
+// ... overload
+NumericVector roll_mean(
+    const NumericVector& series,    // 1D vector of points to take rolling mean
+    int filter_ws                   // Size of window for taking rolling mean
+  );
+// ... overload
+std::vector<double> roll_mean(
+    const std::vector<double>& series,    // 1D vector of points to take rolling mean
+    int filter_ws                         // Size of window for taking rolling mean
+  );
+
 // Convert between vector types
 std::vector<double> to_dVec(const VectorXd& vec);
 std::vector<double> to_dVec(const NumericVector& vec);
@@ -147,6 +163,8 @@ class neuron {
     MatrixXd spike_raster;                        // Nx2 matrix, each row one spike, columns as time (in "unit_time") and trial number
     double lambda;                                // Mean value of neuron, in "unit_data" per "unit_time"
     double lambda_bin;                            // Mean value of neuron, in "unit_data" per bin
+    double spike_sd;                              // Standard deviation of "unit_data" (presumably spike counts) across trials
+    double spike_sd_bin;                          // Standard deviation of "unit_data" (presumably spike counts) across trials, in time units of bin
     
     // Analysis fields
     VectorXd autocorr;                            // Estimated (observed) autocorrelation of trial_data
@@ -223,7 +241,7 @@ class neuron {
       void* data                    // neuron object (this)
     );
     void fit_autocorrelation();
-    void dg_parameters(const bool& verbose);
+    void dg_parameters(const bool& use_raw, const bool& verbose);
     neuron dg_simulation(const int& trials, const bool& verbose);
     NumericMatrix estimate_autocorr_params(
         const int& trials_per_sim, 

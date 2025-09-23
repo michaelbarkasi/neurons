@@ -18,6 +18,55 @@ CharacterVector enum_prefix(std::string prefix, int n) {
     return result;
   }
 
+// Rolling mean
+VectorXd roll_mean(
+    const VectorXd& series,    // 1D vector of points to take rolling mean
+    int filter_ws              // Size of window for taking rolling mean
+  ) {
+    int n = series.size();
+    VectorXd series_out(n);
+    for (int i = 0; i < n; i++) {
+      int ws = std::min(i + 1, filter_ws);
+      // Ensure iterator bounds stay within range
+      auto start = series.begin() + (i - ws + 1);
+      auto end = series.begin() + (i + 1);
+      series_out[i] = std::accumulate(start, end, 0.0) / static_cast<double>(ws);
+    } 
+    return series_out;
+  }
+// ... overload
+NumericVector roll_mean(
+    const NumericVector& series,    // 1D vector of points to take rolling mean
+    int filter_ws                   // Size of window for taking rolling mean
+  ) {
+    int n = series.size();
+    NumericVector series_out(n);
+    for (int i = 0; i < n; i++) {
+      int ws = std::min(i + 1, filter_ws);
+      // Ensure iterator bounds stay within range
+      auto start = series.begin() + (i - ws + 1);
+      auto end = series.begin() + (i + 1);
+      series_out[i] = std::accumulate(start, end, 0.0) / static_cast<double>(ws);
+    } 
+    return series_out;
+  }
+// ... overload
+std::vector<double> roll_mean(
+    const std::vector<double>& series,    // 1D vector of points to take rolling mean
+    int filter_ws                         // Size of window for taking rolling mean
+  ) {
+    int n = series.size();
+  std::vector<double> series_out(n);
+    for (int i = 0; i < n; i++) {
+      int ws = std::min(i + 1, filter_ws);
+      // Ensure iterator bounds stay within range
+      auto start = series.begin() + (i - ws + 1);
+      auto end = series.begin() + (i + 1);
+      series_out[i] = std::accumulate(start, end, 0.0) / static_cast<double>(ws);
+    } 
+    return series_out;
+  }
+
 // Convert to std::vector with doubles 
 std::vector<double> to_dVec(
     const VectorXd& vec
@@ -244,7 +293,7 @@ double mvnorm_cdf(
     
     double prob = as<double>(
       pmvnorm( // by default, lower = -Inf and mean = 0.
-        Named("upper") = upper, 
+        Named("lower") = upper, 
         Named("sigma") = sigma, 
         Named("keepAttr") = false
       )
@@ -351,7 +400,7 @@ NumericVector dg_sigma_formula(
     // desired sigma will be the one which sends all elements to zero
     NumericVector output(dim);
     for (int i = 0; i < dim; i++) {
-      output[i] = cov[i] - Phi2 + Phi * Phi;
+      output[i] = cov[i] - Phi2 - (1 - Phi) * (1 - Phi);
     }
     
     return output;
@@ -524,6 +573,9 @@ void neuron::load_trial_data(const MatrixXd& td) {
     lambda = trial_data.sum()/(double)(trial_data.rows() * trial_data.cols());
     lambda_bin = lambda * t_per_bin;
     
+    // Compute standard deviation
+    spike_sd = sqrt(trial_data.array().square().sum()/(double)(trial_data.rows() * trial_data.cols()) - lambda * lambda);
+    
     // Make spike raaster
     if (unit_data == "spike") {
       infer_raster();
@@ -540,6 +592,9 @@ void neuron::load_trial_data_R(const NumericMatrix& td) {
     // Compute mean neuron value (e.g., firing rate)
     lambda = trial_data.sum()/(double)(trial_data.rows() * trial_data.cols());
     lambda_bin = lambda * t_per_bin;
+    
+    // Compute standard deviation
+    spike_sd = sqrt(trial_data.array().square().sum()/(double)(trial_data.rows() * trial_data.cols()) - lambda * lambda);
     
     // Make spike raster
     if (unit_data == "spike") {
@@ -566,6 +621,9 @@ void neuron::load_spike_raster_R(const NumericMatrix& sr) {
     // Compute mean neuron value (e.g., firing rate)
     lambda = trial_data.sum()/(double)(trial_data.rows() * trial_data.cols());
     lambda_bin = lambda * t_per_bin;
+    
+    // Compute standard deviation
+    spike_sd = sqrt(trial_data.array().square().sum()/(double)(trial_data.rows() * trial_data.cols()) - lambda * lambda);
     
   } 
 
@@ -738,8 +796,12 @@ void neuron::compute_autocorrelation(
         }
       }
       
+      // Compute standard deviation
+      spike_sd_bin = sqrt(data.array().square().sum()/(double)(data.rows() * data.cols()) - lambda_bin * lambda_bin);
+      
     } else {
       data = trial_data;
+      spike_sd_bin = spike_sd;
     }
     
     // Find autocorrelation
@@ -748,6 +810,8 @@ void neuron::compute_autocorrelation(
     } else {
       autocorr = empirical_corr_lagged(data, data);
     }
+    
+    autocorr = roll_mean(autocorr, t_per_bin*2); // smooth with rolling mean
     
   }
 
@@ -872,6 +936,7 @@ void neuron::fit_autocorrelation() {
   } 
 
 void neuron::dg_parameters(
+    const bool& use_raw,
     const bool& verbose
   ) {
     
@@ -895,10 +960,18 @@ void neuron::dg_parameters(
     sigma_gauss.resize(max_lag);
     
     // Find the covariance sigma_gauss for each lag
-    for (int i = 0; i < max_lag; i++) {
-      sigma_gauss[i] = dg_find_sigma_RootBisection(gamma, autocorr_edf[i] - lambda*lambda);
-      // EDIT: Assuming raw correlation, need to convert it into covariance
+    if (use_raw) {
+      for (int i = 0; i < max_lag; i++) {
+        // Want lambda_bin (not lambda) because these parameters are going to simulations, which have time units of bin
+        sigma_gauss[i] = dg_find_sigma_RootBisection(gamma, autocorr_edf[i] - lambda_bin*lambda_bin);
+      }
+    } else {
+      for (int i = 0; i < max_lag; i++) {
+        // Want spike_sd_bin (not lambda) because these parameters are going to simulations, which have time units of bin
+        sigma_gauss[i] = dg_find_sigma_RootBisection(gamma, autocorr_edf[i] * spike_sd_bin*spike_sd_bin);
+      }
     }
+    
    
   }
 
@@ -914,16 +987,9 @@ neuron neuron::dg_simulation(
     int max_lag = sigma_gauss.size();
     if (max_lag == 0) {Rcpp::stop("sigma_gauss must be computed before dg_simulation");}
     
-    // Add 1 to front of sigma_gauss, for lag = 0, which is covariance with itself, which is sd^2 = 1^2 = 1
-    std::vector<double> sigma_gauss1(max_lag + 1);
-    sigma_gauss1[0] = 1.0;
-    for (int i = 0; i < max_lag; i++) {
-      sigma_gauss1[i + 1] = sigma_gauss[i];
-    }
-    
     // Make random draws
-    NumericMatrix sigma_gauss_matrix = makePositiveDefinite(toeplitz(sigma_gauss1, sigma_gauss1));
-    NumericVector mu = rep(0.0, max_lag + 1); // Drawing from MVN with mean = 0 and sd = 1
+    NumericMatrix sigma_gauss_matrix = makePositiveDefinite(toeplitz(sigma_gauss, sigma_gauss));
+    NumericVector mu = rep(0.0, max_lag); // Drawing from MVN with mean = 0 and sd = 1
     NumericMatrix simulated_trials_transpose = mvnorm_random(
       trials, 
       mu,
@@ -984,6 +1050,7 @@ NumericMatrix neuron::estimate_autocorr_params(
     
     // Find parameters for dichotomized Gaussian simulation
     dg_parameters(
+      use_raw,
       false // verbose?
     );
     
@@ -1015,7 +1082,7 @@ NumericMatrix neuron::estimate_autocorr_params(
         my_sim.lambda, 
         my_sim.lambda_bin, 
         my_sim.A, 
-        my_sim.tau, // why is this not *t_per_bin?
+        my_sim.tau * t_per_bin, // convert back to original time units
         my_sim.bias_term,
         my_sim.autocorr_edf[0],
         max(autocorr_edf_tail),

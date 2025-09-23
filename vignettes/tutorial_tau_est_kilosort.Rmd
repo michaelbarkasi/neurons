@@ -174,6 +174,7 @@ With the kilosort4 data preprocessed into spike rasters, the next step is to use
 ```{r create_neuron_objects}
 neurons <- load.rasters.as.neurons(
     spike.rasters$spikes, 
+    bin_size = 5,
     sample_rt = 1e3
   )
 ```
@@ -288,13 +289,7 @@ Thus, exponential decay fits to computed empirical autocorrelation are often not
 autocor.ests <- estimate.autocorr.params(
     neuron_list = neurons,
     n_trials_per_sim = 500, 
-    n_sims_per_neurons = 100, 
-    bin_count_action = "sum",
-    A0 = 0.001,
-    tau0 = 1.0,
-    ctol = 1e-8,
-    max_evals = 500,
-    verbose = FALSE
+    n_sims_per_neurons = 100
   )
 ```
 
@@ -376,13 +371,7 @@ neurons <- load.rasters.as.neurons(
 autocor.ests <- estimate.autocorr.params(
   neuron_list = neurons,
   n_trials_per_sim = 500, 
-  n_sims_per_neurons = 100, 
-  bin_count_action = "sum",
-  A0 = 0.001,
-  tau0 = 1.0,
-  ctol = 1e-8,
-  max_evals = 500,
-  verbose = FALSE
+  n_sims_per_neurons = 100
   )
 
 # Run analysis
