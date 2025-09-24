@@ -231,7 +231,7 @@ a finite sample. If
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>X</mi><mo accent="true">→</mo></mover><mo>=</mo><mo stretchy="false" form="prefix">⟨</mo><msub><mi>X</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>X</mi><mi>T</mi></msub><mo stretchy="false" form="postfix">⟩</mo></mrow><annotation encoding="application/x-tex">\vec{X}=\langle X_1,\ldots,X_T\rangle</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>Y</mi><mo accent="true">→</mo></mover><mo>=</mo><mo stretchy="false" form="prefix">⟨</mo><msub><mi>Y</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>Y</mi><mi>T</mi></msub><mo stretchy="false" form="postfix">⟩</mo></mrow><annotation encoding="application/x-tex">\vec{Y}=\langle Y_1,\ldots,Y_T\rangle</annotation></semantics></math>
-are each a series of samples collected from
+are each a series of observations collected from
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>,
@@ -270,8 +270,10 @@ Time series and repeated observations
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
 is a time series
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><mo>=</mo><mo stretchy="false" form="prefix">⟨</mo><mrow></mrow><msub><mi>X</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>X</mi><mi>t</mi></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>X</mi><mi>T</mi></msub><mo stretchy="false" form="postfix">⟩</mo><mrow></mrow></mrow><annotation encoding="application/x-tex">X=\langle{}X_1, \ldots, X_t, \ldots, X_T\rangle{}</annotation></semantics></math>,
-then its autocorrelation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>X</mi><mi>X</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>l</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">R_{XX}(l)</annotation></semantics></math>
+then its autocorrelation at lag
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math>,
+denoted
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><mi>X</mi><mi>X</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>l</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">R_{XX}(l)</annotation></semantics></math>,
 is the correlation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mrow><mi>X</mi><mi>Y</mi></mrow></msub><annotation encoding="application/x-tex">R_{XY}</annotation></semantics></math>
 between
@@ -316,6 +318,9 @@ is the number of trials (columns) in
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>.</p>
+<h3>
+Time binning
+</h3>
 <p>The <strong>neuron</strong> object class has built-in methods for
 computing both the raw and Pearson empirical autocorrelation from a
 spike raster
@@ -324,42 +329,65 @@ which is (of course) just a matrix for a random variable (spike or
 no-spike) sampled over time (rows) and trials (columns). The variable
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math>
 is discrete, with only two possible values: 1 for a spike, 0 for no
-spike. It does not play nicely with any of the empirical formulas given
-above. For more cogent results, the rows (i.e., the time axis) of the
-matrix
+spike. This binary nature means that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math>
+does not play nicely with any of the empirical formulas given above. If
+given the raw binary input, these formulas will return zero or near zero
+autocorrelation.</p>
+<p>For more cogent results, the rows (i.e., the time axis) of the matrix
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math>
 must be downsampled via binning. This binning is done automatically by
 the function <a href="../reference/load.rasters.as.neurons.html">load.rasters.as.neurons</a>
 and can be controlled via its argument <strong>bin_size</strong>, which
 below is represented by
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Δ</mi><annotation encoding="application/x-tex">\Delta</annotation></semantics></math>.
-The default, used in the code above, is 20ms. A further question to
-decide when computing empirical autocorrelation is how to handle
-multiple spikes in a single bin. There are three options supported by
-the neurons package: “sum”, “mean”, “boolean”. The option is set via the
-argument <strong>bin_count_action</strong>, available in the functions
-<a href="../reference/compute.autocorr.html">compute.autocorr</a>, <a href="../reference/process.autocorr.html">process.autocorr</a>, and <a href="../reference/estimate.autocorr.params.html">estimate.autocorr.params</a>.
+The default, used in the code above, is 5ms.</p>
+<p>A further question to decide when computing empirical autocorrelation
+is how to handle multiple spikes in a single bin. There are three
+options supported by the neurons package: “sum”, “mean”, and “boolean”.
+The option is set via the argument <strong>bin_count_action</strong>,
+available in the functions <a href="../reference/compute.autocorr.html">compute.autocorr</a>, <a href="../reference/process.autocorr.html">process.autocorr</a>, and <a href="../reference/estimate.autocorr.params.html">estimate.autocorr.params</a>.
 In all cases, the default is “sum”, meaning that the value of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math>
 in a given bin on a given trial is the total count of spikes falling in
 that bin. The option “mean” will instead return the mean number of
 spikes in the bin, while “boolean” will return 1 if there is at least
-one spike in the bin and 0 otherwise.</p>
+one spike in the bin and 0 otherwise. From <em>ad hoc</em> development
+and testing, the “sum” function works best, presumably because it
+preserves the most information about correlation.</p>
+<p>Time binning introduces a dilemma. On the one hand, it’s essential
+for avoiding autocorrelation values of zero. On the other hand, it
+violates the mathematical assumptions of the dichotomized Gaussian
+approach. The violation will be pointed out below, but for now note that
+the best approach seems to be a middle path. A large time bin, such as
+20ms, results in robust autocorrelation estimates from the spike data,
+but leads to unreliable dichotomized Gaussian simulations. A small time
+bin, such as 1ms, leads to unreliable empirical autocorrelation
+estimates, but reliable dichotomized Gaussian simulations. The default
+(5ms) falls in the middle. Whatever the chosen bin size, a rolling mean
+is taken to smooth the empirical autocorrelation value.</p>
+<h3>
+Example autocorrelation calculations
+</h3>
 <p>The function <a href="../reference/compute.autocorr.html">compute.autocorr</a> takes a
 single neuron and computes its empirical autocorrelation using its spike
 raster. Here, for example, is the function used to compute the raw
-autocorrelation for the neuron with high autocorrelation:</p>
+autocorrelation for the neuron with high autocorrelation shown
+above:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compute.autocorr.html">compute.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span>, use_raw <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot-autocorrelation.html">plot.autocorrelation</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tutorial_tau_est_DG_files/figure-html/compute_autocorrelation_high-1.png" width="700"></p>
-<p>And here is the Pearson autocorrelation for the same data:</p>
+<p>Which type of correlation, raw or Peason, is calculated is controlled
+by the <strong>use_raw</strong> option. The Pearson autocorrelation for
+the same data can be got by setting <strong>use_raw</strong> to
+FALSE:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compute.autocorr.html">compute.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span>, use_raw <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot-autocorrelation.html">plot.autocorrelation</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tutorial_tau_est_DG_files/figure-html/compute_autocorrelation_high_pearson-1.png" width="700"></p>
-<p>Next, the raw autocorrelation for the neuron with low
-autocorrelation:</p>
+<p>As another example, here is the raw autocorrelation for the neuron
+with low autocorrelation shown above:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compute.autocorr.html">compute.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_low</span><span class="op">]</span><span class="op">]</span>, use_raw <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot-autocorrelation.html">plot.autocorrelation</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_low</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
@@ -374,7 +402,7 @@ Modeling autocorrelation decay
 </h2>
 <p>Theoretically, autocorrelation can be expected to exhibit exponential
 decay over increasing lag, at least in cases with nonzero
-autocorrelation. As noted above, this decay can be modelled with the
+autocorrelation. As noted above, this decay can be modeled with the
 function:
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo>=</mo><mi>A</mi><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mi>l</mi><mi>/</mi><mi>τ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">R = A\exp(-l/\tau) + b</annotation></semantics></math>
 where
@@ -403,15 +431,15 @@ must be in the same unit of time, e.g., ms. The values for
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
 are set by minimizing the mean squared error between the empirical
-autocorrelation and the model function, using the [L-BFGS algorithm as
-implemented in NLopt]{<a href="https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#low-storage-bfgs" class="external-link uri">https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#low-storage-bfgs</a>}.</p>
+autocorrelation and the model function, using the <a href="https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#low-storage-bfgs" class="external-link">L-BFGS
+algorithm as implemented in NLopt</a>.</p>
 <p>Model fitting is accessed in the neurons package with the function <a href="../reference/fit.edf.autocorr.html">fit.edf.autocorr</a>. The
 function takes a single neuron and fits the exponential decay function
 to its empirical autocorrelation. Here, for example, is the function
 used to fit the model to the raw autocorrelation for the neuron with
 high autocorrelation:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/compute.autocorr.html">compute.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/compute.autocorr.html">compute.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> <span class="co"># Recompute with raw autocorrelation</span></span>
 <span><span class="fu"><a href="../reference/fit.edf.autocorr.html">fit.edf.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot-autocorrelation.html">plot.autocorrelation</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tutorial_tau_est_DG_files/figure-html/fit_autocorrelation_high-1.png" width="700"></p>
@@ -422,10 +450,10 @@ provide succinct quantification of the empirical autocorrelation.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">fetch_EDF_parameters</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##            A          tau    bias_term </span></span>
 <span><span class="co">##  0.042105918 32.928150370  0.002764795</span></span></code></pre>
-<p>In this case, the time constant tau is estimated to be 67ms and the
+<p>In this case, the time constant tau is estimated to be 33ms and the
 initial autocorrelation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>
-is estimated to be 0.26.</p>
+is estimated to be 0.04.</p>
 <p>The above shows empirical autocorrelation and model fit being
 performed in separate steps and for only one neuron at a time. The
 function <a href="../reference/process.autocorr.html">process.autocorr</a> will
@@ -434,15 +462,15 @@ results in a data frame.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">autocor.results.batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/process.autocorr.html">process.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.batch</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##       cell    lambda_ms  lambda_bin           A       tau    bias_term   autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
-<span><span class="co">## 1 neuron_1 0.0021196442 0.010598221 0.008935512 10.103940 1.123223e-04 0.009047834  0.005559932  1.580797e-04 1.123223e-04</span></span>
-<span><span class="co">## 2 neuron_2 0.0003823936 0.001911968 0.003046162  5.000049 3.655622e-06 0.003049817  0.001124287  9.468156e-06 3.655622e-06</span></span>
-<span><span class="co">## 3 neuron_3 0.0036099494 0.018049747 0.014032331 14.018229 3.257934e-04 0.014358124  0.010148391  4.324439e-04 3.257934e-04</span></span>
-<span><span class="co">## 4 neuron_4 0.0017867616 0.008933808 0.006903329 12.226625 7.981293e-05 0.006983142  0.004666051  1.243205e-04 7.981293e-05</span></span>
-<span><span class="co">## 5 neuron_5 0.0096557914 0.048278957 0.044396662 10.644490 2.330858e-03 0.046727520  0.030086460  2.572060e-03 2.330858e-03</span></span>
-<span><span class="co">## 6 neuron_6 0.0087146980 0.043573490 0.033422659 10.241355 1.898649e-03 0.035321308  0.022410800  2.071619e-03 1.898649e-03</span></span></code></pre>
+<pre><code><span><span class="co">##       cell    lambda_ms  lambda_bin            A       tau    bias_term    autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
+<span><span class="co">## 1 neuron_1 0.0021196442 0.010598221 17.051925452 10.681954 1.123223e-04 17.052037774 10.678095442  9.377244e-02 1.123223e-04</span></span>
+<span><span class="co">## 2 neuron_2 0.0003823936 0.001911968  0.003046162  5.000049 3.655622e-06  0.003049817  0.001124287  9.468156e-06 3.655622e-06</span></span>
+<span><span class="co">## 3 neuron_3 0.0036099494 0.018049747  0.014032331 14.018229 3.257934e-04  0.014358124  0.010148391  4.324439e-04 3.257934e-04</span></span>
+<span><span class="co">## 4 neuron_4 0.0017867616 0.008933808  0.006903329 12.226625 7.981293e-05  0.006983142  0.004666051  1.243205e-04 7.981293e-05</span></span>
+<span><span class="co">## 5 neuron_5 0.0096557914 0.048278957  0.044396662 10.644490 2.330858e-03  0.046727520  0.030086460  2.572060e-03 2.330858e-03</span></span>
+<span><span class="co">## 6 neuron_6 0.0087146980 0.043573490  0.033422659 10.241355 1.898649e-03  0.035321308  0.022410800  2.071619e-03 1.898649e-03</span></span></code></pre>
 <h2>
-Estimating network time constant
+Estimating network time constants
 </h2>
 <p>The above discussion concerns computing and modeling
 <em>empirical</em> autocorrelation, i.e., autocorrelation as computed
@@ -468,16 +496,16 @@ the recording time is short.</p>
 Dichotomized Gaussians
 </h3>
 <p>Instead of resampling with replacement, an alternative approach is to
-simulate new samples through a random process model that’s constrained
+simulate new samples through a random-process model that’s constrained
 to be consistent with the observed data. In the case of exponentially
 decaying autocorrelation, dichotomized Gaussians provide an ideal model.
 The basic idea is to model the noisy processes underlying neuron spiking
 across time as a latent multivariate Gaussian process, with one Gaussian
-distribution per time bin. On this model, autocorrelation is modelled as
+distribution per time bin. On this model, autocorrelation is modeled as
 correlation between these Gaussians.</p>
-<p>To get a better handle on the idea, consider the following example.
-First, let’s draw a random sample of 300 points from a bivariate
-Gaussian distribution
+<p>Consider the following example of a dichotomized Gaussian. First,
+let’s draw a random sample of 300 points from a bivariate Gaussian
+distribution
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>V</mi><annotation encoding="application/x-tex">V</annotation></semantics></math>,
 such that both component distributions
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><mn>1</mn></msub><annotation encoding="application/x-tex">V_1</annotation></semantics></math>
@@ -487,7 +515,7 @@ are normal (i.e., have mean
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>
 of 0 and standard deviation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>σ</mi><annotation encoding="application/x-tex">\sigma</annotation></semantics></math>
-of 1) and a covariance
+of 1) and such that a covariance
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><mi>V</mi></msub><annotation encoding="application/x-tex">K_V</annotation></semantics></math>
 of 0.75 exists between these distributions.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
@@ -540,10 +568,7 @@ for both dimensions, shading the area of points below the threshold.</p>
 <span>    label <span class="op">=</span> <span class="st">"gamma"</span>, parse <span class="op">=</span> <span class="cn">TRUE</span>, color <span class="op">=</span> <span class="st">"darkblue"</span>, </span>
 <span>    size <span class="op">=</span> <span class="fl">7</span>, vjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tutorial_tau_est_DG_files/figure-html/DG_plot-1.png" width="700"></p>
-<h3>
-Simulating spike rate
-</h3>
-<p>Suppose a threshold value
+<p>Notice how a threshold value
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>γ</mi><annotation encoding="application/x-tex">\gamma</annotation></semantics></math>
 defines, for any
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><mi>i</mi></msub><annotation encoding="application/x-tex">V_i</annotation></semantics></math>,
@@ -555,7 +580,15 @@ if
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mi>i</mi></msub><mo>&gt;</mo><mi>γ</mi></mrow><annotation encoding="application/x-tex">V_i&gt;\gamma</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">X=0</annotation></semantics></math>
-otherwise. In this case, the probability
+otherwise. The variable
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+is the “dichotomized Gaussian”.</p>
+<h3>
+Simulating spike rate
+</h3>
+<p>If
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+is a dichotomized Gaussian, the probability
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo>=</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">P(X=1)</annotation></semantics></math>
 that
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
@@ -574,7 +607,12 @@ distribution function
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><msqrt><mrow><mn>2</mn><mi>π</mi></mrow></msqrt></mfrac><msubsup><mo>∫</mo><mrow><mi>−</mi><mi>∞</mi></mrow><mi>x</mi></msubsup><msup><mi>e</mi><mrow><mi>−</mi><msup><mi>t</mi><mn>2</mn></msup><mi>/</mi><mn>2</mn></mrow></msup><mi>d</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">\Phi(x) = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^x e^{-t^2/2} dt</annotation></semantics></math>
 Thus:
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo>=</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>V</mi><mi>i</mi></msub><mo>&gt;</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mo>−</mo><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">P(X=1) = P(V_i&gt;\gamma) = 1 - \Phi(\gamma)</annotation></semantics></math>
-So, for example,
+In the above plot, the function
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\Phi(\gamma)</annotation></semantics></math>
+corresponds to the shaded area of each axis, while
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo>=</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">1 - \Phi(\gamma)=P(X=1)</annotation></semantics></math>
+corresponds to the non-shaded area.</p>
+<p>It follows that
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><mi>i</mi></msub><annotation encoding="application/x-tex">V_i</annotation></semantics></math>
 can be used to simulate a neuron with mean spike rate
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math>
@@ -604,7 +642,7 @@ between two component dimensions
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><annotation encoding="application/x-tex">V_{i_1}</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub><annotation encoding="application/x-tex">V_{i_2}</annotation></semantics></math>
-of a multivariate Gaussian are to represent the autocorrelation between
+of a multivariate Gaussian is to represent the autocorrelation between
 two time bins
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><annotation encoding="application/x-tex">X_{i_1}</annotation></semantics></math>
 and
