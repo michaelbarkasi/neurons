@@ -364,6 +364,7 @@ objects and return them in a list.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">neurons</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load.rasters.as.neurons.html">load.rasters.as.neurons</a></span><span class="op">(</span></span>
 <span>    <span class="va">spike.rasters</span><span class="op">$</span><span class="va">spikes</span>, </span>
+<span>    bin_size <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>    sample_rt <span class="op">=</span> <span class="fl">1e3</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <p>Class <strong>neuron</strong> comes with built-in methods for
@@ -436,12 +437,12 @@ empirical autocorrelation.</p>
 <code class="sourceCode R"><span><span class="co"># Fetch and print exponential decay parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">fetch_EDF_parameters</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##            A          tau    bias_term </span></span>
-<span><span class="co">## 6.954852e-02 1.306115e+02 4.928898e-03</span></span></code></pre>
+<span><span class="co">## 8.549401e-03 6.734354e+01 3.080561e-04</span></span></code></pre>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fetch and print exponential decay parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_low</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">fetch_EDF_parameters</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##            A          tau    bias_term </span></span>
-<span><span class="co">## 5.742837e-03 2.000062e+01 1.089202e-04</span></span></code></pre>
+<span><span class="co">## 4.538731e-03 5.000139e+00 6.807511e-06</span></span></code></pre>
 <p>The amplitude,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>,
 gives the autocorrelation at lag time 1 (minus the bias), while the time
@@ -457,13 +458,13 @@ does all of these steps in one call for a list of neurons.</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">autocor.results.batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/process.autocorr.html">process.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.batch</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##       cell   lambda_ms lambda_bin           A       tau   bias_term   autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
-<span><span class="co">## 1 neuron_1 0.002458518 0.04917037 0.010156647  181.4869 0.002417725 0.012574371  0.011514569   0.003579824  0.002420339</span></span>
-<span><span class="co">## 2 neuron_2 0.001918199 0.03836398 0.004434678 1263.8386 0.001471795 0.005906473  0.005836848   0.004047495  0.002825161</span></span>
-<span><span class="co">## 3 neuron_3 0.003054323 0.06108645 0.017783778  232.8946 0.003731555 0.021515333  0.020051874   0.006371638  0.003759925</span></span>
-<span><span class="co">## 4 neuron_4 0.003245878 0.06491756 0.012245200  262.0650 0.004214290 0.016459491  0.015559744   0.006266326  0.004254300</span></span>
-<span><span class="co">## 5 neuron_5 0.005471888 0.10943775 0.053576773  154.5662 0.011976621 0.065553394  0.059050639   0.017147599  0.011979890</span></span>
-<span><span class="co">## 6 neuron_6 0.002979021 0.05958043 0.012857226  175.6142 0.003549827 0.016407054  0.015023098   0.004970736  0.003552337</span></span></code></pre>
+<pre><code><span><span class="co">##       cell   lambda_ms  lambda_bin           A      tau    bias_term   autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
+<span><span class="co">## 1 neuron_1 0.002458518 0.012292591 0.009056644 12.72122 0.0001511078 0.009207752  0.006264335  0.0002131866 0.0001511078</span></span>
+<span><span class="co">## 2 neuron_2 0.001918199 0.009590996 0.007685403 11.53797 0.0000919872 0.007777390  0.005074683  0.0001387488 0.0000919872</span></span>
+<span><span class="co">## 3 neuron_3 0.003054323 0.015271613 0.009896467 18.74262 0.0002332222 0.010129689  0.007812410  0.0003400494 0.0002332222</span></span>
+<span><span class="co">## 4 neuron_4 0.003245878 0.016229391 0.011568551 12.92319 0.0002633931 0.011831945  0.008120267  0.0003442126 0.0002633931</span></span>
+<span><span class="co">## 5 neuron_5 0.005471888 0.027359438 0.024046202 20.06005 0.0007485388 0.024794741  0.019489760  0.0010289001 0.0007485388</span></span>
+<span><span class="co">## 6 neuron_6 0.002979021 0.014895107 0.012270280 11.95191 0.0002218642 0.012492144  0.008297382  0.0002998248 0.0002218642</span></span></code></pre>
 <h2>
 Estimating population autocorrelation
 </h2>
@@ -500,16 +501,16 @@ amplitude to 0.001 (the default value in neurons):</p>
 <span><span class="fu"><a href="../reference/fit.edf.autocorr.html">fit.edf.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">C57_cell_num</span><span class="op">]</span><span class="op">]</span>, A0 <span class="op">=</span> <span class="fl">0.001</span><span class="op">)</span></span>
 <span><span class="va">C57_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot-autocorrelation.html">plot.autocorrelation</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">C57_cell_num</span><span class="op">]</span><span class="op">]</span>, return_plot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">C57_cell_num</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">fetch_EDF_parameters</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##            A          tau    bias_term </span></span>
-<span><span class="co">## 3.421418e-03 3.778026e+02 5.572319e-03</span></span></code></pre>
+<pre><code><span><span class="co">##           A         tau   bias_term </span></span>
+<span><span class="co">##  0.01517868 10.57577455  0.00034827</span></span></code></pre>
 <p>With this initial condition,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
 is 378 ms. Now, set the initial amplitude to 0.01:</p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/fit.edf.autocorr.html">fit.edf.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">C57_cell_num</span><span class="op">]</span><span class="op">]</span>, A0 <span class="op">=</span> <span class="fl">0.01</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">C57_cell_num</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">fetch_EDF_parameters</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##           A         tau   bias_term </span></span>
-<span><span class="co">## 0.214649118 2.463110324 0.005572319</span></span></code></pre>
+<pre><code><span><span class="co">##          A        tau  bias_term </span></span>
+<span><span class="co">## 0.01761368 9.20938982 0.00034827</span></span></code></pre>
 <p>With this initial condition,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
 is now 2 ms.</p>
@@ -567,13 +568,7 @@ simulations should be run.</p>
 <code class="sourceCode R"><span><span class="va">autocor.ests</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimate.autocorr.params.html">estimate.autocorr.params</a></span><span class="op">(</span></span>
 <span>    neuron_list <span class="op">=</span> <span class="va">neurons</span>,</span>
 <span>    n_trials_per_sim <span class="op">=</span> <span class="fl">500</span>, </span>
-<span>    n_sims_per_neurons <span class="op">=</span> <span class="fl">100</span>, </span>
-<span>    bin_count_action <span class="op">=</span> <span class="st">"sum"</span>,</span>
-<span>    A0 <span class="op">=</span> <span class="fl">0.001</span>,</span>
-<span>    tau0 <span class="op">=</span> <span class="fl">1.0</span>,</span>
-<span>    ctol <span class="op">=</span> <span class="fl">1e-8</span>,</span>
-<span>    max_evals <span class="op">=</span> <span class="fl">500</span>,</span>
-<span>    verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>    n_sims_per_neurons <span class="op">=</span> <span class="fl">100</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <p>With the simulations run, the final step is to estimate the network
 time constant for covariates of interest. The function <a href="../reference/analyze.autocorr.html">analyze.autocorr</a> does this
@@ -604,12 +599,12 @@ simulation.</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.bootstraps</span><span class="op">$</span><span class="va">resamples</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##   RH_Mecp2 HET LH_Shank3 KO   LH_C57</span></span>
-<span><span class="co">## 1     42.47128     16.32429 149.3374</span></span>
-<span><span class="co">## 2     41.77081     30.83730 146.9808</span></span>
-<span><span class="co">## 3     37.43834     17.44294 164.8140</span></span>
-<span><span class="co">## 4     69.49360     40.05325 146.2148</span></span>
-<span><span class="co">## 5     51.31292     18.60336 153.5552</span></span>
-<span><span class="co">## 6     45.27045     19.04013 155.0169</span></span></code></pre>
+<span><span class="co">## 1     21.01964     16.95656 15.58378</span></span>
+<span><span class="co">## 2     23.60594     20.08450 15.63015</span></span>
+<span><span class="co">## 3     22.42133     19.10560 15.67444</span></span>
+<span><span class="co">## 4     21.73372     16.38733 15.62982</span></span>
+<span><span class="co">## 5     21.21483     15.84687 15.59343</span></span>
+<span><span class="co">## 6     21.57237     19.93225 15.56567</span></span></code></pre>
 <p>The second is <strong>distribution_plot</strong>, a ggplot2 object
 visualizing the bootstrap distributions of tau for each covariate.</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
@@ -670,13 +665,7 @@ Code summary
 <span><span class="va">autocor.ests</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimate.autocorr.params.html">estimate.autocorr.params</a></span><span class="op">(</span></span>
 <span>  neuron_list <span class="op">=</span> <span class="va">neurons</span>,</span>
 <span>  n_trials_per_sim <span class="op">=</span> <span class="fl">500</span>, </span>
-<span>  n_sims_per_neurons <span class="op">=</span> <span class="fl">100</span>, </span>
-<span>  bin_count_action <span class="op">=</span> <span class="st">"sum"</span>,</span>
-<span>  A0 <span class="op">=</span> <span class="fl">0.001</span>,</span>
-<span>  tau0 <span class="op">=</span> <span class="fl">1.0</span>,</span>
-<span>  ctol <span class="op">=</span> <span class="fl">1e-8</span>,</span>
-<span>  max_evals <span class="op">=</span> <span class="fl">500</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  n_sims_per_neurons <span class="op">=</span> <span class="fl">100</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Run analysis</span></span>

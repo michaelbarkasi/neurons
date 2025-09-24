@@ -16,7 +16,10 @@ using namespace Eigen;
 // Helper functions
 
 // Build sequence of numbered string prefixes
-CharacterVector enum_prefix(std::string prefix, int n);
+CharacterVector enum_prefix(
+    std::string prefix, 
+    int n
+  );
 
 // Rolling mean
 VectorXd roll_mean(
@@ -25,13 +28,13 @@ VectorXd roll_mean(
   );
 // ... overload
 NumericVector roll_mean(
-    const NumericVector& series,    // 1D vector of points to take rolling mean
-    int filter_ws                   // Size of window for taking rolling mean
+    const NumericVector& series, 
+    int filter_ws 
   );
 // ... overload
 std::vector<double> roll_mean(
-    const std::vector<double>& series,    // 1D vector of points to take rolling mean
-    int filter_ws                         // Size of window for taking rolling mean
+    const std::vector<double>& series, 
+    int filter_ws  
   );
 
 // Convert between vector types
@@ -43,25 +46,25 @@ NumericVector to_NumVec(const std::vector<double>& vec);
 MatrixXd to_eMat(const NumericMatrix& X);
 NumericMatrix to_NumMat(const MatrixXd& M);
 
-// Empirical correlation between two vectors
+// Empirical Pearson correlation between two vectors
 double empirical_corr(
     const VectorXd& x,
     const VectorXd& y
   );
 
-// Empirical correlation between two variables sampled many times 
+// Empirical Pearson correlation between two variables sampled many times 
 double empirical_corr_multisample(
     const MatrixXd& X, // Rows as intratrial samples, columns as trials
     const MatrixXd& Y  // Rows as intratrial samples, columns as trials
   );
   
-// Estimate correlation across lags
+// Estimate Pearson correlation across lags
 VectorXd empirical_corr_lagged(
     const MatrixXd& TS1, // Time series 1, rows as time points, columns as trials
     const MatrixXd& TS2  // Time series 2, rows as time points, columns as trials
   );
 
-// Estimate correlation across lags, raw version (no mean subtraction, no normalization by std)
+// Estimate raw correlation across lags, raw version (no mean subtraction, no normalization by std)
 VectorXd empirical_corr_lagged_raw(
     const MatrixXd& TS1, // Time series 1, rows as time points, columns as trials
     const MatrixXd& TS2  // Time series 2, rows as time points, columns as trials
@@ -76,13 +79,13 @@ double EDF_autocorr(
     const int& return_grad // 0 = function output, 1 = gradient wrt A, 2 = gradient wrt tau
   );
 
-// multivariate normal CDF
-double mvnorm_cdf(
-    const NumericVector& upper, 
+// multivariate normal CDF, upper tail
+double mvnorm_cdf_uppertail(
+    const NumericVector& threshold, 
     const NumericMatrix& sigma
   );
 
-// Normal CDF inverse
+// Normal CDF, with inverse
 double norm_cdf(
     const double& x, 
     const double& mu, 
@@ -132,7 +135,7 @@ NumericMatrix makePositiveDefinite(
 
 class neuron {
   
-  // private:
+  // private: Eventually move some of the public stuff in here? 
   
   // public:
 

@@ -36,8 +36,8 @@ VectorXd roll_mean(
   }
 // ... overload
 NumericVector roll_mean(
-    const NumericVector& series,    // 1D vector of points to take rolling mean
-    int filter_ws                   // Size of window for taking rolling mean
+    const NumericVector& series,    
+    int filter_ws  
   ) {
     int n = series.size();
     NumericVector series_out(n);
@@ -52,8 +52,8 @@ NumericVector roll_mean(
   }
 // ... overload
 std::vector<double> roll_mean(
-    const std::vector<double>& series,    // 1D vector of points to take rolling mean
-    int filter_ws                         // Size of window for taking rolling mean
+    const std::vector<double>& series,
+    int filter_ws   
   ) {
     int n = series.size();
   std::vector<double> series_out(n);
@@ -142,14 +142,16 @@ NumericMatrix to_NumMat(
     return X;
   }
 
-// Empirical correlation between two vectors
+// Empirical Pearson correlation between two vectors
 double empirical_corr(
     const VectorXd& x,
     const VectorXd& y
   ) {
+   
     // Check dimensions
     int n = x.size();
     if (y.size() != n) {Rcpp::stop("Vectors must be same length for empirical correlation calculation");}
+    
     // Calculate components
     double mean_x = x.sum()/(double)n;
     double mean_y = y.sum()/(double)n;
@@ -158,12 +160,14 @@ double empirical_corr(
     double mean_y2 = y.dot(y)/(double)n;
     double sd_x = sqrt(mean_x2 - mean_x * mean_x);
     double sd_y = sqrt(mean_y2 - mean_y * mean_y);
+    
     // Return correlation estimate
     double corr = (mean_xy - mean_x * mean_y)/(sd_x * sd_y);
     return corr;
+    
   }
 
-// Empirical correlation between two variables sampled many times 
+// Empirical Pearson correlation between two variables sampled many times 
 double empirical_corr_multisample(
     const MatrixXd& X, // Rows as intratrial samples, columns as trials
     const MatrixXd& Y  // Rows as intratrial samples, columns as trials
@@ -190,7 +194,7 @@ double empirical_corr_multisample(
     
   }
 
-// Estimate correlation across lags
+// Estimate Pearson correlation across lags
 VectorXd empirical_corr_lagged(
     const MatrixXd& TS1, // Time series 1, rows as time points, columns as trials
     const MatrixXd& TS2  // Time series 2, rows as time points, columns as trials
@@ -218,7 +222,7 @@ VectorXd empirical_corr_lagged(
     
   }
 
-// Estimate correlation across lags, raw version (no mean subtraction, no normalization by std)
+// Estimate raw correlation across lags, raw version (no mean subtraction, no normalization by std)
 VectorXd empirical_corr_lagged_raw(
     const MatrixXd& TS1, // Time series 1, rows as time points, columns as trials
     const MatrixXd& TS2  // Time series 2, rows as time points, columns as trials
@@ -267,7 +271,7 @@ double EDF_autocorr(
     const double& bias_term,
     const int& return_grad
   ) {
-    if (return_grad == 0) { // No gradient, return function output
+    if (return_grad == 0) {        // No gradient, return function output
       return A * exp(-lag/tau) + bias_term;
     } else if (return_grad == 1) { // gradient wrt A
       return exp(-lag/tau);
@@ -278,22 +282,22 @@ double EDF_autocorr(
     }
   }
 
-// Multivariate normal CDF
-double mvnorm_cdf(
-    const NumericVector& upper, 
+// Multivariate normal CDF, upper tail
+double mvnorm_cdf_uppertail(
+    const NumericVector& threshold, 
     const NumericMatrix& sigma  // covariance matrix of dimension n less than 1000
   ) {
     
     if (sigma.nrow() != sigma.ncol()) {Rcpp::stop("Covariance matrix must be square");}
     if (sigma.nrow() >= 1000) {Rcpp::stop("Covariance matrix must be less than 1000x1000");}
-    if (sigma.nrow() != upper.size()) {Rcpp::stop("Matrix diagonal and upper bounds must be same length");}
+    if (sigma.nrow() != threshold.size()) {Rcpp::stop("Matrix diagonal and threshold vector must be same length");}
     
     Function pmvnorm("pmvnorm", Environment::namespace_env("mvtnorm"));
     // ... uses Genz algorithm
     
     double prob = as<double>(
-      pmvnorm( // by default, lower = -Inf and mean = 0.
-        Named("lower") = upper, 
+      pmvnorm( // by default, lower = -Inf, upper = Inf, and mean = 0.
+        Named("lower") = threshold, 
         Named("sigma") = sigma, 
         Named("keepAttr") = false
       )
@@ -303,7 +307,7 @@ double mvnorm_cdf(
     
   }
 
-// Normal CDF inverse
+// Normal CDF, with inverse
 double norm_cdf(
     const double& x,
     const double& mu,
@@ -382,10 +386,10 @@ NumericVector dg_sigma_formula(
     if (dim != sigma.ncol()) {Rcpp::stop("Covariance matrix must be square");}
     if (dim != cov.size()) {Rcpp::stop("Covariance vector must have the same length as sigma diagonal");}
     
-    // Find probability of a point being below the threshold along all dimensions
-    NumericVector upper = Rcpp::rep(threshold, dim); 
-    double Phi2 = mvnorm_cdf(
-      upper, 
+    // Find probability of a point being above the threshold along all dimensions
+    NumericVector threshold_vec = Rcpp::rep(threshold, dim); 
+    double Phi2_upper = mvnorm_cdf_uppertail(
+      threshold_vec, 
       sigma
     );
    
@@ -398,12 +402,16 @@ NumericVector dg_sigma_formula(
     );
     
     // desired sigma will be the one which sends all elements to zero
-    NumericVector output(dim);
+    //  Formula: cov = Phi2_upper - (1 - Phi) * (1 - Phi) is derived as follows: 
+    //   By definition of cov, cov = E[X1*X2] - E[X1]*E[X2].
+    //   In this case, E[X1] = E[X2] = P(X > threshold) = 1 - Phi.
+    //   X1*X2 != 0 only if both X1 and X2 > threshold, which occurs with probability Phi2_upper.
+    NumericVector residuals(dim);
     for (int i = 0; i < dim; i++) {
-      output[i] = cov[i] - Phi2 - (1 - Phi) * (1 - Phi);
+      residuals[i] = cov[i] - Phi2_upper - (1 - Phi) * (1 - Phi);
     }
     
-    return output;
+    return residuals;
     
   }
 
@@ -419,12 +427,14 @@ double dg_sigma_formula_scalar(
     sigmaMat(_,0) = NumericVector::create(1.0, sigma);
     sigmaMat(_,1) = NumericVector::create(sigma, 1.0);
     
-    // Extend cov to have lag = 0 on front
+    // Include self-covariance on front, which is the variance, sd^2
+    //   The Gaussian is normal, so mean is zero and sd is 1, so variance is 1
     NumericVector cov1 = {1.0, cov};
     
     // Evaluate formula and return second value
-    NumericVector output = dg_sigma_formula(threshold, cov1, sigmaMat);
-    return output[1];
+    NumericVector residual = dg_sigma_formula(threshold, cov1, sigmaMat);
+    // Return only the second element, corresponding to cov
+    return residual[1]; 
     
   }
 
@@ -496,6 +506,7 @@ NumericMatrix makePositiveDefinite(
     
     // Reconstruct the matrix
     return to_NumMat(eigenvectors * eigenvalues.asDiagonal() * eigenvectors.transpose());
+    
   }
 
 /*
@@ -513,11 +524,11 @@ neuron::neuron(
     const std::string hemi,
     const std::string region,
     const std::string age,
-    bool sim, 
-    std::string unit_time, 
-    std::string unit_sample_rate, 
-    std::string unit_data, 
-    double t_per_bin, 
+    const bool sim, 
+    const std::string unit_time, 
+    const std::string unit_sample_rate, 
+    const std::string unit_data, 
+    const double t_per_bin, 
     const double sample_rate
   ) : id_num(id_num), 
     recording_name(recording_name), 
@@ -600,6 +611,28 @@ void neuron::load_trial_data_R(const NumericMatrix& td) {
     if (unit_data == "spike") {
       infer_raster();
     }
+    
+  } 
+
+// Loading spike raster (Eigen matrix)
+void neuron::load_spike_raster(const MatrixXd& sr) {
+    
+    // Check input form
+    if (unit_data != "spike") {Rcpp::stop("Spike raster can only be loaded if unit_data is 'spike'");}
+    if (sr.cols() != 2) {Rcpp::stop("Spike raster must have two columns");}
+   
+    // Save spike raster
+    spike_raster = sr;
+    
+    // Infer trial data
+    infer_trial();
+    
+    // Compute mean neuron value (e.g., firing rate)
+    lambda = trial_data.sum()/(double)(trial_data.rows() * trial_data.cols());
+    lambda_bin = lambda * t_per_bin;
+    
+    // Compute standard deviation
+    spike_sd = sqrt(trial_data.array().square().sum()/(double)(trial_data.rows() * trial_data.cols()) - lambda * lambda);
     
   } 
 
@@ -811,7 +844,7 @@ void neuron::compute_autocorrelation(
       autocorr = empirical_corr_lagged(data, data);
     }
     
-    autocorr = roll_mean(autocorr, t_per_bin*2); // smooth with rolling mean
+    autocorr = roll_mean(autocorr, t_per_bin); // smooth with rolling mean
     
   }
 
@@ -962,11 +995,13 @@ void neuron::dg_parameters(
     // Find the covariance sigma_gauss for each lag
     if (use_raw) {
       for (int i = 0; i < max_lag; i++) {
+        // When raw, autocorr_edf = E[X1*X2], so need to subtract off E[X1]*E[X2] = lambda^2 to get covariance
         // Want lambda_bin (not lambda) because these parameters are going to simulations, which have time units of bin
         sigma_gauss[i] = dg_find_sigma_RootBisection(gamma, autocorr_edf[i] - lambda_bin*lambda_bin);
       }
     } else {
       for (int i = 0; i < max_lag; i++) {
+        // When using Pearson correlation, autocorr_edf = cov/(sd1*sd2), so need to multiply by sd1*sd2 to get covariance
         // Want spike_sd_bin (not lambda) because these parameters are going to simulations, which have time units of bin
         sigma_gauss[i] = dg_find_sigma_RootBisection(gamma, autocorr_edf[i] * spike_sd_bin*spike_sd_bin);
       }
@@ -1088,7 +1123,7 @@ NumericMatrix neuron::estimate_autocorr_params(
         max(autocorr_edf_tail),
         mean(autocorr_edf_tail),
         min(autocorr_edf_tail)
-        };
+      };
       
       sim_results.row(s) = sim_results_row;
       

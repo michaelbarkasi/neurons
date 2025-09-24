@@ -171,9 +171,26 @@ objects (one per cell), so long as it has the recognized columns:
 <strong>region</strong>, or <strong>age</strong> are included, they will
 be recognized and added as metadata to the neuron objects.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">neurons</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load.rasters.as.neurons.html">load.rasters.as.neurons</a></span><span class="op">(</span><span class="va">spike.rasters</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">neurons</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load.rasters.as.neurons.html">load.rasters.as.neurons</a></span><span class="op">(</span><span class="va">spike.rasters</span>, bin_size <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Number of cells discovered:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Number of cells discovered: 41</span></span></code></pre>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Run simulations</span></span>
+<span><span class="va">autocor.ests</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimate.autocorr.params.html">estimate.autocorr.params</a></span><span class="op">(</span></span>
+<span>  neuron_list <span class="op">=</span> <span class="va">neurons</span>,</span>
+<span>  n_trials_per_sim <span class="op">=</span> <span class="fl">500</span>, </span>
+<span>  n_sims_per_neurons <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  use_raw <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Run analysis</span></span>
+<span><span class="va">autocor.results.bootstraps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/analyze.autocorr.html">analyze.autocorr</a></span><span class="op">(</span></span>
+<span>  <span class="va">autocor.ests</span>,</span>
+<span>  covariate <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hemi"</span>,<span class="st">"genotype"</span><span class="op">)</span>,</span>
+<span>  n_bs <span class="op">=</span> <span class="fl">1e4</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">autocor.results.bootstraps</span><span class="op">$</span><span class="va">distribution_plot</span><span class="op">)</span></span></code></pre></div>
+<p><img src="tutorial_tau_est_DG_files/figure-html/create_neuron_objects-1.png" width="700"></p>
 <p>The <strong>neuron</strong> object class is native to C++ and
 integrated into neurons (an R package) via Rcpp. It comes with built-in
 methods for plotting rasters, plotting autocorrelation, and estimating
@@ -183,13 +200,13 @@ R-native wrappers for the most useful ones. The neurons package also
 provides native R functions for plotting. Let’s plot the rasters for two
 cells. The first has high autocorrelation, as can be seen from the long
 horizontal streaks of spikes:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cell_high</span> <span class="op">&lt;-</span> <span class="fl">16</span></span>
 <span><span class="fu"><a href="../reference/plot-raster.html">plot.raster</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> </span></code></pre></div>
 <p><img src="tutorial_tau_est_DG_files/figure-html/plot_raster_high_autocor-1.png" width="700"></p>
 <p>The second has low autocorrelation, as can be seen from the more
 random distribution of spikes without long streaks:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cell_low</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span><span class="fu"><a href="../reference/plot-raster.html">plot.raster</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_low</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> </span></code></pre></div>
 <p><img src="tutorial_tau_est_DG_files/figure-html/plot_raster_low_autocor-1.png" width="700"></p>
@@ -346,23 +363,23 @@ one spike in the bin and 0 otherwise.</p>
 single neuron and computes its empirical autocorrelation using its spike
 raster. Here, for example, is the function used to compute the raw
 autocorrelation for the neuron with high autocorrelation:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compute.autocorr.html">compute.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span>, use_raw <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot-autocorrelation.html">plot.autocorrelation</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tutorial_tau_est_DG_files/figure-html/compute_autocorrelation_high-1.png" width="700"></p>
 <p>And here is the Pearson autocorrelation for the same data:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compute.autocorr.html">compute.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span>, use_raw <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot-autocorrelation.html">plot.autocorrelation</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tutorial_tau_est_DG_files/figure-html/compute_autocorrelation_high_pearson-1.png" width="700"></p>
 <p>Next, the raw autocorrelation for the neuron with low
 autocorrelation:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compute.autocorr.html">compute.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_low</span><span class="op">]</span><span class="op">]</span>, use_raw <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot-autocorrelation.html">plot.autocorrelation</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_low</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tutorial_tau_est_DG_files/figure-html/compute_autocorrelation_low-1.png" width="700"></p>
 <p>And the Pearson autocorrelation for the same data:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compute.autocorr.html">compute.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_low</span><span class="op">]</span><span class="op">]</span>, use_raw <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot-autocorrelation.html">plot.autocorrelation</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_low</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tutorial_tau_est_DG_files/figure-html/compute_autocorrelation_low_pearson-1.png" width="700"></p>
@@ -407,7 +424,7 @@ function takes a single neuron and fits the exponential decay function
 to its empirical autocorrelation. Here, for example, is the function
 used to fit the model to the raw autocorrelation for the neuron with
 high autocorrelation:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/compute.autocorr.html">compute.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/fit.edf.autocorr.html">fit.edf.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot-autocorrelation.html">plot.autocorrelation</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
@@ -415,10 +432,10 @@ high autocorrelation:</p>
 <p>The fitted model is plotted as the red line. The parameters of the
 exponential decay fit can be fetched directly with a neuron method and
 provide succinct quantification of the empirical autocorrelation.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">fetch_EDF_parameters</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##           A         tau   bias_term </span></span>
-<span><span class="co">##  0.25888154 67.42729942  0.04423672</span></span></code></pre>
+<pre><code><span><span class="co">##            A          tau    bias_term </span></span>
+<span><span class="co">##  0.042105918 32.928150370  0.002764795</span></span></code></pre>
 <p>In this case, the time constant tau is estimated to be 67ms and the
 initial autocorrelation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>
@@ -428,16 +445,16 @@ performed in separate steps and for only one neuron at a time. The
 function <a href="../reference/process.autocorr.html">process.autocorr</a> will
 perform both steps at once for an entire list of neurons and return the
 results in a data frame.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">autocor.results.batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/process.autocorr.html">process.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.batch</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##       cell    lambda_ms  lambda_bin            A        tau    bias_term   autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
-<span><span class="co">## 1 neuron_1 0.0021196442 0.042392883  0.077501060   1.666924 1.797157e-03 0.079298216 0.0017976336  1.797163e-03 1.797157e-03</span></span>
-<span><span class="co">## 2 neuron_2 0.0003823936 0.007647872  0.001298119  19.999968 5.848995e-05 0.001356608 0.0005360403  6.856292e-05 5.848995e-05</span></span>
-<span><span class="co">## 3 neuron_3 0.0036099494 0.072198987  0.017915334 170.115506 5.212694e-03 0.023128028 0.0211408733  7.101940e-03 5.215053e-03</span></span>
-<span><span class="co">## 4 neuron_4 0.0017867616 0.035735233  0.003252084 856.788320 1.277007e-03 0.004529091 0.0044540564  2.781459e-03 1.828696e-03</span></span>
-<span><span class="co">## 5 neuron_5 0.0096557914 0.193115827 -0.022580725  44.047935 3.729372e-02 0.014712998 0.0372937227  3.677671e-02 2.295382e-02</span></span>
-<span><span class="co">## 6 neuron_6 0.0087146980 0.174293960  0.279085447   2.336045 3.037838e-02 0.309463832 0.0304317837  3.037909e-02 3.037838e-02</span></span></code></pre>
+<pre><code><span><span class="co">##       cell    lambda_ms  lambda_bin           A       tau    bias_term   autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
+<span><span class="co">## 1 neuron_1 0.0021196442 0.010598221 0.008935512 10.103940 1.123223e-04 0.009047834  0.005559932  1.580797e-04 1.123223e-04</span></span>
+<span><span class="co">## 2 neuron_2 0.0003823936 0.001911968 0.003046162  5.000049 3.655622e-06 0.003049817  0.001124287  9.468156e-06 3.655622e-06</span></span>
+<span><span class="co">## 3 neuron_3 0.0036099494 0.018049747 0.014032331 14.018229 3.257934e-04 0.014358124  0.010148391  4.324439e-04 3.257934e-04</span></span>
+<span><span class="co">## 4 neuron_4 0.0017867616 0.008933808 0.006903329 12.226625 7.981293e-05 0.006983142  0.004666051  1.243205e-04 7.981293e-05</span></span>
+<span><span class="co">## 5 neuron_5 0.0096557914 0.048278957 0.044396662 10.644490 2.330858e-03 0.046727520  0.030086460  2.572060e-03 2.330858e-03</span></span>
+<span><span class="co">## 6 neuron_6 0.0087146980 0.043573490 0.033422659 10.241355 1.898649e-03 0.035321308  0.022410800  2.071619e-03 1.898649e-03</span></span></code></pre>
 <h2>
 Estimating network time constant
 </h2>
@@ -487,7 +504,7 @@ of 0 and standard deviation
 of 1) and a covariance
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><mi>V</mi></msub><annotation encoding="application/x-tex">K_V</annotation></semantics></math>
 of 0.75 exists between these distributions.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">V_sample</span> <span class="op">&lt;-</span> <span class="fu">MASS</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/MASS/man/mvrnorm.html" class="external-link">mvrnorm</a></span><span class="op">(</span></span>
 <span>    n <span class="op">=</span> <span class="fl">300</span>,</span>
 <span>    mu <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0</span><span class="op">)</span>,</span>
@@ -502,7 +519,7 @@ of 0.75 exists between these distributions.</p>
 thresholds
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\gamma = 1</annotation></semantics></math>
 for both dimensions, shading the area of points below the threshold.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Convert to data frame for plotting</span></span>
 <span><span class="va">V_sample</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">V_sample</span><span class="op">)</span> </span>
 <span><span class="va">threshold</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
