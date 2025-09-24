@@ -458,13 +458,13 @@ does all of these steps in one call for a list of neurons.</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">autocor.results.batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/process.autocorr.html">process.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.batch</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##       cell   lambda_ms  lambda_bin           A      tau    bias_term   autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
-<span><span class="co">## 1 neuron_1 0.002458518 0.012292591 0.009056644 12.72122 0.0001511078 0.009207752  0.006264335  0.0002131866 0.0001511078</span></span>
-<span><span class="co">## 2 neuron_2 0.001918199 0.009590996 0.007685403 11.53797 0.0000919872 0.007777390  0.005074683  0.0001387488 0.0000919872</span></span>
-<span><span class="co">## 3 neuron_3 0.003054323 0.015271613 0.009896467 18.74262 0.0002332222 0.010129689  0.007812410  0.0003400494 0.0002332222</span></span>
-<span><span class="co">## 4 neuron_4 0.003245878 0.016229391 0.011568551 12.92319 0.0002633931 0.011831945  0.008120267  0.0003442126 0.0002633931</span></span>
-<span><span class="co">## 5 neuron_5 0.005471888 0.027359438 0.024046202 20.06005 0.0007485388 0.024794741  0.019489760  0.0010289001 0.0007485388</span></span>
-<span><span class="co">## 6 neuron_6 0.002979021 0.014895107 0.012270280 11.95191 0.0002218642 0.012492144  0.008297382  0.0002998248 0.0002218642</span></span></code></pre>
+<pre><code><span><span class="co">##       cell   lambda_ms  lambda_bin          A      tau    bias_term   autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
+<span><span class="co">## 1 neuron_1 0.002458518 0.012292591 0.00100000  5.00000 0.0001511078 0.001151108 0.0005189872  1.530285e-04 0.0001511078</span></span>
+<span><span class="co">## 2 neuron_2 0.001918199 0.009590996 0.00100000  5.00000 0.0000919872 0.001091987 0.0004598666  9.390791e-05 0.0000919872</span></span>
+<span><span class="co">## 3 neuron_3 0.003054323 0.015271613 0.00100000  5.00000 0.0002332222 0.001233222 0.0006011016  2.351429e-04 0.0002332222</span></span>
+<span><span class="co">## 4 neuron_4 0.003245878 0.016229391 0.00100000  5.00000 0.0002633931 0.001263393 0.0006312726  2.653139e-04 0.0002633931</span></span>
+<span><span class="co">## 5 neuron_5 0.005471888 0.027359438 0.02404620 20.06005 0.0007485388 0.024794741 0.0194897599  1.028900e-03 0.0007485388</span></span>
+<span><span class="co">## 6 neuron_6 0.002979021 0.014895107 0.01227028 11.95191 0.0002218642 0.012492144 0.0082973823  2.998248e-04 0.0002218642</span></span></code></pre>
 <h2>
 Estimating population autocorrelation
 </h2>
@@ -599,12 +599,12 @@ simulation.</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.bootstraps</span><span class="op">$</span><span class="va">resamples</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##   RH_Mecp2 HET LH_Shank3 KO   LH_C57</span></span>
-<span><span class="co">## 1     21.01964     16.95656 15.58378</span></span>
-<span><span class="co">## 2     23.60594     20.08450 15.63015</span></span>
-<span><span class="co">## 3     22.42133     19.10560 15.67444</span></span>
-<span><span class="co">## 4     21.73372     16.38733 15.62982</span></span>
-<span><span class="co">## 5     21.21483     15.84687 15.59343</span></span>
-<span><span class="co">## 6     21.57237     19.93225 15.56567</span></span></code></pre>
+<span><span class="co">## 1    11.176780     16.99347 15.52494</span></span>
+<span><span class="co">## 2    15.594461     19.81166 15.60406</span></span>
+<span><span class="co">## 3     9.735282     19.15828 15.50643</span></span>
+<span><span class="co">## 4    13.234880     16.37651 15.54988</span></span>
+<span><span class="co">## 5    10.957662     15.81201 15.55619</span></span>
+<span><span class="co">## 6    12.868973     19.97435 15.57233</span></span></code></pre>
 <p>The second is <strong>distribution_plot</strong>, a ggplot2 object
 visualizing the bootstrap distributions of tau for each covariate.</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
