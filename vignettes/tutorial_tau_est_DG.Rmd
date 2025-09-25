@@ -44,7 +44,7 @@ print(head(spike.rasters))
 The data takes the form of a dataframe the rows of which each represent a single recorded spike. Each column gives relevant metadata, such as the time in the recording of the spike, the identity of the neuron that fired the spike, and the hemisphere in which that neuron was recorded. The function [load.rasters.as.neurons](../reference/load.rasters.as.neurons.html) will convert a compact raster of spikes like this one (a dataframe or file name to a csv importable as such) into **neuron** objects (one per cell), so long as it has the recognized columns: **cell**, **time_in_ms**, and **trial**. If the optional columns **recording_name**, **hemisphere**, **genotype**, **sex**, **region**, or **age** are included, they will be recognized and added as metadata to the neuron objects. 
 
 ```{r create_neuron_objects}
-neurons <- load.rasters.as.neurons(spike.rasters, bin_size = 5)
+neurons <- load.rasters.as.neurons(spike.rasters, bin_size = 10)
 cat("Number of cells discovered:", length(neurons))
 ```
 
