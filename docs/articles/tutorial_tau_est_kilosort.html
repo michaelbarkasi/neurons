@@ -437,7 +437,7 @@ empirical autocorrelation.</p>
 <code class="sourceCode R"><span><span class="co"># Fetch and print exponential decay parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">fetch_EDF_parameters</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##            A          tau    bias_term </span></span>
-<span><span class="co">## 8.386941e-01 1.089698e+01 3.080561e-04</span></span></code></pre>
+<span><span class="co">## 0.0010000000 5.0000000000 0.0003080561</span></span></code></pre>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fetch and print exponential decay parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_low</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">fetch_EDF_parameters</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -599,12 +599,12 @@ simulation.</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.bootstraps</span><span class="op">$</span><span class="va">resamples</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##   RH_Mecp2 HET LH_Shank3 KO   LH_C57</span></span>
-<span><span class="co">## 1     20.40613     16.79377 15.48818</span></span>
-<span><span class="co">## 2     22.45598     19.47728 15.46832</span></span>
-<span><span class="co">## 3     21.76957     19.19992 15.49292</span></span>
-<span><span class="co">## 4     21.08297     16.37977 15.43936</span></span>
-<span><span class="co">## 5     20.40704     15.91490 15.49325</span></span>
-<span><span class="co">## 6     21.47755     19.76403 15.52864</span></span></code></pre>
+<span><span class="co">## 1     20.40157     20.96111 9.168224</span></span>
+<span><span class="co">## 2     20.43003     23.46845 9.193223</span></span>
+<span><span class="co">## 3     16.97245     25.84013 9.141002</span></span>
+<span><span class="co">## 4     21.23175     16.88663 9.266323</span></span>
+<span><span class="co">## 5     18.58005     20.01192 9.415530</span></span>
+<span><span class="co">## 6     19.12619     25.10195 9.211303</span></span></code></pre>
 <p>The second is <strong>distribution_plot</strong>, a ggplot2 object
 visualizing the bootstrap distributions of tau for each covariate.</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">

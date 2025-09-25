@@ -408,7 +408,7 @@ NumericVector dg_sigma_formula(
     //   X1*X2 != 0 only if both X1 and X2 > threshold, which occurs with probability Phi2_upper.
     NumericVector residuals(dim);
     for (int i = 0; i < dim; i++) {
-      residuals[i] = cov[i] - Phi2_upper - (1 - Phi) * (1 - Phi);
+      residuals[i] = cov[i] - Phi2_upper + (1 - Phi) * (1 - Phi);
     }
     
     return residuals;

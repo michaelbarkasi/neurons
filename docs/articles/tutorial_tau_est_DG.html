@@ -357,12 +357,13 @@ and testing, the “sum” function works best, presumably because it
 preserves the most information about correlation.</p>
 <p>Time binning introduces a dilemma. On the one hand, it’s essential
 for avoiding autocorrelation values of zero. On the other hand, it
-violates the mathematical assumptions of the dichotomized Gaussian
-approach. The violation will be pointed out below, but for now note that
-the best approach seems to be a middle path. A large time bin, such as
-20ms, results in robust autocorrelation estimates from the spike data,
-but leads to unreliable dichotomized Gaussian simulations. A small time
-bin, such as 1ms, leads to unreliable empirical autocorrelation
+violates a key mathematical fact underlying the dichotomized Gaussian
+approach. This is the fact, to be explained below, that:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><msubsup><mi>Φ</mi><mn>2</mn><mo>+</mo></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{E}[X_{i_1}X_{i_2}]=\Phi_2^+(\gamma,K_{V_{i_1}V_{i_2}})</annotation></semantics></math>
+Hence, the best approach seems to be a middle path. A large time bin,
+such as 20ms, results in robust autocorrelation estimates from the spike
+data, but leads to unreliable dichotomized Gaussian simulations. A small
+time bin, such as 1ms, leads to unreliable empirical autocorrelation
 estimates, but reliable dichotomized Gaussian simulations. The default
 (5ms) falls in the middle. Whatever the chosen bin size, a rolling mean
 is taken to smooth the empirical autocorrelation value.</p>
@@ -462,13 +463,13 @@ results in a data frame.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">autocor.results.batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/process.autocorr.html">process.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.batch</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##       cell    lambda_ms  lambda_bin            A       tau    bias_term    autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
-<span><span class="co">## 1 neuron_1 0.0021196442 0.010598221 17.051925452 10.681954 1.123223e-04 17.052037774 10.678095442  9.377244e-02 1.123223e-04</span></span>
-<span><span class="co">## 2 neuron_2 0.0003823936 0.001911968  0.003046162  5.000049 3.655622e-06  0.003049817  0.001124287  9.468156e-06 3.655622e-06</span></span>
-<span><span class="co">## 3 neuron_3 0.0036099494 0.018049747  0.014032331 14.018229 3.257934e-04  0.014358124  0.010148391  4.324439e-04 3.257934e-04</span></span>
-<span><span class="co">## 4 neuron_4 0.0017867616 0.008933808  0.006903329 12.226625 7.981293e-05  0.006983142  0.004666051  1.243205e-04 7.981293e-05</span></span>
-<span><span class="co">## 5 neuron_5 0.0096557914 0.048278957  0.044396662 10.644490 2.330858e-03  0.046727520  0.030086460  2.572060e-03 2.330858e-03</span></span>
-<span><span class="co">## 6 neuron_6 0.0087146980 0.043573490  0.033422659 10.241355 1.898649e-03  0.035321308  0.022410800  2.071619e-03 1.898649e-03</span></span></code></pre>
+<pre><code><span><span class="co">##       cell    lambda_ms  lambda_bin           A       tau    bias_term   autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
+<span><span class="co">## 1 neuron_1 0.0021196442 0.010598221 0.008935512 10.103940 1.123223e-04 0.009047834  0.005559932  1.580797e-04 1.123223e-04</span></span>
+<span><span class="co">## 2 neuron_2 0.0003823936 0.001911968 0.003046162  5.000049 3.655622e-06 0.003049817  0.001124287  9.468156e-06 3.655622e-06</span></span>
+<span><span class="co">## 3 neuron_3 0.0036099494 0.018049747 0.014032331 14.018229 3.257934e-04 0.014358124  0.010148391  4.324439e-04 3.257934e-04</span></span>
+<span><span class="co">## 4 neuron_4 0.0017867616 0.008933808 0.006903329 12.226625 7.981293e-05 0.006983142  0.004666051  1.243205e-04 7.981293e-05</span></span>
+<span><span class="co">## 5 neuron_5 0.0096557914 0.048278957 0.044396662 10.644490 2.330858e-03 0.046727520  0.030086460  2.572060e-03 2.330858e-03</span></span>
+<span><span class="co">## 6 neuron_6 0.0087146980 0.043573490 0.033422659 10.241355 1.898649e-03 0.035321308  0.022410800  2.071619e-03 1.898649e-03</span></span></code></pre>
 <h2>
 Estimating network time constants
 </h2>
@@ -604,7 +605,7 @@ is stipulated to be a standard normal
 this cumulative distribution function is the standard normal cumulative
 distribution function
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Φ</mi><annotation encoding="application/x-tex">\Phi</annotation></semantics></math>:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><msqrt><mrow><mn>2</mn><mi>π</mi></mrow></msqrt></mfrac><msubsup><mo>∫</mo><mrow><mi>−</mi><mi>∞</mi></mrow><mi>x</mi></msubsup><msup><mi>e</mi><mrow><mi>−</mi><msup><mi>t</mi><mn>2</mn></msup><mi>/</mi><mn>2</mn></mrow></msup><mi>d</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">\Phi(x) = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^x e^{-t^2/2} dt</annotation></semantics></math>
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>1</mn><msqrt><mrow><mn>2</mn><mi>π</mi></mrow></msqrt></mfrac><msubsup><mo>∫</mo><mrow><mi>−</mi><mi>∞</mi></mrow><mi>x</mi></msubsup><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msup><mi>t</mi><mn>2</mn></msup><mi>/</mi><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow><mi>d</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">\Phi(x) = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^x \exp(-t^2/2) dt</annotation></semantics></math>
 Thus:
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo>=</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>V</mi><mi>i</mi></msub><mo>&gt;</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mo>−</mo><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">P(X=1) = P(V_i&gt;\gamma) = 1 - \Phi(\gamma)</annotation></semantics></math>
 In the above plot, the function
@@ -653,24 +654,14 @@ then each
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><mi>i</mi></msub><annotation encoding="application/x-tex">V_i</annotation></semantics></math>
 should not be thought of as a separate neuron, but rather as the same
 neuron at different time points.</p>
-<p>While this is an insightful idea, it’s mathematically impossible. The
-issue is that the operation of thresholding, needed to convert a
-Gaussian variable
+<p>While this is an insightful idea, the operation of thresholding,
+needed to convert a Gaussian variable
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><mi>i</mi></msub><annotation encoding="application/x-tex">V_i</annotation></semantics></math>
 into a simulated binary spike variable
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mi>i</mi></msub><annotation encoding="application/x-tex">X_i</annotation></semantics></math>,
 will change the correlation:
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo>≠</mo><msub><mi>R</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub></mrow><annotation encoding="application/x-tex">R_{V_{i_1}V_{i_2}} \neq R_{X_{i_1}X_{i_2}}</annotation></semantics></math>
-However, just as there is a predictable relationship between the
-threshold
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>γ</mi><annotation encoding="application/x-tex">\gamma</annotation></semantics></math>
-and spike rate
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math>,
-there is also a predictable relationship between the correlations
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">R_{V_{i_1}V_{i_2}}</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">R_{X_{i_1}X_{i_2}}</annotation></semantics></math>.</p>
-<p>Let’s derive this relationship. Suppose we know the autocorrelation
+However, all is not lost. Given some autocorrelation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">R_{X_{i_1}X_{i_2}}</annotation></semantics></math>
 between two time bins
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><annotation encoding="application/x-tex">X_{i_1}</annotation></semantics></math>
@@ -678,47 +669,81 @@ and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub><annotation encoding="application/x-tex">X_{i_2}</annotation></semantics></math>
 separated by lag
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math>
-and know that the neuron
+for a neuron
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
-spikes with rate
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math>
-across all time bins. We want to find the correlation
+with spike rate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math>,
+a correlation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">R_{V_{i_1}V_{i_2}}</annotation></semantics></math>
-between the corresponding Gaussian variables
+can often be found which, when these variables
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><mi>i</mi></msub><annotation encoding="application/x-tex">V_i</annotation></semantics></math>
+are thresholded by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><msup><mi>Φ</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\gamma = \Phi^{-1}(1-\lambda)</annotation></semantics></math>,
+gives back the original correlation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">R_{X_{i_1}X_{i_2}}</annotation></semantics></math>.
+Actually, in this case, it’s the covariance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">K_{V_{i_1}V_{i_2}}</annotation></semantics></math>
+that is sought. Knowing the correlation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">R_{V_{i_1}V_{i_2}}</annotation></semantics></math>
+is not critical, although because
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>V</mi><annotation encoding="application/x-tex">V</annotation></semantics></math>
+is normal,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo>=</mo><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub></mrow><annotation encoding="application/x-tex">R_{V_{i_1}V_{i_2}} = K_{V_{i_1}V_{i_2}}</annotation></semantics></math>.</p>
+<p>By definition, the covariance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>K</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo>=</mo><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>−</mo><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">K_{X_{i_1}X_{i_2}} = \text{E}[X_{i_1}X_{i_2}] - \text{E}[X_{i_1}]\text{E}[X_{i_2}]</annotation></semantics></math>.
+For all
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>V</mi><mi>i</mi></msub><mo>&gt;</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mo>−</mo><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{E}[X_{i}] = P(V_{i}&gt;\gamma)=1-\Phi(\gamma)</annotation></semantics></math>.
+Further, notice that the expected value of the product
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow><annotation encoding="application/x-tex">X_{i_1}X_{i_2}</annotation></semantics></math>
+is given by the upper-tail cumulative distribution function of a
+bivariate normal distribution with covariance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">K_{V_{i_1}V_{i_2}}</annotation></semantics></math>,
+evaluated at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>γ</mi><annotation encoding="application/x-tex">\gamma</annotation></semantics></math>
+for both components:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><msubsup><mi>Φ</mi><mn>2</mn><mo>+</mo></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{E}[X_{i_1}X_{i_2}] = \Phi_2^+(\gamma,K_{V_{i_1}V_{i_2}})</annotation></semantics></math>
+For a threshold
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>Φ</mi><mn>2</mn><mo>+</mo></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>,</mo><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\Phi_2^+(x,K_{V_{i_1}V_{i_2}})</annotation></semantics></math>
+is the probability that both components of a bivariate normal
+distribution with covariance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">K_{V_{i_1}V_{i_2}}</annotation></semantics></math>
+are greater than
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right"><msubsup><mi>Φ</mi><mn>2</mn><mo>+</mo></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>,</mo><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>V</mi><mn>1</mn></msub><mo>&gt;</mo><mi>x</mi><mo>,</mo><msub><mi>V</mi><mn>2</mn></msub><mo>&gt;</mo><mi>x</mi><mspace width="0.278em"></mspace><mo stretchy="false" form="prefix">|</mo><mspace width="0.278em"></mspace><msub><mi>V</mi><mn>1</mn></msub><mo>,</mo><msub><mi>V</mi><mn>2</mn></msub><mo>∼</mo><mtext mathvariant="normal">MVN</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi>μ</mi><mo>=</mo><mn>0</mn><mo>,</mo><mi>σ</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>K</mi><mo>=</mo><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mfrac><mn>1</mn><msqrt><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>2</mn><mi>π</mi><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mi>𝐝</mi><mi>𝐞</mi><mi>𝐭</mi></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msqrt></mfrac><msubsup><mo>∫</mo><mi>x</mi><mi>∞</mi></msubsup><msubsup><mo>∫</mo><mi>x</mi><mi>∞</mi></msubsup><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">⟨</mo><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub><msup><mo stretchy="false" form="postfix">⟩</mo><mtext mathvariant="normal">T</mtext></msup><msubsup><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow><mrow><mi>−</mi><mn>1</mn></mrow></msubsup><mo stretchy="false" form="prefix">⟨</mo><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub><mo stretchy="false" form="postfix">⟩</mo><mo stretchy="true" form="postfix">)</mo></mrow><mi>d</mi><mo stretchy="false" form="prefix">⟨</mo><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub><mo stretchy="false" form="postfix">⟩</mo></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{align}
+  \Phi_2^+(x,K_{V_{i_1}V_{i_2}}) 
+    &amp;= P(V_1&gt;x, V_2&gt;x \;|\; V_1, V_2\sim \text{MVN}(\mu=0,\sigma=1,K=K_{V_{i_1}V_{i_2}})) \\
+    &amp;= \frac{1}{\sqrt{(2\pi)^2\mathbf{det}(K_{V_{i_1}V_{i_2}})}} 
+      \int_{x}^\infty \int_{x}^\infty \exp(-\frac{1}{2}\langle V_{i_1}V_{i_2}\rangle^\text{T}K_{V_{i_1}V_{i_2}}^{-1}\langle V_{i_1}V_{i_2}\rangle) d\langle V_{i_1}V_{i_2}\rangle
+\end{align}</annotation></semantics></math> Putting it all together:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>K</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo>=</mo><msubsup><mi>Φ</mi><mn>2</mn><mo>+</mo></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">K_{X_{i_1}X_{i_2}} = \Phi_2^+(\gamma,K_{V_{i_1}V_{i_2}}) - (1-\Phi(\gamma))^2</annotation></semantics></math>
+Thus, the covariance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">K_{V_{i_1}V_{i_2}}</annotation></semantics></math>
+between
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><annotation encoding="application/x-tex">V_{i_1}</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub><annotation encoding="application/x-tex">V_{i_2}</annotation></semantics></math>
-which, when thresholded by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><msup><mi>Φ</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\gamma = \Phi^{-1}(1-\lambda)</annotation></semantics></math>,
-gives back the correlation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">R_{X_{i_1}X_{i_2}}</annotation></semantics></math>.</p>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Φ</mi><mn>2</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>,</mo><msub><mi>K</mi><mi>V</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\Phi_2(x,K_V)</annotation></semantics></math>
-be the cumulative distribution function of a multivariate normal
-distribution
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><msub><mi>V</mi><mi>i</mi></msub></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\mu_{V_i}=0</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><msub><mi>V</mi><mi>i</mi></msub></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\sigma_{V_i}=1</annotation></semantics></math>
-for all components
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>)
-with covariance
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>,
-evaluated at
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>
-for all components:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Φ</mi><mn>2</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>,</mo><msub><mi>K</mi><mi>V</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>V</mi><mn>1</mn></msub><mo>≤</mo><mi>x</mi><mo>,</mo><msub><mi>V</mi><mn>2</mn></msub><mo>≤</mo><mi>x</mi><mo>,</mo><mi>…</mi><mspace width="0.278em"></mspace><mo stretchy="false" form="prefix">|</mo><mspace width="0.278em"></mspace><msub><mi>V</mi><mn>1</mn></msub><mo>,</mo><msub><mi>V</mi><mn>2</mn></msub><mo>,</mo><mi>…</mi><mo>∼</mo><mtext mathvariant="normal">MVN</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi>μ</mi><mo>=</mo><mn>0</mn><mo>,</mo><mi>σ</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>K</mi><mo>=</mo><msub><mi>K</mi><mi>V</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\Phi_2(x,K_V) = P(V_1\leq x, V_2\leq x, \ldots \;|\; V_1, V_2, \ldots \sim \text{MVN}(\mu=0,\sigma=1,K=K_V))</annotation></semantics></math>
-That is,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Φ</mi><mn>2</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>,</mo><msub><mi>K</mi><mi>V</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\Phi_2(x,K_V)</annotation></semantics></math>
-is the probability that all components of a multivariate normal
-distribution with covariance
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><mi>V</mi></msub><annotation encoding="application/x-tex">K_V</annotation></semantics></math>
-are less than or equal to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>.</p>
-<p>By definition, the empirical raw autocorrelation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">R_{X_{i_1}X_{i_2}}</annotation></semantics></math>
-can be written in terms of autocovariance, represented by the variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>,
-as follows:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo>=</mo><msub><mi>K</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo>+</mo><msub><mi>μ</mi><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub></msub><msub><mi>μ</mi><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></msub><mo>=</mo><mtext mathvariant="normal">Cov</mtext><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><mo>,</mo><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msup><mi>λ</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">R_{X_{i_1}X_{i_2}} = K_{X_{i_1}X_{i_2}} + \mu_{X_{i_1}}\mu_{X_{i_2}} = \text{Cov}(X_{i_1}, X_{i_2}) + \lambda^2</annotation></semantics></math></p>
+which, after dichotomization, yields covariance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">K_{X_{i_1}X_{i_2}}</annotation></semantics></math>,
+can be found by solving for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">K_{V_{i_1}V_{i_2}}</annotation></semantics></math>
+in the equation:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>=</mo><msub><mi>K</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo>−</mo><msubsup><mi>Φ</mi><mn>2</mn><mo>+</mo></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>,</mo><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">0=K_{X_{i_1}X_{i_2}} - \Phi_2^+(\gamma,K_{V_{i_1}V_{i_2}}) + (1-\Phi(\gamma))^2</annotation></semantics></math>
+The neurons package solves this equation for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">K_{V_{i_1}V_{i_2}}</annotation></semantics></math>
+using a root bisection algorithm.</p>
+<p>The only remaining task is to determine the covariance needed for a
+given desired autocorrelation. This is straightforward from the
+definitions of each type of correlation. For raw autocorrelation:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>K</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo>=</mo><msub><mi>R</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo>−</mo><msup><mi>λ</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">K_{X_{i_1}X_{i_2}} = R_{X_{i_1}X_{i_2}} - \lambda^2</annotation></semantics></math>for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math>
+in time units of bin. For Pearson autocorrelation:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>K</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo>=</mo><msub><mi>R</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><msubsup><mi>σ</mi><mi>X</mi><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">K_{X_{i_1}X_{i_2}} = R_{X_{i_1}X_{i_2}}\sigma_X^2</annotation></semantics></math>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>σ</mi><mi>X</mi><mn>2</mn></msubsup><annotation encoding="application/x-tex">\sigma_X^2</annotation></semantics></math>
+is the variance of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+again in bin units.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Run simulations</span></span>
 <span><span class="va">autocor.ests</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimate.autocorr.params.html">estimate.autocorr.params</a></span><span class="op">(</span></span>
