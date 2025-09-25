@@ -77,34 +77,7 @@
 
     
     
-<p>The extent to which an individual neuron feeds back on itself in a
-recurrent loop can be estimated by its autocorrelation, i.e., the
-correlation between the neuron’s membrane potential
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>v</mi><annotation encoding="application/x-tex">v</annotation></semantics></math>
-at time <em>t</em> and at time <em>t + lag</em>. The more a spike
-<em>now</em> increases the probability of a spike <em>later</em>, the
-stronger the neuron’s connection back onto itself. A neuron’s
-autocorrelation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>R</mi><annotation encoding="application/x-tex">R</annotation></semantics></math>
-can be modeled with an exponential decay function
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo>=</mo><mi>A</mi><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mi>l</mi><mi>/</mi><mi>τ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">R = A\exp(-l/\tau) + b</annotation></semantics></math>,
-where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>
-is the <em>amplitude</em> (autocorrelation at the initial lag),
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math>
-is lag,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-is the <em>network time constant</em>, and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
-is a constant (bias) term. The time constant
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-is a measure of how quickly the neuron’s autocorrelation decays back to
-baseline after a spike. A large
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-means that the neuron retains “memory” of its past activity for a longer
-period of time, while a small
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-means that the neuron quickly forgets its past activity.</p>
+<p>Intro here.</p>
 <h2>
 Load spike rasters
 </h2>
@@ -120,38 +93,7 @@ neurons package.</p>
 <span></span>
 <span><span class="co"># Load neurons package</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span> </span></code></pre></div>
-<p>Rasters from patch-clamp data.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">spike.rasters.exper</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
-<span>    <span class="st">"extdata"</span>, </span>
-<span>    <span class="st">"spike_rasters_2022data.csv"</span>, </span>
-<span>    package <span class="op">=</span> <span class="st">"neurons"</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<p>With the data preprocessed into spike rasters, the next step is to
-convert them into a special class of object from the neuron package,
-<strong>neuron</strong>.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">neurons.exper</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load.rasters.as.neurons.html">load.rasters.as.neurons</a></span><span class="op">(</span><span class="va">spike.rasters.exper</span><span class="op">)</span></span></code></pre></div>
-<p>We want to load the spike rasters as <strong>neuron</strong>s because
-<strong>neuron</strong>s come with built-in methods for plotting
-rasters, plotting autocorrelation, and estimating autocorrelation
-parameters with dichotomized Gaussian simulations.</p>
-<p>[plots of rasters here]</p>
-<h2>
-Estimate autocorrelation
-</h2>
-<h2>
-</h2>
-<p>Model autocorrelation decay&lt;/2&gt;</p>
-<h2>
-Estimate network time constant
-</h2>
-<p>[Don’t discuss the problem, simply mention it and link to the other
-tutorial.]</p>
-  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
-    </nav></aside>
+  </main>
 </div>
 
 

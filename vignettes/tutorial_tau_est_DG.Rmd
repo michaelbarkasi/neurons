@@ -44,11 +44,11 @@ print(head(spike.rasters))
 The data takes the form of a dataframe the rows of which each represent a single recorded spike. Each column gives relevant metadata, such as the time in the recording of the spike, the identity of the neuron that fired the spike, and the hemisphere in which that neuron was recorded. The function [load.rasters.as.neurons](../reference/load.rasters.as.neurons.html) will convert a compact raster of spikes like this one (a dataframe or file name to a csv importable as such) into **neuron** objects (one per cell), so long as it has the recognized columns: **cell**, **time_in_ms**, and **trial**. If the optional columns **recording_name**, **hemisphere**, **genotype**, **sex**, **region**, or **age** are included, they will be recognized and added as metadata to the neuron objects. 
 
 ```{r create_neuron_objects}
-neurons <- load.rasters.as.neurons(spike.rasters, bin_size = 10)
+neurons <- load.rasters.as.neurons(spike.rasters, bin_size = 10.0)
 cat("Number of cells discovered:", length(neurons))
 ```
 
-The **neuron** object class is native to C++ and integrated into neurons (an R package) via Rcpp. It comes with built-in methods for many tasks, such as plotting rasters, plotting autocorrelation, and estimating autocorrelation parameters with dichotomized Gaussian simulations. Some of these methods can be accessed through R, but neurons provides R-native wrappers for the most useful ones. The neurons package also provides native R functions for plotting. Let's plot the rasters for two cells. The first has high autocorrelation, as can be seen from the long horizontal streaks of spikes:
+The **neuron** object class is native to C++ and integrated into neurons (an R package) via Rcpp. It comes with built-in methods for many tasks, such as estimating autocorrelation parameters with dichotomized Gaussian simulations. Some of these methods can be accessed through R, but neurons provides R-native wrappers for the most useful ones. The neurons package also provides native R functions for plotting. Let's plot the rasters for two cells. The first has high autocorrelation, as can be seen from the long horizontal streaks of spikes:
 
 ```{r plot_raster_high_autocor}
 cell_high <- 16
@@ -88,11 +88,13 @@ where $N$ is the number of trials (columns) in $X$ and $Y$.
 
 The **neuron** object class has built-in methods for computing both the raw and Pearson empirical autocorrelation from a spike raster $S$, which is (of course) just a matrix for a random variable (spike or no-spike) sampled over time (rows) and trials (columns). The variable $S$ is discrete, with only two possible values: 1 for a spike, 0 for no spike. This binary nature means that $S$ does not play nicely with any of the empirical formulas given above. If given the raw binary input, these formulas will return zero or near zero autocorrelation. 
 
-For more cogent results, the rows (i.e., the time axis) of the matrix $S$ must be downsampled via binning. This binning is done automatically by the function [load.rasters.as.neurons](../reference/load.rasters.as.neurons.html) and can be controlled via its argument **bin_size**, which below is represented by $\Delta$. The default, used in the code above, is 5ms. 
+For more cogent results, the rows (i.e., the time axis) of the matrix $S$ must be downsampled via binning. This binning is done automatically by the function [load.rasters.as.neurons](../reference/load.rasters.as.neurons.html) and can be controlled via its argument **bin_size**, which below is represented by $\Delta$. The default, used in the code above, is 10ms. 
 
 A further question to decide when computing empirical autocorrelation is how to handle multiple spikes in a single bin. There are three options supported by the neurons package: "sum", "mean", and "boolean". The option is set via the argument **bin_count_action**, available in the functions [compute.autocorr](../reference/compute.autocorr.html), [process.autocorr](../reference/process.autocorr.html), and [estimate.autocorr.params](../reference/estimate.autocorr.params.html). In all cases, the default is "sum", meaning that the value of $S$ in a given bin on a given trial is the total count of spikes falling in that bin. The option "mean" will instead return the mean number of spikes in the bin, while "boolean" will return 1 if there is at least one spike in the bin and 0 otherwise. From *ad hoc* development and testing, the "sum" function works best, presumably because it preserves the most information about correlation. 
 
-Time binning introduces a dilemma. On the one hand, it's essential for avoiding autocorrelation values of zero. On the other hand, it violates a key mathematical fact underlying the dichotomized Gaussian approach. This is the fact, to be explained below, that: \[\text{E}[X_{i_1}X_{i_2}]=\Phi_2^+(\gamma,K_{V_{i_1}V_{i_2}})\] Hence, the best approach seems to be a middle path. A large time bin, such as 20ms, results in robust autocorrelation estimates from the spike data, but leads to unreliable dichotomized Gaussian simulations. A small time bin, such as 1ms, leads to unreliable empirical autocorrelation estimates, but reliable dichotomized Gaussian simulations. The default (5ms) falls in the middle. Whatever the chosen bin size, a rolling mean is taken to smooth the empirical autocorrelation value. 
+Time binning introduces a dilemma. On the one hand, it's essential for avoiding autocorrelation values of zero. On the other hand, it violates a key mathematical fact underlying the dichotomized Gaussian approach. This is the fact, explained below, that: 
+\[\text{E}[X_{i_1}X_{i_2}]=\Phi_2^+(\gamma,K_{V_{i_1}V_{i_2}})\] 
+Hence, the best approach seems to be a middle path. A large time bin, such as 20ms, results in robust autocorrelation estimates from the spike data, but leads to unreliable dichotomized Gaussian simulations. A small time bin, such as 1ms, leads to unreliable empirical autocorrelation estimates, but reliable dichotomized Gaussian simulations. The default (10ms) falls in the middle. Whatever the chosen bin size, a rolling mean is taken to smooth the empirical autocorrelation value. 
 
 <h3>Example autocorrelation calculations</h3>
 
@@ -146,7 +148,7 @@ The fitted model is plotted as the red line. The parameters of the exponential d
 print(neurons[[cell_high]]$fetch_EDF_parameters())
 ```
 
-In this case, the time constant tau is estimated to be 33ms and the initial autocorrelation $A$ is estimated to be 0.04. 
+In this case, the time constant tau is estimated to be `r round(neurons[[cell_high]]$fetch_EDF_parameters()["tau"],1)`ms and the initial autocorrelation $A$ is estimated to be `r round(neurons[[cell_high]]$fetch_EDF_parameters()["A"],3)`. 
 
 The above shows empirical autocorrelation and model fit being performed in separate steps and for only one neuron at a time. The function [process.autocorr](../reference/process.autocorr.html) will perform both steps at once for an entire list of neurons and return the results in a data frame. 
 
@@ -255,27 +257,86 @@ Thus, the covariance $K_{V_{i_1}V_{i_2}}$ between $V_{i_1}$ and $V_{i_2}$ which,
 \[0=K_{X_{i_1}X_{i_2}} - \Phi_2^+(\gamma,K_{V_{i_1}V_{i_2}}) + (1-\Phi(\gamma))^2\]
 The neurons package solves this equation for $K_{V_{i_1}V_{i_2}}$ using a root bisection algorithm. 
 
-The only remaining task is to determine the covariance needed for a given desired autocorrelation. This is straightforward from the definitions of each type of correlation. For raw autocorrelation: \[K_{X_{i_1}X_{i_2}} = R_{X_{i_1}X_{i_2}} - \lambda^2\]for $\lambda$ in time units of bin. For Pearson autocorrelation: \[K_{X_{i_1}X_{i_2}} = R_{X_{i_1}X_{i_2}}\sigma_X^2\]where $\sigma_X^2$ is the variance of $X$ again in bin units.
+The only remaining task is to determine the covariance needed for a given desired autocorrelation. This is straightforward from the definitions of each type of correlation. For raw autocorrelation: \[K_{X_{i_1}X_{i_2}} = R_{X_{i_1}X_{i_2}} - \lambda^2\]for $\lambda$ in time units of bin. For Pearson autocorrelation: \[K_{X_{i_1}X_{i_2}} = R_{X_{i_1}X_{i_2}}\sigma_X^2\]where $\sigma_X^2$ is the variance of $X$, again in bin units.
 
-... Workflow: compute empirical autocorrelation, fit with model, use predicted autocorrelation to set desired $R_X$, find Gaussian parameters like $K_V$, use them to run many simulations. For each simluationk , compute empirical autocorrelation, fit with model, collect the fitted parameters. The distribution of these fitted parameters across simulations is the estimate of the uncertainty in the original fit.
+<h3>Running and bootstrapping simulations</h3>
 
+The function [estimate.autocorr.params](../reference/estimate.autocorr.params.html) takes a list of neurons and:
 
-```{r}
+1. Computes the empirical autocorrelation of each neuron.
+2. Fits an exponential decay model to that empirical autocorrelation.
+3. Generates many simulated spike trains (dichotomized Gaussians) based on the values $R_{XX}$ predicted by the model of the empirical autocorrelation and the observed firing rate $\lambda$ of the neuron.
+4. Computes the empirical autocorrelation of each simulated spike train.
+5. Fits an exponential decay model to the empirical autocorrelation of each simulated spike train.
 
-# Run simulations
+This procedure yields a distribution of possible $\tau$ values for each neuron. For the purpose of speed, this tutorial runs only 100 simulations per neuron, but in practice, 1000 or more simulations should be run. 
+
+```{r run_simulations}
 autocor.ests <- estimate.autocorr.params(
-  neuron_list = neurons,
-  n_trials_per_sim = 500, 
-  n_sims_per_neurons = 100,
-  use_raw = TRUE
+    neuron_list = neurons,
+    n_trials_per_sim = 500, 
+    n_sims_per_neurons = 100,
+    use_raw = TRUE
+  )
+print(head(autocor.ests$estimates))
+```
+
+With the simulations run, the final step is to estimate the network time constant for covariates of interest. The function [analyze.autocorr](../reference/analyze.autocorr.html) does this by bootstrapping over the tau values obtained from the simulations. If there are $n$ neurons in a covariate level, $m$ simulations have been run per neuron, then each bootstrap resample consists of the mean of $n$ draws with replacement from the pool of $nm$ values for $\tau$. For this tutorial, 10k bootstrap resamples are used.
+
+```{r run_analysis}
+autocor.results.bootstraps <- analyze.autocorr(
+    autocor.ests,
+    covariate = c("hemi","genotype"),
+    n_bs = 1e4
+  )
+```
+
+The function [analyze.autocorr](../reference/analyze.autocorr.html) returns a list with two objects. The first is **resamples**, a dataframe holding the tau values for each covariate from each simulation. 
+
+```{r resamples}
+print(head(autocor.results.bootstraps$resamples))
+```
+
+The second is **distribution_plot**, a ggplot2 object visualizing the bootstrap distributions of tau for each covariate.
+
+```{r plot_distribution}
+print(autocor.results.bootstraps$distribution_plot)
+``` 
+
+<h2>Code summary</h2> 
+
+The essential steps to run this analysis are as follows: 
+
+```{r code_summary, eval=FALSE}
+# Setup
+rm(list = ls())
+set.seed(12345) 
+library(neurons) 
+
+# Load demo data
+spike.rasters <- read.csv(
+  system.file(
+      "extdata", 
+      "spike_rasters_2022data.csv", 
+      package = "neurons"
+    )
   )
 
-# Run analysis
-autocor.results.bootstraps <- analyze.autocorr(
-  autocor.ests,
-  covariate = c("hemi","genotype"),
-  n_bs = 1e4
-)
-print(autocor.results.bootstraps$distribution_plot)
+# Create neuron objects
+neurons <- load.rasters.as.neurons(spike.rasters, bin_size = 10.0)
 
+# Run dichotomized Gaussian simulations 
+autocor.ests <- estimate.autocorr.params(
+    neuron_list = neurons,
+    n_trials_per_sim = 500, 
+    n_sims_per_neurons = 100,
+    use_raw = TRUE
+  )
+
+# Analyze results by covariate
+autocor.results.bootstraps <- analyze.autocorr(
+    autocor.ests,
+    covariate = c("hemi","genotype"),
+    n_bs = 1e4
+  )
 ```

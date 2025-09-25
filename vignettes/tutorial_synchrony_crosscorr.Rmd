@@ -7,9 +7,7 @@ title: "Spike synchrony via cross-correlation"
 options(width = 10000)
 ```
 
-The extent to which an individual neuron feeds back on itself in a recurrent loop can be estimated by its autocorrelation, i.e., the correlation between the neuron's membrane potential $v$ at time *t* and at time *t + lag*. The more a spike *now* increases the probability of a spike *later*, the stronger the neuron's connection back onto itself. A neuron's autocorrelation $R$ can be modeled with an exponential decay function $R = A\exp(-l/\tau) + b$, where $A$ is the *amplitude* (autocorrelation at the initial lag), $l$ is lag, $\tau$ is the *network time constant*, and $b$ is a constant (bias) term. The time constant $\tau$ is a measure of how quickly the neuron's autocorrelation decays back to baseline after a spike. A large $\tau$ means that the neuron retains "memory" of its past activity for a longer period of time, while a small $\tau$ means that the neuron quickly forgets its past activity.
-
-
+Intro here.
 
 <h2>Load spike rasters</h2>
 
@@ -25,33 +23,3 @@ set.seed(12345)
 # Load neurons package
 library(neurons) 
 ```
-
-Rasters from patch-clamp data.
-
-```{r load rasters}
-spike.rasters.exper <- read.csv(
-  system.file(
-    "extdata", 
-    "spike_rasters_2022data.csv", 
-    package = "neurons"
-    )
-  )
-```
-
-With the data preprocessed into spike rasters, the next step is to convert them into a special class of object from the neuron package, **neuron**. 
-
-```{r create_neuron_objects}
-neurons.exper <- load.rasters.as.neurons(spike.rasters.exper)
-```
-
-We want to load the spike rasters as **neuron**s because **neuron**s come with built-in methods for plotting rasters, plotting autocorrelation, and estimating autocorrelation parameters with dichotomized Gaussian simulations. 
-
-[plots of rasters here]
-
-<h2>Estimate autocorrelation</h2>
-
-<h2>Model autocorrelation decay</2>
-
-<h2>Estimate network time constant</h2>
-
-[Don't discuss the problem, simply mention it and link to the other tutorial.]

@@ -80,15 +80,16 @@
 <p>The neurons package provides functions to use <a href="tutorial_tau_est_DG.html">dichotomized Gaussians to estimate
 network time constants</a> on different kinds of spike data (<a href="https://doi.org/10.1162/neco.2008.02-08-713" class="external-link">Macke et
 al. 2009</a>, <a href="https://doi.org/10.1371/journal.pbio.3001803" class="external-link">Neophytou et
-al. 2022</a>), including kilosort4 output. <a href="https://doi.org/10.1038/s41592-024-02232-7" class="external-link">KiloSort4</a> is a <a href="https://github.com/MouseLand/Kilosort" class="external-link">Python package</a> for
-extracting spike clusters (a proxy for individual neurons) from
-multi-channel probe recordings. Network time constants provide an
-estimate of recurrence by quantifying decay in spiking autocorrelation
-as a function of lag time. A higher network time constant indicates that
-a neuron receives a larger number of projections back on itself.
-Intuitively, the longer into the future a spike <em>now</em> increases
-the probability of a spike <em>later</em>, the stronger the connections
-from that neuron back onto itself must be.</p>
+al. 2022</a>), including kilosort4 output. <a href="https://doi.org/10.1038/s41592-024-02232-7" class="external-link">KiloSort4</a> is a <a href="https://github.com/MouseLand/Kilosort" class="external-link">Python package</a>,
+completely distinct from the neurons package, for extracting spike
+clusters (a proxy for individual neurons) from multi-channel probe
+recordings. Network time constants provide an estimate of recurrence by
+quantifying decay in spiking autocorrelation as a function of lag time.
+A higher network time constant indicates that a neuron receives a larger
+number of projections back on itself. Intuitively, the longer into the
+future a spike <em>now</em> increases the probability of a spike
+<em>later</em>, the stronger the connections from that neuron back onto
+itself must be.</p>
 <h2>
 Load data
 </h2>
@@ -205,11 +206,11 @@ data.</p>
 <span><span class="co">## 2025-02-20_16-19-12   RH Mecp2 HET P79   F</span></span>
 <span><span class="co">## 2025-02-20_17-04-02   RH Mecp2 HET P79   F</span></span></code></pre>
 <h2>
-Preprocess data into spike rasters
+Preprocessing kilosort4 data into spike rasters
 </h2>
 <p>The function <a href="../reference/preprocess.kilo4.html">preprocess.kilo4</a> converts
-cluster spike times into spike rasters of the standardized format
-expected by the neurons package.</p>
+cluster spike times into spike rasters of the format expected by the
+neurons package.</p>
 <h3>
 Parsing trials and quality control
 </h3>
@@ -237,11 +238,11 @@ some time later.</p>
 <span>    stim_responsive_only <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>    verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span>  <span class="op">)</span> </span></code></pre></div>
-<p>A path (such as <strong>demo_data</strong>) for the actual data must
-be passed to <a href="../reference/preprocess.kilo4.html">preprocess.kilo4</a>. Metadata
-(such as <strong>kilo4_metadata</strong>) will usually be provided, but
-is not necessary for the function to run. If left out, the preprocessed
-output will simply lack information about covariates.</p>
+<p>A path (such as <strong>demo_data</strong>) for the data must be
+passed to <a href="../reference/preprocess.kilo4.html">preprocess.kilo4</a>. Metadata
+(such as <strong>kilo4_metadata</strong>) is not necessary for the
+function to run. If left out, the preprocessed output will lack
+information about covariates.</p>
 <p>In addition to the start and stop times and pointers to the data, <a href="../reference/preprocess.kilo4.html">preprocess.kilo4</a> has three
 Boolean variables controlling the quality of clusters extracted for
 further analysis:</p>
@@ -322,9 +323,8 @@ in the output?</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Number of cells included:"</span>, <span class="va">n_cells</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Number of cells included: 37</span></span></code></pre>
 <p>The number of cells and summary statistics, such as mean spike and
-trial count, can be pulled for each covariate combination as well. While
-this can be done with minimal code by hand, the function <a href="../reference/summarize.cluster.key.html">summarize.cluster.key</a>
-automates this process.</p>
+trial count, can be pulled for each covariate combination with the
+function <a href="../reference/summarize.cluster.key.html">summarize.cluster.key</a>.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Print results </span></span>
 <span><span class="va">covariate_summary</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/summarize.cluster.key.html">summarize.cluster.key</a></span><span class="op">(</span></span>
@@ -364,18 +364,20 @@ objects and return them in a list.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">neurons</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load.rasters.as.neurons.html">load.rasters.as.neurons</a></span><span class="op">(</span></span>
 <span>    <span class="va">spike.rasters</span><span class="op">$</span><span class="va">spikes</span>, </span>
-<span>    bin_size <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>    bin_size <span class="op">=</span> <span class="fl">10.0</span>,</span>
 <span>    sample_rt <span class="op">=</span> <span class="fl">1e3</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<p>Class <strong>neuron</strong> comes with built-in methods for
-plotting rasters, plotting autocorrelation, and estimating
-autocorrelation parameters with dichotomized Gaussian simulations. These
-methods can be accessed directly via the Rcpp objects, or through
-wrappers provided by the neurons package.</p>
+<p>The <strong>neuron</strong> object class is native to C++ and
+integrated into neurons (an R package) via Rcpp. It comes with built-in
+methods for many tasks, such as estimating autocorrelation parameters
+with dichotomized Gaussian simulations. Some of these methods can be
+accessed through R, but neurons provides R-native wrappers for the most
+useful ones. The neurons package also provides native R functions for
+plotting.</p>
 <h3>
 Visualizing autocorrelation
 </h3>
-<p>For example, here is the raster from one cell, plotted with the <a href="../reference/plot.raster.html">plot.raster</a> wrapper:</p>
+<p>For example, here is the raster from one cell, plotted with the <a href="../reference/plot.raster.html">plot.raster</a> function:</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cell_high</span> <span class="op">&lt;-</span> <span class="fl">25</span></span>
 <span><span class="fu"><a href="../reference/plot-raster.html">plot.raster</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> </span></code></pre></div>
@@ -400,13 +402,12 @@ quantified both by using the raster data to compute the empirical
 correlation between spikes separated by different lag times (empirical
 autocorrelation), and by fitting an exponential decay model to those
 empirically estimated spike correlations. The empirical autocorrelation
-can be computed with centering-and-normalization, or without (i.e., “raw
-autocorrelation”). The <a href="tutorial_tau_est_DG.html">tutorial on
-estimating network time constants</a> provides a comparison between
-empirical vs population autocorrelation, and centered-and-normalized vs
-raw autocorrelation. The class <strong>neuron</strong> provides a method
-for computing both versions of empirical autocorrelation, and the
-neurons package provides a wrapper <a href="../reference/compute.autocorr.html">compute.autocorr</a> with
+can be computed with centering-and-normalization (i.e., Pearson
+correlation), or without (i.e., raw correlation). The <a href="tutorial_tau_est_DG.html">tutorial on estimating network time
+constants</a> provides a comparison between empirical vs population
+autocorrelation, and Pearson vs raw autocorrelation. The class
+<strong>neuron</strong> provides a method for computing both versions of
+empirical autocorrelation, and the neurons package provides a wrapper <a href="../reference/compute.autocorr.html">compute.autocorr</a> with
 default parameters to access it. Similarly, there is a method and
 corresponding wrapper <a href="../reference/fit.edf.autocorr.html">fit.edf.autocorr</a> for
 fitting a decay model to the empirical estimate. Here, for example,
@@ -437,34 +438,71 @@ empirical autocorrelation.</p>
 <code class="sourceCode R"><span><span class="co"># Fetch and print exponential decay parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">fetch_EDF_parameters</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##            A          tau    bias_term </span></span>
-<span><span class="co">## 8.549401e-03 6.734354e+01 3.080561e-04</span></span></code></pre>
+<span><span class="co">## 2.964153e-02 1.158360e+02 1.232224e-03</span></span></code></pre>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fetch and print exponential decay parameters</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_low</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">fetch_EDF_parameters</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##            A          tau    bias_term </span></span>
-<span><span class="co">## 4.538731e-03 5.000139e+00 6.807511e-06</span></span></code></pre>
+<span><span class="co">## 3.905183e-03 4.372462e+01 2.723004e-05</span></span></code></pre>
 <p>The amplitude,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>,
 gives the autocorrelation at lag time 1 (minus the bias), while the time
 constant,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
 (tau), gives the rate of decay in autocorrelation as lag time increases.
-Notice how the high-autocorrelation cell has a time constant of 131ms
-and an amplitude of 0.07, while the low-autocorrelation cell has a time
-constant of only 20ms and an amplitude of 0.006.</p>
+Notice how the high-autocorrelation cell has a time constant of 115.8ms
+and an amplitude of 0.03, while the low-autocorrelation cell has a time
+constant of only 43.7ms and an amplitude of 0.004.</p>
 <p>In practice, the individual steps shown above do not need to be run
 with separate method calls. The neurons package provides a function, <a href="../reference/process.autocorr.html">process.autocorr</a>, which
-does all of these steps in one call for a list of neurons.</p>
+does all of these steps in one call for a list of neurons. Here is the
+function run on the current set of neurons, with full print out of
+results:</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">autocor.results.batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/process.autocorr.html">process.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.batch</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##       cell   lambda_ms  lambda_bin           A      tau    bias_term   autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
-<span><span class="co">## 1 neuron_1 0.002458518 0.012292591 0.009056644 12.72122 0.0001511078 0.009207752  0.006264335  0.0002131866 0.0001511078</span></span>
-<span><span class="co">## 2 neuron_2 0.001918199 0.009590996 0.007685403 11.53797 0.0000919872 0.007777390  0.005074683  0.0001387488 0.0000919872</span></span>
-<span><span class="co">## 3 neuron_3 0.003054323 0.015271613 4.194365807 10.69454 0.0002332222 4.194599029  2.628208605  0.0234576460 0.0002332222</span></span>
-<span><span class="co">## 4 neuron_4 0.003245878 0.016229391 4.195703560 10.68683 0.0002633931 4.195966953  2.628191251  0.0234742769 0.0002633931</span></span>
-<span><span class="co">## 5 neuron_5 0.005471888 0.027359438 0.024046202 20.06005 0.0007485388 0.024794741  0.019489760  0.0010289001 0.0007485388</span></span>
-<span><span class="co">## 6 neuron_6 0.002979021 0.014895107 0.012270280 11.95191 0.0002218642 0.012492144  0.008297382  0.0002998248 0.0002218642</span></span></code></pre>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">autocor.results.batch</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##         cell    lambda_ms  lambda_bin           A       tau    bias_term   autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
+<span><span class="co">## 1   neuron_1 0.0024585183 0.024585183 0.012067056  71.37481 6.044312e-04 0.012671487  0.011093920  1.135793e-03 6.044312e-04</span></span>
+<span><span class="co">## 2   neuron_2 0.0019181991 0.019181991 0.009126643  71.81541 3.679488e-04 0.009494591  0.008308256  7.724912e-04 3.679488e-04</span></span>
+<span><span class="co">## 3   neuron_3 0.0030543226 0.030543226 0.017661381  82.14318 9.328886e-04 0.018594270  0.016569917  1.836363e-03 9.328888e-04</span></span>
+<span><span class="co">## 4   neuron_4 0.0032458782 0.032458782 0.014882406  78.08601 1.053573e-03 0.015935978  0.014147071  1.774952e-03 1.053573e-03</span></span>
+<span><span class="co">## 5   neuron_5 0.0054718876 0.054718876 0.051480600  70.30975 2.994155e-03 0.054474755  0.047649645  5.224807e-03 2.994155e-03</span></span>
+<span><span class="co">## 6   neuron_6 0.0029790213 0.029790213 0.016318386  67.29038 8.874568e-04 0.017205843  0.014952363  1.561959e-03 8.874568e-04</span></span>
+<span><span class="co">## 7   neuron_7 0.0018270450 0.018270450 0.009617739  54.85215 3.338094e-04 0.009951548  0.008348698  6.523030e-04 3.338094e-04</span></span>
+<span><span class="co">## 8   neuron_8 0.0010396851 0.010396851 0.005687176  52.10008 1.080945e-04 0.005795270  0.004802049  2.860916e-04 1.080945e-04</span></span>
+<span><span class="co">## 9   neuron_9 0.0010211900 0.010211900 0.005913492  41.77791 1.042829e-04 0.006017775  0.004758974  2.490937e-04 1.042829e-04</span></span>
+<span><span class="co">## 10 neuron_10 0.0016103889 0.016103889 0.014570541  62.30812 2.593352e-04 0.014829876  0.012669415  8.136122e-04 2.593352e-04</span></span>
+<span><span class="co">## 11 neuron_11 0.0026712112 0.026712112 0.021281033  63.47338 7.135369e-04 0.021994570  0.018892587  1.539475e-03 7.135369e-04</span></span>
+<span><span class="co">## 12 neuron_12 0.0013210738 0.013210738 0.007725894  50.53494 1.745236e-04 0.007900418  0.006513357  4.083457e-04 1.745236e-04</span></span>
+<span><span class="co">## 13 neuron_13 0.0005218241 0.005218241 0.003895074  43.85586 2.723004e-05 0.003922304  0.003128132  1.279492e-04 2.723004e-05</span></span>
+<span><span class="co">## 14 neuron_14 0.0024981505 0.024981505 0.014975372  73.06438 6.240756e-04 0.015599447  0.013683909  1.300233e-03 6.240756e-04</span></span>
+<span><span class="co">## 15 neuron_15 0.0022260093 0.022260093 0.012395822  51.39499 4.955117e-04 0.012891334  0.010699595  8.777055e-04 4.955117e-04</span></span>
+<span><span class="co">## 16 neuron_16 0.0014452547 0.014452547 0.007919662  65.81665 2.088761e-04 0.008128538  0.007012199  5.285116e-04 2.088761e-04</span></span>
+<span><span class="co">## 17 neuron_17 0.0005205031 0.005205031 0.003349648  38.79900 2.709234e-05 0.003376740  0.002615691  1.025449e-04 2.709234e-05</span></span>
+<span><span class="co">## 18 neuron_18 0.0003428466 0.003428466 0.002381807  46.68868 1.175438e-05 0.002393561  0.001934347  7.779356e-05 1.175438e-05</span></span>
+<span><span class="co">## 19 neuron_19 0.0028243686 0.028243686 0.015334620  54.90906 7.977058e-04 0.016132326  0.013579141  1.306092e-03 7.977058e-04</span></span>
+<span><span class="co">## 20 neuron_20 0.0097370831 0.097370831 0.183868550  67.43091 9.481079e-03 0.193349629  0.168007480  1.709816e-02 9.481079e-03</span></span>
+<span><span class="co">## 21 neuron_21 0.0037618084 0.037618084 0.019044673  65.60016 1.415120e-03 0.020459793  0.017767096  2.181033e-03 1.415120e-03</span></span>
+<span><span class="co">## 22 neuron_22 0.0029291980 0.029291980 0.016251169  55.81145 8.580201e-04 0.017109189  0.014443345  1.406477e-03 8.580201e-04</span></span>
+<span><span class="co">## 23 neuron_23 0.0029316079 0.029316079 0.015822961  53.68204 8.594325e-04 0.016682393  0.013993114  1.371187e-03 8.594325e-04</span></span>
+<span><span class="co">## 24 neuron_24 0.0023243204 0.023243204 0.012832226  50.58105 5.402465e-04 0.013372472  0.011070550  9.290009e-04 5.402465e-04</span></span>
+<span><span class="co">## 25 neuron_25 0.0035103055 0.035103055 0.029635859 115.86011 1.232224e-03 0.030868083  0.028417462  3.409416e-03 1.232289e-03</span></span>
+<span><span class="co">## 26 neuron_26 0.0007680539 0.007680539 0.005998158  47.10189 5.899067e-05 0.006057149  0.004909805  2.269338e-04 5.899067e-05</span></span>
+<span><span class="co">## 27 neuron_27 0.0011435273 0.011435273 0.007461278  42.19250 1.307655e-04 0.007592044  0.006017596  3.155177e-04 1.307655e-04</span></span>
+<span><span class="co">## 28 neuron_28 0.0073308271 0.073308271 0.059564650  58.66356 5.374103e-03 0.064938752  0.055603412  7.496559e-03 5.374103e-03</span></span>
+<span><span class="co">## 29 neuron_29 0.0006677551 0.006677551 0.004077727  44.61683 4.458969e-05 0.004122316  0.003303552  1.527947e-04 4.458969e-05</span></span>
+<span><span class="co">## 30 neuron_30 0.0008235027 0.008235027 0.005074560  40.20276 6.781567e-05 0.005142376  0.004024873  1.868152e-04 6.781567e-05</span></span>
+<span><span class="co">## 31 neuron_31 0.0006843066 0.006843066 0.004334425  39.62114 4.682755e-05 0.004381253  0.003414421  1.468099e-04 4.682755e-05</span></span>
+<span><span class="co">## 32 neuron_32 0.0014070303 0.014070303 0.008488876  54.52572 1.979734e-04 0.008686849  0.007264414  4.772545e-04 1.979734e-04</span></span>
+<span><span class="co">## 33 neuron_33 0.0006434355 0.006434355 0.004149423  35.74107 4.140093e-05 0.004190824  0.003178125  1.265161e-04 4.140093e-05</span></span>
+<span><span class="co">## 34 neuron_34 0.0010196155 0.010196155 0.006513936  41.99332 1.039616e-04 0.006617898  0.005237581  2.644010e-04 1.039616e-04</span></span>
+<span><span class="co">## 35 neuron_35 0.0019766477 0.019766477 0.015101218  69.92589 3.907136e-04 0.015491932  0.013479644  1.041216e-03 3.907136e-04</span></span>
+<span><span class="co">## 36 neuron_36 0.0006286167 0.006286167 0.004018344  44.35807 3.951590e-05 0.004057860  0.003246823  1.447533e-04 3.951590e-05</span></span>
+<span><span class="co">## 37 neuron_37 0.0037323984 0.037323984 0.020823406  42.25347 1.393080e-03 0.022216486  0.017828038  1.909535e-03 1.393080e-03</span></span></code></pre>
+<p>As the last neuron, number 37, is the only C57 sample, it should be
+removed before making any comparisons between genotypes.</p>
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">neurons</span> <span class="op">&lt;-</span> <span class="va">neurons</span><span class="op">[</span><span class="op">-</span><span class="fl">37</span><span class="op">]</span></span></code></pre></div>
 <h2>
 Estimating population autocorrelation
 </h2>
@@ -479,74 +517,23 @@ but to estimate population values. At first glance, the output of <a href="../re
 to provide all that’s needed for this estimation. Why not simply take
 the covariate means of the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-values listed in the output of <a href="../reference/process.autocorr.html">process.autocorr</a>?</p>
-<h3>
-The problem
-</h3>
-<p>The problem is that recurrence is very noisy, the amount of data
-available from which to extract a signal through all that noise is low,
-and
+values listed in the output of <a href="../reference/process.autocorr.html">process.autocorr</a>? The
+problem is that recurrence is very noisy, the amount of data available
+from which to extract a signal through all that noise is low, and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-itself is an imperfect measure of the network time constant. To see the
-problem, consider the lone cluster from a C57 mouse in the demo data.
-Obviously a single data point is not enough to estimate the population
-value of a variable, but even this single data point is an unreliable
-estimate of the true network time constant of this one individual cell.
-Consider what happens when a slightly different initial condition is
-used in the fit of the exponential decay model. First, set the initial
-amplitude to 0.001 (the default value in neurons):</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Set cell number</span></span>
-<span><span class="va">C57_cell_num</span> <span class="op">&lt;-</span> <span class="fl">37</span></span>
-<span><span class="fu"><a href="../reference/fit.edf.autocorr.html">fit.edf.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">C57_cell_num</span><span class="op">]</span><span class="op">]</span>, A0 <span class="op">=</span> <span class="fl">0.001</span><span class="op">)</span></span>
-<span><span class="va">C57_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot-autocorrelation.html">plot.autocorrelation</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">C57_cell_num</span><span class="op">]</span><span class="op">]</span>, return_plot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">C57_cell_num</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">fetch_EDF_parameters</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##           A         tau   bias_term </span></span>
-<span><span class="co">##  0.01517868 10.57577455  0.00034827</span></span></code></pre>
-<p>With this initial condition,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-is 378 ms. Now, set the initial amplitude to 0.01:</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/fit.edf.autocorr.html">fit.edf.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">C57_cell_num</span><span class="op">]</span><span class="op">]</span>, A0 <span class="op">=</span> <span class="fl">0.01</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">C57_cell_num</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">fetch_EDF_parameters</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##          A        tau  bias_term </span></span>
-<span><span class="co">## 0.01761368 9.20938982 0.00034827</span></span></code></pre>
-<p>With this initial condition,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-is now 2 ms.</p>
-<p>What’s happening? Consider the autocorrelation plot resulting from
-the first fit with a low initial amplitude and high
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">C57_plot</span><span class="op">)</span></span></code></pre></div>
-<p><img src="tutorial_tau_est_kilosort_files/figure-html/fit_variability2_plot-1.png" width="700"></p>
-<p>Notice the blue line, which gives the computed empirical
-autocorrelation as a function of lag. The exponential component of the
-blue line is clearly small, with its initial peak amplitude
+itself is an imperfect measure of the network time constant. For
+example, a relatively flat empirical autocorrelation curve is ambiguous
+between high
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>
-only slightly larger than its baseline bias. Given the exponential decay
-model (the red line):</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>=</mo><mi>A</mi><mo>*</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mtext mathvariant="normal">lag</mtext><mi>/</mi><mi>τ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mtext mathvariant="normal">bias</mtext></mrow><annotation encoding="application/x-tex">y = A * \exp(-\text{lag}/\tau) + \text{bias}</annotation></semantics></math></p>
-<p>this behavior can be accommodated in two ways: either neuron 37 has a
-low baseline autocorrelation that decays slowly (low
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>,
-high
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>),
-or it has a high baseline autocorrelation that decays quickly (high
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>,
-low
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>).
-These are the two solutions the optimization algorithm finds, depending
-on the initial conditions. The upshot is that the data is simply too
-noisy to decide between them. More generally, unless <em>both</em>
-autocorrelation and the network time constant are relatively high (e.g.,
-as with neuron 25 with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>=</mo><mn>131</mn></mrow><annotation encoding="application/x-tex">\tau=131</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>A</mi><mo>=</mo><mn>0.07</mn></mrow><annotation encoding="application/x-tex">A=0.07</annotation></semantics></math>),
-noise will quickly dominate and the estimated
+with low
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-will depend on initial conditions.</p>
+and low
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>
+with high
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>.
+Similarly, empirical autocorrelation values are highly sensitive to
+relatively arbitrary choices in data processing, as discussed in the <a href="tutorial_tau_est_DG.html">tutorial on estimating network time
+constants</a>.</p>
 <h3>
 Dichotomized Gaussians
 </h3>
@@ -557,19 +544,40 @@ network time constant for a covariate of interest based on these
 unreliable individual estimates (e.g., bootstrapping) will only amplify
 the noise. The solution is to estimate the network time constant from
 simulations, not the observed data itself. Specifically, <a href="tutorial_tau_est_DG.html">dichotomized Gaussians</a> can be used
-to generate simulated spike trains consistent with the observed data.
-The exponential decay model can be fit to each simulation, yielding a
-distribution of possible
+to simulate spike trains consistent with the observed data. The function
+<a href="../reference/estimate.autocorr.params.html">estimate.autocorr.params</a>
+takes a list of neurons and:</p>
+<ol style="list-style-type: decimal">
+<li>Computes the empirical autocorrelation of each neuron.</li>
+<li>Fits an exponential decay model to that empirical
+autocorrelation.</li>
+<li>Generates many simulated spike trains (dichotomized Gaussians) based
+on the values predicted by the model of the empirical autocorrelation
+and the observed firing rate of the neuron.</li>
+<li>Computes the empirical autocorrelation of each simulated spike
+train.</li>
+<li>Fits an exponential decay model to the empirical autocorrelation of
+each simulated spike train.</li>
+</ol>
+<p>This procedure yields a distribution of possible
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
 values for each neuron. For the purpose of speed, this tutorial runs
 only 100 simulations per neuron, but in practice, 1000 or more
 simulations should be run.</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">autocor.ests</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimate.autocorr.params.html">estimate.autocorr.params</a></span><span class="op">(</span></span>
 <span>    neuron_list <span class="op">=</span> <span class="va">neurons</span>,</span>
 <span>    n_trials_per_sim <span class="op">=</span> <span class="fl">500</span>, </span>
 <span>    n_sims_per_neurons <span class="op">=</span> <span class="fl">100</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
+<span>  <span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.ests</span><span class="op">$</span><span class="va">estimates</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##    lambda_ms lambda_bin          A      tau    bias_term  autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
+<span><span class="co">## 1 0.01584211  0.1584211 0.01184220 55.43608 0.0002509723 0.01209318  0.010138576  0.0006476965 0.0002509723</span></span>
+<span><span class="co">## 2 0.01472368  0.1472368 0.01107407 52.48280 0.0002167869 0.01129086  0.009369658  0.0005661810 0.0002167869</span></span>
+<span><span class="co">## 3 0.01777632  0.1777632 0.01431655 56.45551 0.0003159974 0.01463255  0.012308547  0.0008052540 0.0003159974</span></span>
+<span><span class="co">## 4 0.01860526  0.1860526 0.01383925 61.53315 0.0003461558 0.01418540  0.012109574  0.0008655264 0.0003461558</span></span>
+<span><span class="co">## 5 0.01761842  0.1761842 0.01295759 63.24811 0.0003104088 0.01326800  0.011373058  0.0008113769 0.0003104088</span></span>
+<span><span class="co">## 6 0.01563158  0.1563158 0.01142668 56.50480 0.0002443463 0.01167102  0.009817615  0.0006352159 0.0002443463</span></span></code></pre>
 <p>With the simulations run, the final step is to estimate the network
 time constant for covariates of interest. The function <a href="../reference/analyze.autocorr.html">analyze.autocorr</a> does this
 by bootstrapping over the tau values obtained from the simulations. If
@@ -585,7 +593,7 @@ draws with replacement from the pool of
 values for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>.
 For this tutorial, 10k bootstrap resamples are used.</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Run analysis</span></span>
 <span><span class="va">autocor.results.bootstraps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/analyze.autocorr.html">analyze.autocorr</a></span><span class="op">(</span></span>
 <span>  <span class="va">autocor.ests</span>,</span>
@@ -596,25 +604,25 @@ For this tutorial, 10k bootstrap resamples are used.</p>
 list with two objects. The first is <strong>resamples</strong>, a
 dataframe holding the tau values for each covariate from each
 simulation.</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.bootstraps</span><span class="op">$</span><span class="va">resamples</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##   RH_Mecp2 HET LH_Shank3 KO   LH_C57</span></span>
-<span><span class="co">## 1     21.57711     21.54229 9.264978</span></span>
-<span><span class="co">## 2     19.52550     25.68817 9.312277</span></span>
-<span><span class="co">## 3     15.46000     26.02238 9.377917</span></span>
-<span><span class="co">## 4     21.09859     19.41136 9.336514</span></span>
-<span><span class="co">## 5     18.33608     20.62840 9.335962</span></span>
-<span><span class="co">## 6     20.63927     26.77423 9.404013</span></span></code></pre>
+<pre><code><span><span class="co">##   RH_Mecp2 HET LH_Shank3 KO</span></span>
+<span><span class="co">## 1     61.42147     60.49513</span></span>
+<span><span class="co">## 2     66.11624     58.29698</span></span>
+<span><span class="co">## 3     60.67469     60.03308</span></span>
+<span><span class="co">## 4     69.83573     58.98560</span></span>
+<span><span class="co">## 5     61.88627     62.78685</span></span>
+<span><span class="co">## 6     63.45675     63.28792</span></span></code></pre>
 <p>The second is <strong>distribution_plot</strong>, a ggplot2 object
 visualizing the bootstrap distributions of tau for each covariate.</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">autocor.results.bootstraps</span><span class="op">$</span><span class="va">distribution_plot</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tutorial_tau_est_kilosort_files/figure-html/plot_distribution-1.png" width="700"></p>
 <h2>
 Code summary
 </h2>
 <p>The essential steps to run this analysis are as follows:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Setup</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span>list <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ls.html" class="external-link">ls</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">12345</span><span class="op">)</span> </span>

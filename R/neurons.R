@@ -52,7 +52,7 @@ runparallel <- function(
 #' @param unit_time Unit of time for spike raster or other recording data, e.g. "ms", "s", etc. (default: "ms").
 #' @param unit_sample_rate Unit of sample rate for spike raster or other recording data, e.g. "Hz", "kHz", etc. (default: "Hz").
 #' @param unit_data Unit of data for spike raster or other recording data, e.g. "mV", "spike", etc. (default: "mV").
-#' @param t_per_bin Time (in above units) per bin, e.g., 1 ms per bin (default: 1.0).
+#' @param t_per_bin Time (in above units) per bin, e.g., 1 ms per bin (default: 10.0).
 #' @param sample_rate Sample rate (in above units), e.g., 1e4 Hz (default: 1e4).
 #' @return A new neuron object.
 #' @export
@@ -69,7 +69,7 @@ new_neuron <- function(
     unit_time = "ms", 
     unit_sample_rate = "Hz", 
     unit_data = "mV", 
-    t_per_bin = 1.0, 
+    t_per_bin = 10.0, 
     sample_rate = 1e4
   ) {
     neuron <- new(
@@ -84,14 +84,14 @@ new_neuron <- function(
 #' This function loads spike raster data from a data frame or CSV file and converts each unique cell into a neuron object. The raster data frame must contain columns for cell identifier, spike time in milliseconds, and trial number. Optional metadata columns can also be included.
 #' 
 #' @param raster_df Data frame (or file name to csv importable as such), each row a spike; must have columns: cell, time_in_ms, trial; optional columns: recording_name, hemisphere, genotype, sex, region, age.
-#' @param bin_size Size of time bins in milliseconds (default: 20).
+#' @param bin_size Size of time bins in milliseconds (default: 10).
 #' @param sample_rt Sample rate in the default unit for neuron objects, Hz (default: 1e4).
 #' @param time_cutoff Maximum time (in ms) to include spikes; spikes occurring after this time will be excluded (default: Inf).
 #' @return A list of neuron objects, one per unique cell in the raster data.
 #' @export
 load.rasters.as.neurons <- function(
     raster_df,
-    bin_size = 20, 
+    bin_size = 10.0, 
     sample_rt = 1e4,
     time_cutoff = Inf
   ) {
@@ -217,7 +217,7 @@ make.plot.title <- function(
 #' @usage plot.autocorrelation(nrn, plot_title = "Est. autocorr", bias_term = 0, plot_time_cutoff = Inf)
 #' @param nrn Neuron object for which to plot autocorrelation.
 #' @param plot_title Title for the plot (default: "Est. autocorr").
-#' @param bias_term Bias term to plot as a horizontal line (default: 0).
+#' @param bias_term Bias term to plot as a horizontal line (default: NULL).
 #' @param plot_time_cutoff Maximum lag (in bins) to display on the x-axis (default: Inf).
 #' @param return_plot Logical indicating whether to return the ggplot object (TRUE) or print it (FALSE) (default: FALSE).
 #' @return A ggplot object showing the estimated and fitted autocorrelation.
@@ -225,7 +225,7 @@ make.plot.title <- function(
 plot.autocorrelation <- function(
     nrn,
     plot_title = "Est. autocorr",
-    bias_term = 0,
+    bias_term = NULL,
     plot_time_cutoff = Inf,
     return_plot = FALSE
   ) {
@@ -250,7 +250,6 @@ plot.autocorrelation <- function(
     # Make plot
     plt <- ggplot2::ggplot(df_temp) +
       ggplot2::geom_line(ggplot2::aes(x = bin, y = autocorrelation), color = "blue") + 
-      ggplot2::geom_hline(yintercept = bias_term, linewidth = 2, linetype = "dotted", color = "darkgray") +
       ggplot2::labs(
         title = plot_title,
         x = "Lag (bins)",
@@ -261,6 +260,9 @@ plot.autocorrelation <- function(
         panel.background = ggplot2::element_rect(fill = "white", colour = NA),
         plot.background  = ggplot2::element_rect(fill = "white", colour = NA)
       )
+    if (!is.null(bias_term)) {
+      plt <- plt + ggplot2::geom_hline(yintercept = bias_term, linewidth = 2, linetype = "dotted", color = "darkgray")
+    }
     if (length(autocorr_edf) > 1) {
       plt <- plt + ggplot2::geom_line(ggplot2::aes(x = bin, y = autocorrelation_fitted), color = "red")
     }
@@ -621,10 +623,10 @@ analyze.autocorr <- function(
       est$neuron_id <- est$neuron_id[rep(1:nrow(est$neuron_id), each = est$n_sims_per_neurons), ]
       
       # Combine with estimates 
-      est$estimates <- cbind(est$estimates, est$neuron_id)
+      estimates_id <- cbind(est$estimates, est$neuron_id)
       
       # Add to big data frame
-      ests_all <- rbind(ests_all, est$estimates)
+      ests_all <- rbind(ests_all, estimates_id)
       
     }
     
@@ -652,7 +654,7 @@ analyze.autocorr <- function(
         lvl_mask <- lvl_mask & ests_all[,c] == lvl
       } else {
         for (c in c(covariate)) {
-          lvl_mask <- lvl_mask & ests_all[,c] == lvl[[c]]
+          lvl_mask <- lvl_mask & ests_all[,c] == cov_X[i,c]
         }
       }
       
@@ -664,7 +666,8 @@ analyze.autocorr <- function(
           #   each resample has a 1/n chance of drawing from a given neuron N; but, as N
           #   is represented by n_sims values from the DG simulations, the probability of a given value
           #   being drawn to represent N is determined by the simulations. 
-          resamples[j,i] <- mean(sample(ests_all[lvl_mask, "tau"], n_cells, replace = TRUE))
+          these_samples <- sample(ests_all[lvl_mask, "tau"], n_cells, replace = TRUE)
+          resamples[j,i] <- mean(these_samples)
         }
       }
       
