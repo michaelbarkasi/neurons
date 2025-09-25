@@ -242,7 +242,11 @@ While this is an insightful idea, the operation of thresholding, needed to conve
 \[R_{V_{i_1}V_{i_2}} \neq R_{X_{i_1}X_{i_2}}\]
 However, all is not lost. Given some autocorrelation $R_{X_{i_1}X_{i_2}}$ between two time bins $X_{i_1}$ and $X_{i_2}$ separated by lag $l$ for a neuron $X$ with spike rate $\lambda$, a correlation $R_{V_{i_1}V_{i_2}}$ can often be found which, when these variables $V_i$ are thresholded by $\gamma = \Phi^{-1}(1-\lambda)$, gives back the original correlation $R_{X_{i_1}X_{i_2}}$. Actually, in this case, it's the covariance $K_{V_{i_1}V_{i_2}}$ that is sought. Knowing the correlation $R_{V_{i_1}V_{i_2}}$ is not critical, although because $V$ is normal, $R_{V_{i_1}V_{i_2}} = K_{V_{i_1}V_{i_2}}$. 
 
-By definition, the covariance $K_{X_{i_1}X_{i_2}} = \text{E}[X_{i_1}X_{i_2}] - \text{E}[X_{i_1}]\text{E}[X_{i_2}]$. For all $i$, $\text{E}[X_{i}] = P(V_{i}>\gamma)=1-\Phi(\gamma)$. Further, notice that the expected value of the product $X_{i_1}X_{i_2}$ is given by the upper-tail cumulative distribution function of a bivariate normal distribution with covariance $K_{V_{i_1}V_{i_2}}$, evaluated at $\gamma$ for both components: 
+By definition, the covariance $K_{X_{i_1}X_{i_2}}$ is given by:
+\[K_{X_{i_1}X_{i_2}}= \text{E}[X_{i_1}X_{i_2}] - \text{E}[X_{i_1}]\text{E}[X_{i_2}]\] 
+For all $i$,
+\[\text{E}[X_{i}] = P(V_{i}>\gamma)=1-\Phi(\gamma)\] 
+Further, notice that the expected value of the product $X_{i_1}X_{i_2}$ is given by the upper-tail cumulative distribution function of a bivariate normal distribution with covariance $K_{V_{i_1}V_{i_2}}$, evaluated at $\gamma$ for both components: 
 \[\text{E}[X_{i_1}X_{i_2}] = \Phi_2^+(\gamma,K_{V_{i_1}V_{i_2}})\]
 For a threshold $x$, $\Phi_2^+(x,K_{V_{i_1}V_{i_2}})$ is the probability that both components of a bivariate normal distribution with covariance $K_{V_{i_1}V_{i_2}}$ are greater than $x$:
 \begin{align}

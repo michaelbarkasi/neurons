@@ -449,7 +449,7 @@ provide succinct quantification of the empirical autocorrelation.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="va">cell_high</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">fetch_EDF_parameters</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##           A         tau   bias_term </span></span>
-<span><span class="co">##  0.12535591 73.57410266  0.01105918</span></span></code></pre>
+<span><span class="co">##  0.12535480 73.56534654  0.01105918</span></span></code></pre>
 <p>In this case, the time constant tau is estimated to be 73.6ms and the
 initial autocorrelation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>
@@ -462,13 +462,13 @@ results in a data frame.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">autocor.results.batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/process.autocorr.html">process.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.batch</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##       cell    lambda_ms  lambda_bin           A      tau    bias_term   autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
-<span><span class="co">## 1 neuron_1 0.0021196442 0.021196442 0.012313504 38.18340 4.492891e-04 0.012762793 0.0099256717  7.198735e-04 4.492891e-04</span></span>
-<span><span class="co">## 2 neuron_2 0.0003823936 0.003823936 0.002640528 33.41566 1.462249e-05 0.002655150 0.0019722200  6.441845e-05 1.462249e-05</span></span>
-<span><span class="co">## 3 neuron_3 0.0036099494 0.036099494 0.020566831 71.32338 1.303173e-03 0.021870005 0.0191794261  2.196287e-03 1.303173e-03</span></span>
-<span><span class="co">## 4 neuron_4 0.0017867616 0.017867616 0.001000000 10.00000 3.192517e-04 0.001319252 0.0006871312  3.230555e-04 3.192517e-04</span></span>
-<span><span class="co">## 5 neuron_5 0.0096557914 0.096557914 0.075028474 31.83775 9.323431e-03 0.084351905 0.0641280862  1.065232e-02 9.323431e-03</span></span>
-<span><span class="co">## 6 neuron_6 0.0087146980 0.087146980 0.044857742 39.71559 7.594596e-03 0.052452338 0.0424673519  8.618560e-03 7.594596e-03</span></span></code></pre>
+<pre><code><span><span class="co">##       cell    lambda_ms  lambda_bin           A      tau    bias_term  autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
+<span><span class="co">## 1 neuron_1 0.0021196442 0.021196442 0.012313504 38.18340 4.492891e-04 0.01276279  0.009925672  7.198735e-04 4.492891e-04</span></span>
+<span><span class="co">## 2 neuron_2 0.0003823936 0.003823936 0.002640528 33.41566 1.462249e-05 0.00265515  0.001972220  6.441845e-05 1.462249e-05</span></span>
+<span><span class="co">## 3 neuron_3 0.0036099494 0.036099494 0.020566831 71.32338 1.303173e-03 0.02187000  0.019179426  2.196287e-03 1.303173e-03</span></span>
+<span><span class="co">## 4 neuron_4 0.0017867616 0.017867616 0.010491524 49.17751 3.192517e-04 0.01081078  0.008880300  6.233471e-04 3.192517e-04</span></span>
+<span><span class="co">## 5 neuron_5 0.0096557914 0.096557914 0.075028474 31.83775 9.323431e-03 0.08435191  0.064128086  1.065232e-02 9.323431e-03</span></span>
+<span><span class="co">## 6 neuron_6 0.0087146980 0.087146980 0.044857742 39.71559 7.594596e-03 0.05245234  0.042467352  8.618560e-03 7.594596e-03</span></span></code></pre>
 <h2>
 Estimating network time constants
 </h2>
@@ -689,10 +689,12 @@ is not critical, although because
 is normal,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo>=</mo><msub><mi>K</mi><mrow><msub><mi>V</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>V</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub></mrow><annotation encoding="application/x-tex">R_{V_{i_1}V_{i_2}} = K_{V_{i_1}V_{i_2}}</annotation></semantics></math>.</p>
 <p>By definition, the covariance
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>K</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo>=</mo><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>−</mo><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">K_{X_{i_1}X_{i_2}} = \text{E}[X_{i_1}X_{i_2}] - \text{E}[X_{i_1}]\text{E}[X_{i_2}]</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><annotation encoding="application/x-tex">K_{X_{i_1}X_{i_2}}</annotation></semantics></math>
+is given by:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>K</mi><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow></msub><mo>=</mo><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>−</mo><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">K_{X_{i_1}X_{i_2}}= \text{E}[X_{i_1}X_{i_2}] - \text{E}[X_{i_1}]\text{E}[X_{i_2}]</annotation></semantics></math>
 For all
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>V</mi><mi>i</mi></msub><mo>&gt;</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mo>−</mo><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{E}[X_{i}] = P(V_{i}&gt;\gamma)=1-\Phi(\gamma)</annotation></semantics></math>.
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">E</mtext><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>X</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>V</mi><mi>i</mi></msub><mo>&gt;</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mo>−</mo><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{E}[X_{i}] = P(V_{i}&gt;\gamma)=1-\Phi(\gamma)</annotation></semantics></math>
 Further, notice that the expected value of the product
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><msub><mi>i</mi><mn>1</mn></msub></msub><msub><mi>X</mi><msub><mi>i</mi><mn>2</mn></msub></msub></mrow><annotation encoding="application/x-tex">X_{i_1}X_{i_2}</annotation></semantics></math>
 is given by the upper-tail cumulative distribution function of a
@@ -777,13 +779,13 @@ simulations should be run.</p>
 <span>    use_raw <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.ests</span><span class="op">$</span><span class="va">estimates</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##    lambda_ms lambda_bin          A      tau    bias_term   autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
-<span><span class="co">## 1 0.01692810  0.1692810 0.01236773 36.21091 0.0002865607 0.012654291 0.0096698543  0.0005423836 0.0002865607</span></span>
-<span><span class="co">## 2 0.01677124  0.1677124 0.01291667 33.54088 0.0002812746 0.013197941 0.0098679568  0.0005259177 0.0002812746</span></span>
-<span><span class="co">## 3 0.01686275  0.1686275 0.01250991 36.54724 0.0002843522 0.012794262 0.0097996671  0.0005458666 0.0002843522</span></span>
-<span><span class="co">## 4 0.01637908  0.1637908 0.00100000 10.00000 0.0002682744 0.001268274 0.0006361539  0.0002721032 0.0002682744</span></span>
-<span><span class="co">## 5 0.01732026  0.1732026 0.00100000 10.00000 0.0002999915 0.001299991 0.0006678709  0.0003038203 0.0002999915</span></span>
-<span><span class="co">## 6 0.01454902  0.1454902 0.01073121 28.14013 0.0002116740 0.010942883 0.0077333713  0.0003771298 0.0002116740</span></span></code></pre>
+<pre><code><span><span class="co">##    lambda_ms lambda_bin          A      tau    bias_term  autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
+<span><span class="co">## 1 0.01688889  0.1688889 0.01190413 38.56055 0.0002852346 0.01218937  0.009470064  0.0005497602 0.0002852346</span></span>
+<span><span class="co">## 2 0.01590850  0.1590850 0.01092675 40.61636 0.0002530803 0.01117983  0.008795191  0.0005105874 0.0002530803</span></span>
+<span><span class="co">## 3 0.01878431  0.1878431 0.01418505 36.24284 0.0003528504 0.01453790  0.011117548  0.0006465601 0.0003528504</span></span>
+<span><span class="co">## 4 0.01671895  0.1671895 0.01203930 36.50089 0.0002795234 0.01231883  0.009433704  0.0005308353 0.0002795234</span></span>
+<span><span class="co">## 5 0.01854902  0.1854902 0.01405934 37.42106 0.0003440661 0.01440341  0.011106459  0.0006460043 0.0003440661</span></span>
+<span><span class="co">## 6 0.01822222  0.1822222 0.01333629 37.17653 0.0003320494 0.01366834  0.010523018  0.0006163265 0.0003320494</span></span></code></pre>
 <p>With the simulations run, the final step is to estimate the network
 time constant for covariates of interest. The function <a href="../reference/analyze.autocorr.html">analyze.autocorr</a> does this
 by bootstrapping over the tau values obtained from the simulations. If
@@ -812,12 +814,12 @@ simulation.</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.bootstraps</span><span class="op">$</span><span class="va">resamples</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##   LH_CBA/J  RH_CBA/J</span></span>
-<span><span class="co">## 1 57.83444  82.33068</span></span>
-<span><span class="co">## 2 57.01644 103.25039</span></span>
-<span><span class="co">## 3 58.56651  67.02219</span></span>
-<span><span class="co">## 4 56.24359  86.83488</span></span>
-<span><span class="co">## 5 55.35298  76.02586</span></span>
-<span><span class="co">## 6 58.09633  82.75586</span></span></code></pre>
+<span><span class="co">## 1 57.97739  80.89738</span></span>
+<span><span class="co">## 2 57.74824 108.46566</span></span>
+<span><span class="co">## 3 57.34851  76.86553</span></span>
+<span><span class="co">## 4 56.12538  89.17201</span></span>
+<span><span class="co">## 5 56.71212  95.08618</span></span>
+<span><span class="co">## 6 57.44959  81.51360</span></span></code></pre>
 <p>The second is <strong>distribution_plot</strong>, a ggplot2 object
 visualizing the bootstrap distributions of tau for each covariate.</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
