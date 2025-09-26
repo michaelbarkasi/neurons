@@ -109,13 +109,11 @@ load.rasters.as.neurons <- function(
       
       # Make name for new neuron
       new_name <- paste0("neuron_", c)
-      
       # Grab raster
       c_mask <- raster_df$cell == c
       raster <- raster_df[c_mask, c("time_in_ms", "trial")]
       colnames(raster) <- c("time", "trial")
       raster <- raster[raster$time <= time_cutoff,]
-      
       # Extract meta data
       recording_name <- "not_provided"
       if ("recording_name" %in% colnames(raster_df)) {

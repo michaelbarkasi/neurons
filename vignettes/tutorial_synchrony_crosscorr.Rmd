@@ -23,3 +23,32 @@ set.seed(12345)
 # Load neurons package
 library(neurons) 
 ```
+
+```{r load_rasters}
+spike.rasters <- read.csv(
+  system.file(
+      "extdata", 
+      "cross_corr_demo_data.csv", 
+      package = "neurons"
+    )
+  )
+spike.rasters$genotype <- as.character(spike.rasters$genotype)
+print(head(spike.rasters))
+```
+
+```{r}
+
+same_penetration <- function(cell_num, raster = spike.rasters) {
+  pen <- unique(raster$recording_name[raster$cell == cell_num])
+  same_pen <- unique(raster$cell[raster$recording_name == pen])
+  return(same_pen)
+}
+same_penetration(1)
+
+neurons <- load.rasters.as.neurons(spike.rasters, bin_size = 10.0)
+
+cross_corr <- neurons[[1]]$compute_crosscorrelation_R(neurons[[3]], "sum", 1000)
+
+plot(cross_corr, type='l')
+
+```

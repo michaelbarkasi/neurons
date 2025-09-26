@@ -783,6 +783,116 @@ NumericVector neuron::fetch_EDF_parameters() const {
  * Member function implementations, analysis
  */
 
+// Compute cross-correlation of this neuron with another neuron
+VectorXd neuron::compute_crosscorrelation(
+    const neuron& nrn_compare,
+    const std::string& bin_count_action,
+    const int& max_lag
+  ) {
+    
+    // Compare time units 
+    if (unit_time != nrn_compare.unit_time) {
+      Rcpp::stop("Both neurons must have the same unit_time for cross-correlation calculation");
+    }
+    
+    // Compare bin size 
+    if (t_per_bin != nrn_compare.t_per_bin) {
+      Rcpp::stop("Both neurons must have the same t_per_bin for cross-correlation calculation");
+    }
+    
+    // Compare trial lengths
+    const int trial_length_ref = trial_data.rows();
+    const int trial_length_comp = nrn_compare.trial_data.rows();
+    
+    // Check max lag
+    const int min_trial_length = std::min(trial_length_ref, trial_length_comp);
+    if (max_lag > min_trial_length) {
+      Rcpp::stop("max_lag must be less than or equal to the length of the shortest trial");
+    }
+    
+    // Check time unit of the trial matrix, home cell
+    bool convert_to_bins = false;
+    int max_lag_bin = max_lag;
+    int min_trial_length_bin = min_trial_length;
+    if (unit_time != "bin") {
+      convert_to_bins = true;
+      max_lag_bin = (int) max_lag/t_per_bin;
+      min_trial_length_bin = (int) min_trial_length/t_per_bin;
+    }
+    
+    // Check binning action
+    if (bin_count_action != "sum" && bin_count_action != "boolean" && bin_count_action != "mean") {
+      Rcpp::stop("bin_count_action must be 'sum', 'boolean', or 'mean'");
+    }
+    
+    // Initialize matrices for data manipulation 
+    const int N_trial = std::min(trial_data.cols(), nrn_compare.trial_data.cols());
+    MatrixXd binned_data_ref(min_trial_length_bin, N_trial);
+    MatrixXd binned_data_comp(min_trial_length_bin, N_trial);
+    
+    // Collapse bins if needed
+    if (convert_to_bins) {
+      
+      for (int n = 0; n < N_trial; n++) {
+        for (int b = 0; b < min_trial_length_bin; b++) {
+          double bin_count_ref = trial_data(seq(b*(int)t_per_bin, (b*(int)t_per_bin) + t_per_bin - 1), n).sum();
+          double bin_count_comp = nrn_compare.trial_data(seq(b*(int)t_per_bin, (b*(int)t_per_bin) + t_per_bin - 1), n).sum();
+          if (bin_count_action == "mean") {
+            binned_data_ref(b, n) = bin_count_ref/(double)t_per_bin;
+            binned_data_comp(b, n) = bin_count_comp/(double)t_per_bin;
+          } else if (bin_count_action == "sum") {
+            binned_data_ref(b, n) = bin_count_ref;
+            binned_data_comp(b, n) = bin_count_comp;
+          } else if (bin_count_action == "boolean") {
+            binned_data_ref(b, n) = (bin_count_ref > 0.0) ? 1.0 : 0.0;
+            binned_data_comp(b, n) = (bin_count_comp > 0.0) ? 1.0 : 0.0;
+          }
+        }
+      }
+      
+    } else {
+      binned_data_ref = trial_data(seq(0, min_trial_length_bin - 1), seq(0, N_trial - 1));
+      binned_data_comp = nrn_compare.trial_data(seq(0, min_trial_length_bin - 1), seq(0, N_trial - 1));
+    }
+    
+    int n_lag_steps = min_trial_length_bin - max_lag_bin;
+    int n_lag_steps_good = n_lag_steps;
+    VectorXd crosscorr(max_lag_bin);
+    crosscorr.setZero();
+    for (int lag_step = 0; lag_step <= n_lag_steps; lag_step++) {
+      MatrixXd binned_data_ref_cut = binned_data_ref(seq(lag_step, lag_step + max_lag_bin - 1), Eigen::all);
+      MatrixXd binned_data_comp_cut = binned_data_comp(seq(lag_step, lag_step + max_lag_bin - 1), Eigen::all);
+      VectorXd step_crosscorr = empirical_corr_lagged(binned_data_ref_cut, binned_data_comp_cut);
+      if ((step_crosscorr.array().isNaN()).any() || (step_crosscorr.array().isInf()).any()) {
+        n_lag_steps_good -= 1;
+      } else {
+        crosscorr += step_crosscorr;
+      }
+    }
+    crosscorr /= (double)(n_lag_steps + 1);
+    
+    Rcpp::Rcout << "Possible lag steps: " << n_lag_steps << ", good lag steps: " << n_lag_steps_good << std::endl;
+    
+    /*
+     * This runs, but having to remove way too much. Switch to raw correlation?
+     * Also, take advantage of the long trials, and pad into the next block instead of cutting. 
+     */
+    
+    // Return 
+    return crosscorr;
+    
+  }
+
+// Wrapper
+NumericVector neuron::compute_crosscorrelation_R(
+    const neuron& nrn_compare,
+    const std::string& bin_count_action,
+    const int& max_lag
+  ) {
+    VectorXd cc = compute_crosscorrelation(nrn_compare, bin_count_action, max_lag);
+    return to_NumVec(cc);
+  }
+
 // Compute autocorrelation of trial data
 void neuron::compute_autocorrelation(
     const std::string& bin_count_action,
@@ -848,6 +958,7 @@ void neuron::compute_autocorrelation(
     
   }
 
+// Objective function for fitting EDF model to autocorrelation
 double neuron::bounded_MSE_EDF_autocorr(
     const std::vector<double>& x, // 0 is A, 1 is tau
     std::vector<double>& grad,
@@ -908,6 +1019,7 @@ double neuron::bounded_MSE_EDF_autocorr(
     
   }
 
+// Fit EDF model to autocorrelation
 void neuron::fit_autocorrelation() { 
    
     // Grab initial parameters
@@ -968,6 +1080,7 @@ void neuron::fit_autocorrelation() {
     
   } 
 
+// Find parameters for dichotomized Gaussian simulation
 void neuron::dg_parameters(
     const bool& use_raw,
     const bool& verbose
@@ -1154,6 +1267,7 @@ RCPP_MODULE(neuron) {
   .method("fetch_id_data", &neuron::fetch_id_data)
   .method("fetch_lambda", &neuron::fetch_lambda)
   .method("compute_autocorrelation", &neuron::compute_autocorrelation)
+  .method("compute_crosscorrelation_R", &neuron::compute_crosscorrelation_R)
   .method("fit_autocorrelation", &neuron::fit_autocorrelation)
   .method("dg_parameters", &neuron::dg_parameters)
   .method("dg_simulation", &neuron::dg_simulation)

@@ -233,6 +233,16 @@ class neuron {
     NumericVector fetch_EDF_parameters() const;
     
     // Member functions for data analysis
+    VectorXd compute_crosscorrelation(
+      const neuron& nrn_compare,
+      const std::string& bin_count_action,
+      const int& max_lag
+    );
+    NumericVector compute_crosscorrelation_R(
+      const neuron& nrn_compare,
+      const std::string& bin_count_action,
+      const int& max_lag
+    );
     void compute_autocorrelation(
       const std::string& bin_count_action, // action must be 'sum', 'boolean', or 'mean'
       const bool& use_raw                  // whether to use raw autocorrelation (true) or standard centered and normalized correlation (false)
@@ -257,7 +267,7 @@ class neuron {
         const bool& use_raw,
         const bool& verbose
     );
-
-};
+    
+  };
 
 #endif
