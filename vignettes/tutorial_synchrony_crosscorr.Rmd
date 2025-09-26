@@ -47,7 +47,7 @@ same_penetration(1)
 
 neurons <- load.rasters.as.neurons(spike.rasters, bin_size = 10.0)
 
-cross_corr <- neurons[[1]]$compute_crosscorrelation_R(neurons[[3]], "sum", 1000)
+cross_corr <- neurons[[2]]$compute_crosscorrelation_R(neurons[[1]], "sum", 1000)
 
 plot(cross_corr, type='l')
 

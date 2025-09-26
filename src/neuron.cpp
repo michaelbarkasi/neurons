@@ -202,7 +202,7 @@ VectorXd empirical_corr_lagged(
     
     // Check for matching dimensions 
     const int max_lag = TS1.rows();
-    if (TS2.rows() != max_lag) {Rcpp::stop("Time series must have same number of time points (rows)");}
+    //if (TS2.rows() != max_lag) {Rcpp::stop("Time series must have same number of time points (rows)");}
     const int N_trial = TS1.cols();
     if (TS2.cols() != N_trial) {Rcpp::stop("Time series must have same number of trials (columns)");}
     
@@ -212,8 +212,11 @@ VectorXd empirical_corr_lagged(
     
     // Compute correlation for all possible lags
     for (int lag = 0; lag < max_lag; lag++) {
-      MatrixXd TS2_shifted = TS2(seq(0 + lag, max_lag), Eigen::all);
-      MatrixXd TS1_cut = TS1(seq(0, max_lag - lag), Eigen::all);
+      // TEST EDIT
+      //MatrixXd TS2_shifted = TS2(seq(0 + lag, max_lag), Eigen::all);
+      //MatrixXd TS1_cut = TS1(seq(0, max_lag - lag), Eigen::all);
+      MatrixXd TS2_shifted = TS2(seq(0 + lag, max_lag + lag), Eigen::all);
+      MatrixXd TS1_cut = TS1(seq(0, max_lag), Eigen::all);
       lagged_corr(lag) = empirical_corr_multisample(TS1_cut, TS2_shifted);
     }
     
@@ -855,13 +858,15 @@ VectorXd neuron::compute_crosscorrelation(
       binned_data_comp = nrn_compare.trial_data(seq(0, min_trial_length_bin - 1), seq(0, N_trial - 1));
     }
     
-    int n_lag_steps = min_trial_length_bin - max_lag_bin;
+    int n_lag_steps = min_trial_length_bin - 2*max_lag_bin;
     int n_lag_steps_good = n_lag_steps;
     VectorXd crosscorr(max_lag_bin);
     crosscorr.setZero();
     for (int lag_step = 0; lag_step <= n_lag_steps; lag_step++) {
+      
       MatrixXd binned_data_ref_cut = binned_data_ref(seq(lag_step, lag_step + max_lag_bin - 1), Eigen::all);
-      MatrixXd binned_data_comp_cut = binned_data_comp(seq(lag_step, lag_step + max_lag_bin - 1), Eigen::all);
+      MatrixXd binned_data_comp_cut = binned_data_comp(seq(lag_step, lag_step + 2*max_lag_bin - 1), Eigen::all);
+      
       VectorXd step_crosscorr = empirical_corr_lagged(binned_data_ref_cut, binned_data_comp_cut);
       if ((step_crosscorr.array().isNaN()).any() || (step_crosscorr.array().isInf()).any()) {
         n_lag_steps_good -= 1;
