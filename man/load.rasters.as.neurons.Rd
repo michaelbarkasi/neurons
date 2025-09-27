@@ -7,6 +7,8 @@
 load.rasters.as.neurons(
   raster_df,
   bin_size = 10,
+  fallback_duration = 0,
+  fallback_displacement = 0,
   sample_rt = 10000,
   time_cutoff = Inf
 )
@@ -15,6 +17,10 @@ load.rasters.as.neurons(
 \item{raster_df}{Data frame (or file name to csv importable as such), each row a spike; must have columns: cell, time_in_ms, trial; optional columns: recording_name, hemisphere, genotype, sex, region, age.}
 
 \item{bin_size}{Size of time bins in milliseconds (default: 10).}
+
+\item{fallback_duration}{Duration in milliseconds to use if trial durations cannot be inferred from the raster data (default: 0).}
+
+\item{fallback_displacement}{Displacement in milliseconds to use if trial displacements cannot be inferred from the raster data (default: 0).}
 
 \item{sample_rt}{Sample rate in the default unit for neuron objects, Hz (default: 1e4).}
 

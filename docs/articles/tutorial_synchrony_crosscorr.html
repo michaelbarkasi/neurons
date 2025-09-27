@@ -93,6 +93,39 @@ neurons package.</p>
 <span></span>
 <span><span class="co"># Load neurons package</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span> </span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">spike.rasters</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
+<span>      <span class="st">"extdata"</span>, </span>
+<span>      <span class="st">"cross_corr_demo_data.csv"</span>, </span>
+<span>      package <span class="op">=</span> <span class="st">"neurons"</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="va">spike.rasters</span><span class="op">$</span><span class="va">genotype</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">spike.rasters</span><span class="op">$</span><span class="va">genotype</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">spike.rasters</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">##   time_in_ms genotype recording_name cell cluster trial</span></span>
+<span><span class="co">## 1     79.035        1  penetration_1    1       1     1</span></span>
+<span><span class="co">## 2    211.563        1  penetration_1    1       1     1</span></span>
+<span><span class="co">## 3    254.331        1  penetration_1    1       1     1</span></span>
+<span><span class="co">## 4    267.630        1  penetration_1    1       1     1</span></span>
+<span><span class="co">## 5    360.195        1  penetration_1    1       1     1</span></span>
+<span><span class="co">## 6    371.877        1  penetration_1    1       1     1</span></span></code></pre>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">same_penetration</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">cell_num</span>, <span class="va">raster</span> <span class="op">=</span> <span class="va">spike.rasters</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">pen</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">raster</span><span class="op">$</span><span class="va">recording_name</span><span class="op">[</span><span class="va">raster</span><span class="op">$</span><span class="va">cell</span> <span class="op">==</span> <span class="va">cell_num</span><span class="op">]</span><span class="op">)</span></span>
+<span>  <span class="va">same_pen</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">raster</span><span class="op">$</span><span class="va">cell</span><span class="op">[</span><span class="va">raster</span><span class="op">$</span><span class="va">recording_name</span> <span class="op">==</span> <span class="va">pen</span><span class="op">]</span><span class="op">)</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="va">same_pen</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="fu">same_penetration</span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## [1] 1 2 3 4</span></span></code></pre>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">neurons</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load.rasters.as.neurons.html">load.rasters.as.neurons</a></span><span class="op">(</span><span class="va">spike.rasters</span>, bin_size <span class="op">=</span> <span class="fl">10.0</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">cross_corr</span> <span class="op">&lt;-</span> <span class="va">neurons</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="fu">compute_crosscorrelation_R</span><span class="op">(</span><span class="va">neurons</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, <span class="st">"sum"</span>, <span class="fl">1000</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Possible lag steps: 124365, good lag steps: 123279</span></span></code></pre>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">cross_corr</span>, type<span class="op">=</span><span class="st">'l'</span><span class="op">)</span></span></code></pre></div>
+<p><img src="tutorial_synchrony_crosscorr_files/figure-html/unnamed-chunk-1-1.png" width="700"></p>
   </main>
 </div>
 

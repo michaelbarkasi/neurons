@@ -85,6 +85,8 @@ new_neuron <- function(
 #' 
 #' @param raster_df Data frame (or file name to csv importable as such), each row a spike; must have columns: cell, time_in_ms, trial; optional columns: recording_name, hemisphere, genotype, sex, region, age.
 #' @param bin_size Size of time bins in milliseconds (default: 10).
+#' @param fallback_duration Duration in milliseconds to use if trial durations cannot be inferred from the raster data (default: 0).
+#' @param fallback_displacement Displacement in milliseconds to use if trial displacements cannot be inferred from the raster data (default: 0).
 #' @param sample_rt Sample rate in the default unit for neuron objects, Hz (default: 1e4).
 #' @param time_cutoff Maximum time (in ms) to include spikes; spikes occurring after this time will be excluded (default: Inf).
 #' @return A list of neuron objects, one per unique cell in the raster data.
@@ -92,6 +94,8 @@ new_neuron <- function(
 load.rasters.as.neurons <- function(
     raster_df,
     bin_size = 10.0, 
+    fallback_duration = 0,
+    fallback_displacement = 0,
     sample_rt = 1e4,
     time_cutoff = Inf
   ) {
@@ -161,7 +165,7 @@ load.rasters.as.neurons <- function(
         sample_rate = sample_rt
       )
       raster <- as.matrix(raster)
-      new_neuron$load_spike_raster_R(raster)
+      new_neuron$load_spike_raster_R(raster, fallback_duration, fallback_displacement)
       
       # Save in list
       neuron_list[[new_name]] <- new_neuron
@@ -366,6 +370,7 @@ test.sigma.assumption <- function(
 #' 
 #' @param neuron_list An R list of neuron objects.
 #' @param bin_count_action Method for counting spikes in each bin when computing autocorrelation; one of "boolean", "mean", or "sum" (default: "sum").
+#' @param max_lag Maximum lag (in units of the trial data) to compute autocorrelation; if 0, uses the number of time bins in the neuron's trial data (default: 0).
 #' @param A0 Initial guess for amplitude parameter of exponential decay function (default: 0.001).
 #' @param tau0 Initial guess for time constant parameter of exponential decay function (default: 1.0).
 #' @param ctol Convergence tolerance for fitting exponential decay function (default: 1e-8).
@@ -379,6 +384,7 @@ test.sigma.assumption <- function(
 process.autocorr <- function(
     neuron_list,
     bin_count_action = "sum", 
+    max_lag = 0,
     A0 = 0.001,
     tau0 = 1.0,
     ctol = 1e-8,
@@ -395,14 +401,20 @@ process.autocorr <- function(
     # Loop through neurons in the list
     for (i in seq_along(neuron_list)) {
       
+      # Grab neuron
       nrn <- neuron_list[[i]]
+      
+      # Set max lag
+      if (max_lag == 0) {
+        max_lag <- nrow(nrn$fetch_trial_data_R())
+      }
       
       # Set exponential decay function (EDF) parameters 
       nrn$set_edf_initials(A0, tau0)
       nrn$set_edf_termination(ctol, max_evals)
       
       # Compute autocorrelation
-      nrn$compute_autocorrelation(bin_count_action, use_raw)
+      nrn$compute_autocorrelation(bin_count_action, max_lag, use_raw)
       
       # Fit autocorrelation 
       nrn$fit_autocorrelation()
@@ -717,15 +729,20 @@ analyze.autocorr <- function(
 #' 
 #' @param nrn Neuron object for which to compute autocorrelation.
 #' @param bin_count_action Method for counting spikes in each bin when computing autocorrelation; one of "boolean", "mean", or "sum" (default: "sum").
+#' @param max_lag Maximum lag (in units of the trial data) to compute autocorrelation; if 0, uses the number of time bins in the neuron's trial data (default: 0).
 #' @param use_raw Logical indicating whether to use raw autocorrelation (true) or standard centered and normalized correlation (false) (default: TRUE).
 #' @return None. Modifies neuron in place.
 #' @export
 compute.autocorr <- function(
     nrn,
     bin_count_action = "sum",
+    max_lag = 0,
     use_raw = TRUE
   ) {
-    nrn <- nrn$compute_autocorrelation(bin_count_action, use_raw)
+    if (max_lag == 0) {
+      max_lag <- nrow(nrn$fetch_trial_data_R())
+    }
+    nrn <- nrn$compute_autocorrelation(bin_count_action, max_lag, use_raw)
   }
 
 #' Fit exponential decay function to autocorrelation of single neuron object
