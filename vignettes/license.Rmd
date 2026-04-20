@@ -96,3 +96,11 @@ https://github.com/tidyverse/ggplot2
 <h1> MASS </h1> 
 
 ... must fill in.
+
+GNU General Public License v2.0 / v3.0
+
+<h1> mvtnorm </h1>
+
+... must fill in. 
+
+GNU General Public License v2.0
