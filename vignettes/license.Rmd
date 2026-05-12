@@ -74,16 +74,6 @@ https://nlopt.readthedocs.io/en/latest/
 GNU Lesser General Public License (LGPL)  
 https://nlopt.readthedocs.io/en/latest/NLopt_License_and_Copyright/
 
-<h1> pcg </h1>
-
-Melissa E. O'Neill  
-https://www.cs.hmc.edu/~oneill/index.html
-
-https://www.pcg-random.org/  
-https://github.com/imneme/pcg-cpp
-
-Apache 2.0 and The MIT License
-
 <h1> ggplot2 </h1>
 
 by: ggplot2 core developer team

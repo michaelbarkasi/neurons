@@ -10,7 +10,6 @@
 #include <RcppEigen.h>
 #include <nlopt.hpp>
 #include <boost/math/distributions/normal.hpp>
-#include "pcg_random.hpp"
 using namespace Rcpp;
 using namespace Eigen;
 
@@ -137,13 +136,6 @@ MatrixXd mvnorm_random(
     int n, 
     VectorXd mu, 
     MatrixXd sigma
-  );
-
-// Better normal distribution function, with PCG and Box-Muller
-double pcg_rnorm(
-    double mean, 
-    double sd,
-    pcg32& rng
   );
 
 /*

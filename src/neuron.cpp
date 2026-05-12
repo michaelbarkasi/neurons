@@ -289,15 +289,13 @@ NumericVector random_walk(
   const double& step_size,
   const unsigned int& seed
   ) {
-    // Set up the random number generator
-    pcg32 rng(seed);
     // Initialize vector to hold walk
     NumericVector walk(n_steps);
     // Start at zero
     walk(0) = 0; 
     // Take steps in walk
     for (int i = 1; i < n_steps; i++) {
-      walk(i) = pcg_rnorm(walk(i - 1), step_size, rng);
+      walk(i) = R::rnorm(walk(i - 1), step_size);
     }
     // Return the random walk
     return walk;
@@ -539,34 +537,6 @@ NumericMatrix mvnorm_random(
     );
     
     return X;
-    
-  } 
-
-// Better normal distribution function, with PCG and Box-Muller
-double pcg_rnorm(
-    double mean, 
-    double sd,
-    pcg32& rng
-  ) {
-   
-    // Sample from a uniform random distribution between 0 and 1
-    int u_max = 1e9; 
-    int u1i, u2i;
-    do {u1i = rng(u_max);} // randomly select integer between 0 and u_max
-    while (u1i == 0);
-    double u1 = (double)u1i/(double)u_max; // normalize to (0, 1)
-    u2i = rng(u_max);
-    double u2 = (double)u2i/(double)u_max; // normalize to (0, 1)
-    
-    const double two_pi = 2.0 * M_PI;
-    
-    //compute z0 and z1
-    double mag = sd * sqrt(-2.0 * log(u1));
-    double z0  = mag * cos(two_pi * u2) + mean;
-    //double z1  = mag * sin(two_pi * u2) + mean;
-   
-    //return std::make_pair(z0, z1);
-    return z0; // return only one value, for now
     
   } 
 
