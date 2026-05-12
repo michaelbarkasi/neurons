@@ -1,11 +1,11 @@
 
 # Intro ################################################################################################################
 
-# Neurons: A framework for neuron modelling, simulation, and analysis
+# NeuronsDG: A framework for neuron modelling, simulation, and analysis
 
 # By Mike Barkasi
 # GNU GPLv3: https://www.gnu.org/licenses/gpl-3.0.en.html
-#   Copyright (c) 2025
+#   Copyright (c) 2026
 
 #' @useDynLib neuronsDG, .registration = TRUE
 #' @import Rcpp
