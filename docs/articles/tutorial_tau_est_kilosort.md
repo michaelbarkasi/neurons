@@ -2,8 +2,8 @@
 
 ## Introduction
 
-The neurons package provides functions to use [dichotomized Gaussians to
-estimate network time
+The neuronsDG package provides functions to use [dichotomized Gaussians
+to estimate network time
 constants](https://michaelbarkasi.github.io/neurons/articles/tutorial_tau_est_DG.md)
 on different kinds of spike data ([Macke et
 al. 2009](https://doi.org/10.1162/neco.2008.02-08-713), [Neophytou et
@@ -11,10 +11,10 @@ al. 2022](https://doi.org/10.1371/journal.pbio.3001803)), including
 kilosort4 output.
 [KiloSort4](https://doi.org/10.1038/s41592-024-02232-7) is a [Python
 package](https://github.com/MouseLand/Kilosort), completely distinct
-from the neurons package, for extracting spike clusters (a proxy for
-individual neurons) from multi-channel probe recordings. Network time
-constants provide an estimate of recurrence by quantifying decay in
-spiking autocorrelation as a function of lag time. A higher network time
+from neuronsDG, for extracting spike clusters (a proxy for individual
+neurons) from multi-channel probe recordings. Network time constants
+provide an estimate of recurrence by quantifying decay in spiking
+autocorrelation as a function of lag time. A higher network time
 constant indicates that a neuron receives a larger number of projections
 back on itself. Intuitively, the longer into the future a spike *now*
 increases the probability of a spike *later*, the stronger the
@@ -23,16 +23,17 @@ connections from that neuron back onto itself must be.
 ## Load data
 
 Begin by clearing the R workspace, setting a random-number generator
-seed, and loading the neurons package.
+seed, and loading neuronsDG.
 
 ``` r
+
 # Clear the R workspace to start fresh
 rm(list = ls())
 
 # Set seed for reproducibility
 set.seed(12345) 
 
-# Load neurons package
+# Load package
 library(neuronsDG, quietly = TRUE) 
 ```
 
@@ -44,11 +45,12 @@ tutortial. These recordings targeted the auditory cortex and were made
 while auditory stimuli were played at regular intervals.
 
 ``` r
+
 # Set path to data 
 demo_data <- system.file(
     "extdata", 
     "kilo4demo", 
-    package = "neurons"
+    package = "neuronsDG"
   )
 ```
 
@@ -86,12 +88,13 @@ Metadata about the recordings (formatted as a dataframe) is needed to
 supply covariates.
 
 ``` r
+
 # Load 
 kilo4_metadata <- read.csv(
     system.file(
       "extdata", 
       "meta_data_kilo4demo.csv", 
-      package = "neurons"
+      package = "neuronsDG"
     )
   )
 
@@ -109,13 +112,14 @@ print(head(kilo4_metadata))
 ## 6 2025-02-20     17-04-02 001-002         RH  H10b                 0,0                 0,0 Mecp2 HET P79   F 1191.4
 ```
 
-The neurons package (as of v1.0) can only handle certain covariates, and
-expects them to have specific names (**type**, **genotype**, **sex**,
-**hemi**, **region**, **age**). The package also expects the dataframe
-holding those covariates to have rows labeled with recording names that
-match the format of the recording names in the data.
+The neuronsDG package (as of v1.0) can only handle certain covariates,
+and expects them to have specific names (**type**, **genotype**,
+**sex**, **hemi**, **region**, **age**). The package also expects the
+dataframe holding those covariates to have rows labeled with recording
+names that match the format of the recording names in the data.
 
 ``` r
+
 # Format and apply recording names to metadata as row names
 rownames(kilo4_metadata) <- paste0(
     kilo4_metadata$DAY, 
@@ -126,7 +130,7 @@ rownames(kilo4_metadata) <- paste0(
 # Keep only the relevant columns (covariates of interest)
 kilo4_metadata <- kilo4_metadata[,c("HEMISPHERE","STRAIN","AGE","SEX")]
 
-# Rename columns to match what's expected by neurons package 
+# Rename columns to match what's expected by neuronsDG package 
 colnames(kilo4_metadata) <- c("hemi", "genotype", "age", "sex")
 
 # Preview 
@@ -148,7 +152,7 @@ print(head(kilo4_metadata))
 The function
 [preprocess.kilo4()](https://michaelbarkasi.github.io/neurons/reference/preprocess.kilo4.md)
 converts cluster spike times into spike rasters of the format expected
-by the neurons package.
+by neuronsDG.
 
 ### Parsing trials and quality control
 
@@ -164,6 +168,7 @@ analyzed. In this case, the start time should be some time after the
 stimulus (to allow for settling) and the end time some time later.
 
 ``` r
+
 spike.rasters <- preprocess.kilo4(
     trial_time_start = 500,      # ms
     trial_time_end = 500 + 1520, # ms
@@ -222,6 +227,7 @@ recordings. Each row is a spike, with columns giving information such as
 cell number, time, and genotype.
 
 ``` r
+
 print(head(spike.rasters$spikes))
 ```
 
@@ -246,6 +252,7 @@ representing clusters (i.e., “cells”) and columns giving information
 such as cell number, genotype, and number of spikes.
 
 ``` r
+
 print(head(spike.rasters$cluster.key))
 ```
 
@@ -265,6 +272,7 @@ Important summary information can be pulled from **cluster.key**. For
 example, how many cells were included in the output?
 
 ``` r
+
 n_cells <- nrow(spike.rasters$cluster.key)
 cat("Number of cells included:", n_cells)
 ```
@@ -278,6 +286,7 @@ count, can be pulled for each covariate combination with the function
 [summarize.cluster.key()](https://michaelbarkasi.github.io/neurons/reference/summarize.cluster.key.md).
 
 ``` r
+
 # Print results 
 covariate_summary <- summarize.cluster.key(
     key = spike.rasters$cluster.key, 
@@ -315,12 +324,12 @@ hemisphere.
 With the kilosort4 data preprocessed into spike rasters, the next step
 is to use the function
 [load.rasters.as.neurons()](https://michaelbarkasi.github.io/neurons/reference/load.rasters.as.neurons.md)
-to convert these rasters into a special class of object from the neuron
-package, **neuron**. This function will convert all clusters appearing
-in the raster into individual **neuron** objects and return them in a
-list.
+to convert these rasters into a special class of object from neuronsDG,
+**neuron**. This function will convert all clusters appearing in the
+raster into individual **neuron** objects and return them in a list.
 
 ``` r
+
 neurons <- load.rasters.as.neurons(
     spike.rasters$spikes, 
     bin_size = 10.0,
@@ -328,12 +337,13 @@ neurons <- load.rasters.as.neurons(
   )
 ```
 
-The **neuron** object class is native to C++ and integrated into neurons
-(an R package) via Rcpp. It comes with built-in methods for many tasks,
-such as estimating autocorrelation parameters with dichotomized Gaussian
-simulations. Some of these methods can be accessed through R, but
-neurons provides R-native wrappers for the most useful ones. The neurons
-package also provides native R functions for plotting.
+The **neuron** object class is native to C++ and integrated into
+neuronsDG (an R package) via Rcpp. It comes with built-in methods for
+many tasks, such as estimating autocorrelation parameters with
+dichotomized Gaussian simulations. Some of these methods can be accessed
+through R, but neurons provides R-native wrappers for the most useful
+ones. The neuronsDG package also provides native R functions for
+plotting.
 
 ### Visualizing autocorrelation
 
@@ -342,6 +352,7 @@ For example, here is the raster from one cell, plotted with the
 function:
 
 ``` r
+
 cell_high <- 25
 plot.raster(neurons[[cell_high]]) 
 ```
@@ -353,6 +364,7 @@ horizontal streaks of spikes. Contrast this raster with one from a cell
 with low autocorrelation:
 
 ``` r
+
 cell_low <- 13
 plot.raster(neurons[[cell_low]]) 
 ```
@@ -378,8 +390,8 @@ estimating network time
 constants](https://michaelbarkasi.github.io/neurons/articles/tutorial_tau_est_DG.md)
 provides a comparison between empirical vs population autocorrelation,
 and Pearson vs raw autocorrelation. The class **neuron** provides a
-method for computing both versions of empirical autocorrelation, and the
-neurons package provides a wrapper
+method for computing both versions of empirical autocorrelation, and
+neuronsDG provides a wrapper
 [compute.autocorr()](https://michaelbarkasi.github.io/neurons/reference/compute.autocorr.md)
 with default parameters to access it. Similarly, there is a method and
 corresponding wrapper
@@ -388,6 +400,7 @@ for fitting a decay model to the empirical estimate. Here, for example,
 these wrappers applied to the above cells:
 
 ``` r
+
 # High autocorrelation cell
 compute.autocorr(neurons[[cell_high]])
 fit.edf.autocorr(neurons[[cell_high]])
@@ -404,6 +417,7 @@ exponential decay in empirical autocorrelation. Here is the
 high-autocorrelation cell:
 
 ``` r
+
 plot.autocorrelation(neurons[[cell_high]])
 ```
 
@@ -412,6 +426,7 @@ plot.autocorrelation(neurons[[cell_high]])
 Here is the plot for the low-autocorrelation cell:
 
 ``` r
+
 plot.autocorrelation(neurons[[cell_low]]) 
 ```
 
@@ -422,6 +437,7 @@ a neuron method and provide succinct quantification of the empirical
 autocorrelation.
 
 ``` r
+
 # Fetch and print exponential decay parameters
 print(neurons[[cell_high]]$fetch_EDF_parameters())
 ```
@@ -432,6 +448,7 @@ print(neurons[[cell_high]]$fetch_EDF_parameters())
 ```
 
 ``` r
+
 # Fetch and print exponential decay parameters
 print(neurons[[cell_low]]$fetch_EDF_parameters())
 ```
@@ -449,13 +466,14 @@ amplitude of 0.031, while the low-autocorrelation cell has a time
 constant of only 44.2ms and an amplitude of 0.004.
 
 In practice, the individual steps shown above do not need to be run with
-separate method calls. The neurons package provides a function,
+separate method calls. The neuronsDG package provides a function,
 [process.autocorr()](https://michaelbarkasi.github.io/neurons/reference/process.autocorr.md),
 which does all of these steps in one call for a list of neurons. Here is
 the function run on the current set of neurons, with full print out of
 results:
 
 ``` r
+
 autocor.results.batch <- process.autocorr(neurons)
 print(autocor.results.batch)
 ```
@@ -505,6 +523,7 @@ As the last neuron, number 37, is the only C57 sample, it should be
 removed before making any comparisons between genotypes.
 
 ``` r
+
 neurons <- neurons[-37]
 ```
 
@@ -561,6 +580,7 @@ simulations per neuron, but in practice, 1000 or more simulations should
 be run.
 
 ``` r
+
 autocor.ests <- estimate.autocorr.params(
     neuron_list = neurons,
     n_trials_per_sim = 500, 
@@ -571,12 +591,12 @@ print(head(autocor.ests$estimates))
 
 ``` scroll-output
 ##    lambda_ms lambda_bin          A      tau    bias_term  autocorr1 max_autocorr mean_autocorr min_autocorr
-## 1 0.01842384  0.1842384 0.01333024 58.79604 0.0003394379 0.01366967  0.011584796  0.0008187728 0.0003394379
-## 2 0.01948344  0.1948344 0.01481292 54.02188 0.0003796046 0.01519253  0.012689332  0.0008652320 0.0003796046
-## 3 0.01831788  0.1831788 0.01351420 61.78581 0.0003355448 0.01384974  0.011830306  0.0008483692 0.0003355448
-## 4 0.01728477  0.1728477 0.01292258 51.65018 0.0002987632 0.01322135  0.010946700  0.0007020462 0.0002987632
-## 5 0.01631788  0.1631788 0.01140312 53.48721 0.0002662732 0.01166939  0.009724891  0.0006360605 0.0002662732
-## 6 0.01913907  0.1913907 0.01451654 56.30571 0.0003663041 0.01488285  0.012520651  0.0008642567 0.0003663041
+## 1 0.01740397  0.1740397 0.01270022 50.25951 0.0003028983 0.01300312   0.01071170  0.0006875050 0.0003028983
+## 2 0.01933775  0.1933775 0.01442859 61.45231 0.0003739485 0.01480254   0.01263569  0.0009182705 0.0003739485
+## 3 0.01784106  0.1784106 0.01285209 58.52146 0.0003183034 0.01317040   0.01115165  0.0007780982 0.0003183034
+## 4 0.01741722  0.1741722 0.01281886 58.15564 0.0003033595 0.01312222   0.01109709  0.0007588466 0.0003033595
+## 5 0.01682119  0.1682119 0.01209286 55.70845 0.0002829525 0.01237581   0.01038875  0.0006929647 0.0002829525
+## 6 0.02125828  0.2125828 0.01572998 63.77607 0.0004519144 0.01618190   0.01389910  0.0010696484 0.0004519144
 ```
 
 With the simulations run, the final step is to estimate the network time
@@ -589,6 +609,7 @@ mean of n draws with replacement from the pool of nm values for \tau.
 For this tutorial, 10k bootstrap resamples are used.
 
 ``` r
+
 # Run analysis
 autocor.results.bootstraps <- analyze.autocorr(
   autocor.ests,
@@ -603,23 +624,25 @@ returns a list with two objects. The first is **resamples**, a dataframe
 holding the tau values for each covariate from each simulation.
 
 ``` r
+
 print(head(autocor.results.bootstraps$resamples))
 ```
 
 ``` scroll-output
 ##   RH_Mecp2 HET LH_Shank3 KO
-## 1     62.61748     56.40285
-## 2     59.88137     58.81627
-## 3     59.51760     58.45770
-## 4     52.23003     58.02937
-## 5     54.35176     57.60072
-## 6     61.16398     54.95277
+## 1     63.09572     55.92978
+## 2     60.23415     57.89369
+## 3     59.48629     58.25557
+## 4     52.54515     57.49400
+## 5     54.98458     57.47310
+## 6     61.12656     55.79558
 ```
 
 The second is **distribution_plot**, a ggplot2 object visualizing the
 bootstrap distributions of tau for each covariate.
 
 ``` r
+
 print(autocor.results.bootstraps$distribution_plot)
 ```
 
@@ -630,17 +653,18 @@ print(autocor.results.bootstraps$distribution_plot)
 The essential steps to run this analysis are as follows:
 
 ``` r
+
 # Setup
 rm(list = ls())
 set.seed(12345) 
-library(neurons) 
+library(neuronsDG) 
 
 # Load and format metadata
 kilo4_metadata <- read.csv(
   system.file(
     "extdata", 
     "meta_data_kilo4demo.csv", 
-    package = "neurons"
+    package = "neuronsDG"
     )
   )
 rownames(kilo4_metadata) <- paste0(
@@ -658,7 +682,7 @@ spike.rasters <- preprocess.kilo4(
   recording.folder = system.file(
     "extdata", 
     "kilo4demo", 
-    package = "neurons"
+    package = "neuronsDG"
     ),
   meta_data = kilo4_metadata, 
   max_spikes = 1e4,

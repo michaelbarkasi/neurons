@@ -13,6 +13,8 @@
   Gaussians](https://michaelbarkasi.github.io/neurons/articles/tutorial_tau_est_DG.md):
 - [Network time constants from KiloSort4
   data](https://michaelbarkasi.github.io/neurons/articles/tutorial_tau_est_kilosort.md):
+- [The effect of thresholding on
+  correlations](https://michaelbarkasi.github.io/neurons/articles/tutorial_thresholding.md):
 
 ### Legal
 

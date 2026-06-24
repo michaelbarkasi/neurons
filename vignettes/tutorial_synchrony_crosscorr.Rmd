@@ -12,11 +12,11 @@ knitr::opts_chunk$set(class.output = "scroll-output", cache = TRUE)
 
 <h2>Introduction</h2>
 
-Synchronous firing between two neurons can be detected by computing the cross-correlation of their spike trains. The *cross-correlation* between two time series $R$ (the reference series) and $C$ (the comparison series) is the correlation between $R$ and a lagged copy of $C$. This tutorial shows how to use functions from the neurons package and some basic R code to compute and visualize cross-correlations between spike trains. Data from the thalamic reticular nucleus (TRN) of wildtype and Mut-S Homolog 2 (Msh2) knock-out mice is used. As discussed in the [preprint](https://www.biorxiv.org/content/10.1101/2025.02.13.638164v1) from which the data is taken, the Msh2 knock-out mice were observed to exhibit increased gap junction formation in the TRN, and thus it would be expected that the knock-out mice would exhibit increased synchronous firing. This is because gap junctions are fast, electrical synapses between cells. 
+Synchronous firing between two neurons can be detected by computing the cross-correlation of their spike trains. The *cross-correlation* between two time series $R$ (the reference series) and $C$ (the comparison series) is the correlation between $R$ and a lagged copy of $C$. This tutorial shows how to use functions from neuronsDG and some basic R code to compute and visualize cross-correlations between spike trains. Data from the thalamic reticular nucleus (TRN) of wildtype and Mut-S Homolog 2 (Msh2) knock-out mice is used. As discussed in the [preprint](https://www.biorxiv.org/content/10.1101/2025.02.13.638164v1) from which the data is taken, the Msh2 knock-out mice were observed to exhibit increased gap junction formation in the TRN, and thus it would be expected that the knock-out mice would exhibit increased synchronous firing. This is because gap junctions are fast, electrical synapses between cells. 
 
 <h2>Load spike rasters</h2>
 
-The first step is to set up the R environment by clearing the workspace, setting a random-number generator seed, and loading the neurons package.
+The first step is to set up the R environment by clearing the workspace, setting a random-number generator seed, and loading neuronsDG.
 
 ```{r Rsetup}
 # Clear the R workspace to start fresh
@@ -25,7 +25,7 @@ rm(list = ls())
 # Set seed for reproducibility
 set.seed(12345) 
 
-# Load neurons package
+# Load package
 library(neuronsDG, quietly = TRUE) 
 ```
 
@@ -36,7 +36,7 @@ spike.rasters <- read.csv(
   system.file(
       "extdata", 
       "cross_corr_demo_data.csv", 
-      package = "neurons"
+      package = "neuronsDG"
     )
   )
 print(head(spike.rasters))
@@ -62,13 +62,10 @@ make_trials_from_spikes <- function(
     
     # Identify the penetration of the cell of interest
     cell_pen <- unique(raster$recording_name[raster$cell == cell_num])
-    
     # Subset raster to the penetration of the cell of interest
     raster_p <- raster[raster$recording_name == cell_pen,]
-    
     # Get indices of spikes from the reference cell
     cell_idx <- which(raster_p$cell == cell_num)
-    
     # Get spike times of the reference cell
     ref_cell_spikes <- raster_p$time_in_ms[cell_idx]
     
@@ -126,7 +123,7 @@ raster_demo <- make_trials_from_spikes(
 print(head(raster_demo))
 ```
 
-The neurons package includes functions for computing both [raw and Pearson cross-correlations](tutorial_tau_est_DG.html) from a raster like **raster_demo**. The first step is to convert **raster_demo** into a list of neuron objects using the [load.rasters.as.neurons()](../reference/load.rasters.as.neurons.html) function. 
+The neuronsDG package includes functions for computing both [raw and Pearson cross-correlations](tutorial_tau_est_DG.html) from a raster like **raster_demo**. The first step is to convert **raster_demo** into a list of neuron objects using the [load.rasters.as.neurons()](../reference/load.rasters.as.neurons.html) function. 
 
 ```{r load_neurons}
 neurons <- load.rasters.as.neurons(
@@ -301,10 +298,8 @@ cross_corr_by_genotype <- function(
       # Compute cross-correlation between reference cell and comparison cells
       cross_corr <- c()
       for (comp_cell in comp_cell_list) {
-        
         # Don't compute autocorrelation
         if (ref_cell == comp_cell) next
-        
         # Compute cross-correlation
         ref_neuron <- neurons[[paste0("neuron_", ref_cell)]]
         comp_neuron <- neurons[[paste0("neuron_", comp_cell)]]
@@ -315,15 +310,11 @@ cross_corr_by_genotype <- function(
           TRUE,                         # use raw?
           FALSE                         # verbose?
         )
-        
         # Append to results
         cross_corr <- rbind(cross_corr, cross_corr_cc)
-        
       }
-      
       # Store cross-correlation results for this reference cell
       cross_corr_by_cell[[paste0("cross_corr_", ref_cell)]] <- cross_corr
-      
     }
     
     # Separate cross-correlations by genotype
@@ -333,26 +324,21 @@ cross_corr_by_genotype <- function(
       
       # Get all cross-correlations for this reference cell
       cross_corr_matrix <- cross_corr_by_cell[[ref_cell]]
-      
       # Get genotype of this reference cell
       geno <- unique(spike.rasters$genotype[spike.rasters$cell == ref_cell])
       
       # Process cross-correlation from each comparison cell
       for (comp_cell in 1:nrow(cross_corr_matrix)) {
-        
         # Grab cross-correlation vector
         cross_corr_vector <- cross_corr_matrix[comp_cell, ]
-        
         # Normalize
         cross_corr_vector <- cross_corr_vector/mean(cross_corr_vector)
-        
         # Append to genotype-specific results
         if (geno == "WT") {
           geno_WT_crosscorr <- rbind(geno_WT_crosscorr, cross_corr_vector)
         } else if (geno == "Msh2KO") {
           geno_Msh2KO_crosscorr <- rbind(geno_Msh2KO_crosscorr, cross_corr_vector)
         }
-        
       }
     }
     

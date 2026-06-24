@@ -44,6 +44,7 @@
     <li><a class="dropdown-item" href="../articles/tutorial_synchrony_crosscorr.html">Spike synchrony via cross-correlation</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial_tau_est_DG.html">Network time constants via dichotomized Gaussians</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial_tau_est_kilosort.html">Network time constants from KiloSort4 data</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial_thresholding.html">The effect of thresholding on correlations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Legal</h6></li>
     <li><a class="dropdown-item" href="../articles/license.html">Dependency licenses</a></li>
@@ -80,7 +81,7 @@
                         <h4 data-toc-skip class="author">Michael
 Barkasi</h4>
             
-            <h4 data-toc-skip class="date">2026-04-20</h4>
+            <h4 data-toc-skip class="date">2026-06-24</h4>
       
 
       <div class="d-none name"><code>install.Rmd</code></div>
@@ -99,8 +100,8 @@ install the package<br>
 <li>To ensure a clean start, run:</li>
 </ol>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-f</span> src/<span class="pp">*</span>.o src/<span class="pp">*</span>.so</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> neurons.Rcheck</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-f</span> neurons_<span class="pp">*</span>.tar.gz</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> neuronsDG.Rcheck</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-f</span> neuronsDG_<span class="pp">*</span>.tar.gz</span>
 <span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="ex">./build_install.sh</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="build-documentation">Build documentation<a class="anchor" aria-label="anchor" href="#build-documentation"></a>

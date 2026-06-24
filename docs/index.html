@@ -46,6 +46,7 @@
     <li><a class="dropdown-item" href="articles/tutorial_synchrony_crosscorr.html">Spike synchrony via cross-correlation</a></li>
     <li><a class="dropdown-item" href="articles/tutorial_tau_est_DG.html">Network time constants via dichotomized Gaussians</a></li>
     <li><a class="dropdown-item" href="articles/tutorial_tau_est_kilosort.html">Network time constants from KiloSort4 data</a></li>
+    <li><a class="dropdown-item" href="articles/tutorial_thresholding.html">The effect of thresholding on correlations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Legal</h6></li>
     <li><a class="dropdown-item" href="articles/license.html">Dependency licenses</a></li>
@@ -75,9 +76,9 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="neuronsdg-modelling-neurons-via-dichotomized-gaussians">neuronsDG: Modelling neurons via dichotomized Gaussians<a class="anchor" aria-label="anchor" href="#neuronsdg-modelling-neurons-via-dichotomized-gaussians"></a>
 </h1></div>
-<p>neuronsDG is an R/C++ package for simulating neurons, currently under development at <a href="https://oviedolab.org/" class="external-link">Oviedo Lab</a>. The package is built around the core object class <strong>neuron</strong>, a C++ class accessible through R via Rcpp modules and wrappers. This class is meant for modeling the spiking of single neurons with dichotomized Gaussians.</p>
+<p>neuronsDG is an R/C++ package for simulating neurons, developed by <a href="https://oviedolab.org/" class="external-link">Oviedo Lab</a>, which extends the mathematical framework presented in <a href="https://doi.org/10.1371/journal.pbio.3001803" class="external-link">this paper</a>. The package is built around the core object class <strong>neuron</strong>, a C++ class accessible through R via an Rcpp module and wrappers. This class is meant for modeling the spiking of single neurons with dichotomized Gaussians.</p>
 <div class="figure">
-<img src="reference/figures/DG_autocorr.png" alt="Overlay of spike trains with autocorrelation and dichotomized Gaussian" width="90%"><p class="caption">
+<img src="reference/figures/DG_autocorr_art.png" alt="Overlay of spike trains with autocorrelation and dichotomized Gaussian" width="90%"><p class="caption">
 Artistic overlay of spike trains with autocorrelation and a dichotomized Gaussian with covariance. This package uses the latter to generate simulations of the former.
 </p>
 </div>

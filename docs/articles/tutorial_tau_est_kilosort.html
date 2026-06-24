@@ -44,6 +44,7 @@
     <li><a class="dropdown-item" href="../articles/tutorial_synchrony_crosscorr.html">Spike synchrony via cross-correlation</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial_tau_est_DG.html">Network time constants via dichotomized Gaussians</a></li>
     <li><a class="dropdown-item" href="../articles/tutorial_tau_est_kilosort.html">Network time constants from KiloSort4 data</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorial_thresholding.html">The effect of thresholding on correlations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Legal</h6></li>
     <li><a class="dropdown-item" href="../articles/license.html">Dependency licenses</a></li>
@@ -80,7 +81,7 @@
                         <h4 data-toc-skip class="author">Michael
 Barkasi</h4>
             
-            <h4 data-toc-skip class="date">2026-04-20</h4>
+            <h4 data-toc-skip class="date">2026-06-24</h4>
       
 
       <div class="d-none name"><code>tutorial_tau_est_kilosort.Rmd</code></div>
@@ -91,24 +92,24 @@ Barkasi</h4>
 <h2>
 Introduction
 </h2>
-<p>The neurons package provides functions to use <a href="tutorial_tau_est_DG.html">dichotomized Gaussians to estimate
+<p>The neuronsDG package provides functions to use <a href="tutorial_tau_est_DG.html">dichotomized Gaussians to estimate
 network time constants</a> on different kinds of spike data (<a href="https://doi.org/10.1162/neco.2008.02-08-713" class="external-link">Macke et
 al. 2009</a>, <a href="https://doi.org/10.1371/journal.pbio.3001803" class="external-link">Neophytou et
 al. 2022</a>), including kilosort4 output. <a href="https://doi.org/10.1038/s41592-024-02232-7" class="external-link">KiloSort4</a> is a <a href="https://github.com/MouseLand/Kilosort" class="external-link">Python package</a>,
-completely distinct from the neurons package, for extracting spike
-clusters (a proxy for individual neurons) from multi-channel probe
-recordings. Network time constants provide an estimate of recurrence by
-quantifying decay in spiking autocorrelation as a function of lag time.
-A higher network time constant indicates that a neuron receives a larger
-number of projections back on itself. Intuitively, the longer into the
-future a spike <em>now</em> increases the probability of a spike
-<em>later</em>, the stronger the connections from that neuron back onto
-itself must be.</p>
+completely distinct from neuronsDG, for extracting spike clusters (a
+proxy for individual neurons) from multi-channel probe recordings.
+Network time constants provide an estimate of recurrence by quantifying
+decay in spiking autocorrelation as a function of lag time. A higher
+network time constant indicates that a neuron receives a larger number
+of projections back on itself. Intuitively, the longer into the future a
+spike <em>now</em> increases the probability of a spike <em>later</em>,
+the stronger the connections from that neuron back onto itself must
+be.</p>
 <h2>
 Load data
 </h2>
 <p>Begin by clearing the R workspace, setting a random-number generator
-seed, and loading the neurons package.</p>
+seed, and loading neuronsDG.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Clear the R workspace to start fresh</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span>list <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ls.html" class="external-link">ls</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -116,7 +117,7 @@ seed, and loading the neurons package.</p>
 <span><span class="co"># Set seed for reproducibility</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">12345</span><span class="op">)</span> </span>
 <span></span>
-<span><span class="co"># Load neurons package</span></span>
+<span><span class="co"># Load package</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">neuronsDG</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> </span></code></pre></div>
 <h3>
 Spike and stimulus data
@@ -130,7 +131,7 @@ made while auditory stimuli were played at regular intervals.</p>
 <span><span class="va">demo_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
 <span>    <span class="st">"extdata"</span>, </span>
 <span>    <span class="st">"kilo4demo"</span>, </span>
-<span>    package <span class="op">=</span> <span class="st">"neurons"</span></span>
+<span>    package <span class="op">=</span> <span class="st">"neuronsDG"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <p>The function used to process kilosort4 output is <a href="../reference/preprocess.kilo4.html">preprocess.kilo4()</a>. This
 function expects its argument <strong>data_path</strong> to point to a
@@ -177,7 +178,7 @@ supply covariates.</p>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
 <span>      <span class="st">"extdata"</span>, </span>
 <span>      <span class="st">"meta_data_kilo4demo.csv"</span>, </span>
-<span>      package <span class="op">=</span> <span class="st">"neurons"</span></span>
+<span>      package <span class="op">=</span> <span class="st">"neuronsDG"</span></span>
 <span>    <span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
@@ -190,13 +191,13 @@ supply covariates.</p>
 <span><span class="co">## 4 2025-02-06     15-53-03 001-005         RH  H10b                 0,0                 0,0       C57 P79   F 1003.0</span></span>
 <span><span class="co">## 5 2025-02-20     16-19-12 001-001         RH  H10b                 0,0                 0,0 Mecp2 HET P79   F 1191.4</span></span>
 <span><span class="co">## 6 2025-02-20     17-04-02 001-002         RH  H10b                 0,0                 0,0 Mecp2 HET P79   F 1191.4</span></span></code></pre>
-<p>The neurons package (as of v1.0) can only handle certain covariates,
-and expects them to have specific names (<strong>type</strong>,
-<strong>genotype</strong>, <strong>sex</strong>, <strong>hemi</strong>,
-<strong>region</strong>, <strong>age</strong>). The package also expects
-the dataframe holding those covariates to have rows labeled with
-recording names that match the format of the recording names in the
-data.</p>
+<p>The neuronsDG package (as of v1.0) can only handle certain
+covariates, and expects them to have specific names
+(<strong>type</strong>, <strong>genotype</strong>, <strong>sex</strong>,
+<strong>hemi</strong>, <strong>region</strong>, <strong>age</strong>).
+The package also expects the dataframe holding those covariates to have
+rows labeled with recording names that match the format of the recording
+names in the data.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Format and apply recording names to metadata as row names</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">kilo4_metadata</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span>
@@ -208,7 +209,7 @@ data.</p>
 <span><span class="co"># Keep only the relevant columns (covariates of interest)</span></span>
 <span><span class="va">kilo4_metadata</span> <span class="op">&lt;-</span> <span class="va">kilo4_metadata</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"HEMISPHERE"</span>,<span class="st">"STRAIN"</span>,<span class="st">"AGE"</span>,<span class="st">"SEX"</span><span class="op">)</span><span class="op">]</span></span>
 <span></span>
-<span><span class="co"># Rename columns to match what's expected by neurons package </span></span>
+<span><span class="co"># Rename columns to match what's expected by neuronsDG package </span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">kilo4_metadata</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hemi"</span>, <span class="st">"genotype"</span>, <span class="st">"age"</span>, <span class="st">"sex"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Preview </span></span>
@@ -225,7 +226,7 @@ Preprocessing kilosort4 data into spike rasters
 </h2>
 <p>The function <a href="../reference/preprocess.kilo4.html">preprocess.kilo4()</a>
 converts cluster spike times into spike rasters of the format expected
-by the neurons package.</p>
+by neuronsDG.</p>
 <h3>
 Parsing trials and quality control
 </h3>
@@ -372,10 +373,10 @@ Converting to neurons
 </h2>
 <p>With the kilosort4 data preprocessed into spike rasters, the next
 step is to use the function <a href="../reference/load.rasters.as.neurons.html">load.rasters.as.neurons()</a>
-to convert these rasters into a special class of object from the neuron
-package, <strong>neuron</strong>. This function will convert all
-clusters appearing in the raster into individual <strong>neuron</strong>
-objects and return them in a list.</p>
+to convert these rasters into a special class of object from neuronsDG,
+<strong>neuron</strong>. This function will convert all clusters
+appearing in the raster into individual <strong>neuron</strong> objects
+and return them in a list.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">neurons</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load.rasters.as.neurons.html">load.rasters.as.neurons</a></span><span class="op">(</span></span>
 <span>    <span class="va">spike.rasters</span><span class="op">$</span><span class="va">spikes</span>, </span>
@@ -383,12 +384,12 @@ objects and return them in a list.</p>
 <span>    sample_rt <span class="op">=</span> <span class="fl">1e3</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <p>The <strong>neuron</strong> object class is native to C++ and
-integrated into neurons (an R package) via Rcpp. It comes with built-in
-methods for many tasks, such as estimating autocorrelation parameters
-with dichotomized Gaussian simulations. Some of these methods can be
-accessed through R, but neurons provides R-native wrappers for the most
-useful ones. The neurons package also provides native R functions for
-plotting.</p>
+integrated into neuronsDG (an R package) via Rcpp. It comes with
+built-in methods for many tasks, such as estimating autocorrelation
+parameters with dichotomized Gaussian simulations. Some of these methods
+can be accessed through R, but neurons provides R-native wrappers for
+the most useful ones. The neuronsDG package also provides native R
+functions for plotting.</p>
 <h3>
 Visualizing autocorrelation
 </h3>
@@ -422,7 +423,7 @@ correlation), or without (i.e., raw correlation). The <a href="tutorial_tau_est_
 constants</a> provides a comparison between empirical vs population
 autocorrelation, and Pearson vs raw autocorrelation. The class
 <strong>neuron</strong> provides a method for computing both versions of
-empirical autocorrelation, and the neurons package provides a wrapper <a href="../reference/compute.autocorr.html">compute.autocorr()</a> with
+empirical autocorrelation, and neuronsDG provides a wrapper <a href="../reference/compute.autocorr.html">compute.autocorr()</a> with
 default parameters to access it. Similarly, there is a method and
 corresponding wrapper <a href="../reference/fit.edf.autocorr.html">fit.edf.autocorr()</a> for
 fitting a decay model to the empirical estimate. Here, for example,
@@ -467,9 +468,10 @@ high-autocorrelation cell has a time constant of 104.4ms and an
 amplitude of 0.031, while the low-autocorrelation cell has a time
 constant of only 44.2ms and an amplitude of 0.004.</p>
 <p>In practice, the individual steps shown above do not need to be run
-with separate method calls. The neurons package provides a function, <a href="../reference/process.autocorr.html">process.autocorr()</a>, which
-does all of these steps in one call for a list of neurons. Here is the
-function run on the current set of neurons, with full print out of
+with separate method calls. The neuronsDG package provides a function,
+<a href="../reference/process.autocorr.html">process.autocorr()</a>,
+which does all of these steps in one call for a list of neurons. Here is
+the function run on the current set of neurons, with full print out of
 results:</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">autocor.results.batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/process.autocorr.html">process.autocorr</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span></span>
@@ -571,12 +573,12 @@ practice, 1000 or more simulations should be run.</p>
 <span>  <span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.ests</span><span class="op">$</span><span class="va">estimates</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre class="scroll-output"><code><span><span class="co">##    lambda_ms lambda_bin          A      tau    bias_term  autocorr1 max_autocorr mean_autocorr min_autocorr</span></span>
-<span><span class="co">## 1 0.01842384  0.1842384 0.01333024 58.79604 0.0003394379 0.01366967  0.011584796  0.0008187728 0.0003394379</span></span>
-<span><span class="co">## 2 0.01948344  0.1948344 0.01481292 54.02188 0.0003796046 0.01519253  0.012689332  0.0008652320 0.0003796046</span></span>
-<span><span class="co">## 3 0.01831788  0.1831788 0.01351420 61.78581 0.0003355448 0.01384974  0.011830306  0.0008483692 0.0003355448</span></span>
-<span><span class="co">## 4 0.01728477  0.1728477 0.01292258 51.65018 0.0002987632 0.01322135  0.010946700  0.0007020462 0.0002987632</span></span>
-<span><span class="co">## 5 0.01631788  0.1631788 0.01140312 53.48721 0.0002662732 0.01166939  0.009724891  0.0006360605 0.0002662732</span></span>
-<span><span class="co">## 6 0.01913907  0.1913907 0.01451654 56.30571 0.0003663041 0.01488285  0.012520651  0.0008642567 0.0003663041</span></span></code></pre>
+<span><span class="co">## 1 0.01740397  0.1740397 0.01270022 50.25951 0.0003028983 0.01300312   0.01071170  0.0006875050 0.0003028983</span></span>
+<span><span class="co">## 2 0.01933775  0.1933775 0.01442859 61.45231 0.0003739485 0.01480254   0.01263569  0.0009182705 0.0003739485</span></span>
+<span><span class="co">## 3 0.01784106  0.1784106 0.01285209 58.52146 0.0003183034 0.01317040   0.01115165  0.0007780982 0.0003183034</span></span>
+<span><span class="co">## 4 0.01741722  0.1741722 0.01281886 58.15564 0.0003033595 0.01312222   0.01109709  0.0007588466 0.0003033595</span></span>
+<span><span class="co">## 5 0.01682119  0.1682119 0.01209286 55.70845 0.0002829525 0.01237581   0.01038875  0.0006929647 0.0002829525</span></span>
+<span><span class="co">## 6 0.02125828  0.2125828 0.01572998 63.77607 0.0004519144 0.01618190   0.01389910  0.0010696484 0.0004519144</span></span></code></pre>
 <p>With the simulations run, the final step is to estimate the network
 time constant for covariates of interest. The function <a href="../reference/analyze.autocorr.html">analyze.autocorr()</a> does
 this by bootstrapping over the tau values obtained from the simulations.
@@ -599,12 +601,12 @@ simulation.</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">autocor.results.bootstraps</span><span class="op">$</span><span class="va">resamples</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre class="scroll-output"><code><span><span class="co">##   RH_Mecp2 HET LH_Shank3 KO</span></span>
-<span><span class="co">## 1     62.61748     56.40285</span></span>
-<span><span class="co">## 2     59.88137     58.81627</span></span>
-<span><span class="co">## 3     59.51760     58.45770</span></span>
-<span><span class="co">## 4     52.23003     58.02937</span></span>
-<span><span class="co">## 5     54.35176     57.60072</span></span>
-<span><span class="co">## 6     61.16398     54.95277</span></span></code></pre>
+<span><span class="co">## 1     63.09572     55.92978</span></span>
+<span><span class="co">## 2     60.23415     57.89369</span></span>
+<span><span class="co">## 3     59.48629     58.25557</span></span>
+<span><span class="co">## 4     52.54515     57.49400</span></span>
+<span><span class="co">## 5     54.98458     57.47310</span></span>
+<span><span class="co">## 6     61.12656     55.79558</span></span></code></pre>
 <p>The second is <strong>distribution_plot</strong>, a ggplot2 object
 visualizing the bootstrap distributions of tau for each covariate.</p>
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
@@ -618,14 +620,14 @@ Code summary
 <code class="sourceCode R"><span><span class="co"># Setup</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span>list <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ls.html" class="external-link">ls</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">12345</span><span class="op">)</span> </span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">neurons</span><span class="op">)</span> </span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">neuronsDG</span><span class="op">)</span> </span>
 <span></span>
 <span><span class="co"># Load and format metadata</span></span>
 <span><span class="va">kilo4_metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
 <span>    <span class="st">"extdata"</span>, </span>
 <span>    <span class="st">"meta_data_kilo4demo.csv"</span>, </span>
-<span>    package <span class="op">=</span> <span class="st">"neurons"</span></span>
+<span>    package <span class="op">=</span> <span class="st">"neuronsDG"</span></span>
 <span>    <span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">kilo4_metadata</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span>
@@ -643,7 +645,7 @@ Code summary
 <span>  recording.folder <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
 <span>    <span class="st">"extdata"</span>, </span>
 <span>    <span class="st">"kilo4demo"</span>, </span>
-<span>    package <span class="op">=</span> <span class="st">"neurons"</span></span>
+<span>    package <span class="op">=</span> <span class="st">"neuronsDG"</span></span>
 <span>    <span class="op">)</span>,</span>
 <span>  meta_data <span class="op">=</span> <span class="va">kilo4_metadata</span>, </span>
 <span>  max_spikes <span class="op">=</span> <span class="fl">1e4</span>,</span>

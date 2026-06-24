@@ -25,9 +25,9 @@ However, typical approaches to such simulations, such as bootstrapping,
 will only amplify the noise. A better approach is to use dichotomized
 Gaussians.
 
-This tutorial shows how to use the neurons package to estimate network
-time constants using dichotomized Gaussians. Patch-clamp recordings will
-be used as an example dataset. The recordings are from layer 2/3 of the
+This tutorial shows how to use neuronsDG to estimate network time
+constants using dichotomized Gaussians. Patch-clamp recordings will be
+used as an example dataset. The recordings are from layer 2/3 of the
 auditory cortex of mature wildtype mice, in both the left and right
 hemisphere. These recordings are used by [Neophytou et
 al. 2022](https://doi.org/10.1371/journal.pbio.3001803), who adapt and
@@ -39,28 +39,30 @@ tutorial reproduces that analysis, with a few improvements.
 ## Load spike rasters
 
 Set up the R environment by clearing the workspace, setting a
-random-number generator seed, and loading the neurons package.
+random-number generator seed, and loading neuronsDG.
 
 ``` r
+
 # Clear the R workspace to start fresh
 rm(list = ls())
 
 # Set seed for reproducibility
 set.seed(12345) 
 
-# Load neurons package
+# Load package
 library(neuronsDG, quietly = TRUE) 
 ```
 
-All of the data is contained in a single csv file, provided with the
-neurons package, as a compact spike raster.
+All of the data is contained in a single csv file, provided with
+neuronsDG, as a compact spike raster.
 
 ``` r
+
 spike.rasters <- read.csv(
   system.file(
       "extdata", 
       "spike_rasters_2022data.csv", 
-      package = "neurons"
+      package = "neuronsDG"
     )
   )
 print(head(spike.rasters))
@@ -91,6 +93,7 @@ or **age** are included, they will be recognized and added as metadata
 to the neuron objects.
 
 ``` r
+
 neurons <- load.rasters.as.neurons(spike.rasters, bin_size = 10.0)
 cat("Number of cells discovered:", length(neurons))
 ```
@@ -99,16 +102,18 @@ cat("Number of cells discovered:", length(neurons))
 ## Number of cells discovered: 41
 ```
 
-The **neuron** object class is native to C++ and integrated into neurons
-(an R package) via Rcpp. It comes with built-in methods for many tasks,
-such as estimating autocorrelation parameters with dichotomized Gaussian
-simulations. Some of these methods can be accessed through R, but
-neurons provides R-native wrappers for the most useful ones. The neurons
-package also provides native R functions for plotting. Let’s plot the
-rasters for two cells. The first has high autocorrelation, as can be
-seen from the long horizontal streaks of spikes:
+The **neuron** object class is native to C++ and integrated into
+neuronsDG (an R package) via Rcpp. It comes with built-in methods for
+many tasks, such as estimating autocorrelation parameters with
+dichotomized Gaussian simulations. Some of these methods can be accessed
+through R, but neurons provides R-native wrappers for the most useful
+ones. The neuronsDG package also provides native R functions for
+plotting. Let’s plot the rasters for two cells. The first has high
+autocorrelation, as can be seen from the long horizontal streaks of
+spikes:
 
 ``` r
+
 cell_high <- 16
 plot.raster(neurons[[cell_high]]) 
 ```
@@ -119,6 +124,7 @@ The second has low autocorrelation, as can be seen from the more random
 distribution of spikes without long streaks:
 
 ``` r
+
 cell_low <- 1
 plot.raster(neurons[[cell_low]]) 
 ```
@@ -199,9 +205,8 @@ represented by \Delta. The default, used in the code above, is 10ms.
 
 A further question to decide when computing empirical autocorrelation is
 how to handle multiple spikes in a single bin. There are three options
-supported by the neurons package: “sum”, “mean”, and “boolean”. The
-option is set via the argument **bin_count_action**, available in the
-functions
+supported by neuronsDG: “sum”, “mean”, and “boolean”. The option is set
+via the argument **bin_count_action**, available in the functions
 [compute.autocorr()](https://michaelbarkasi.github.io/neurons/reference/compute.autocorr.md),
 [process.autocorr()](https://michaelbarkasi.github.io/neurons/reference/process.autocorr.md),
 and
@@ -237,6 +242,7 @@ raw autocorrelation for the neuron with high autocorrelation shown
 above:
 
 ``` r
+
 compute.autocorr(neurons[[cell_high]], use_raw = TRUE)
 plot.autocorrelation(neurons[[cell_high]])
 ```
@@ -248,6 +254,7 @@ the **use_raw** option. The Pearson autocorrelation for the same data
 can be got by setting **use_raw** to FALSE:
 
 ``` r
+
 compute.autocorr(neurons[[cell_high]], use_raw = FALSE)
 plot.autocorrelation(neurons[[cell_high]])
 ```
@@ -258,6 +265,7 @@ As another example, here is the raw autocorrelation for the neuron with
 low autocorrelation shown above:
 
 ``` r
+
 compute.autocorr(neurons[[cell_low]], use_raw = TRUE)
 plot.autocorrelation(neurons[[cell_low]])
 ```
@@ -267,6 +275,7 @@ plot.autocorrelation(neurons[[cell_low]])
 And the Pearson autocorrelation for the same data:
 
 ``` r
+
 compute.autocorr(neurons[[cell_low]], use_raw = FALSE)
 plot.autocorrelation(neurons[[cell_low]])
 ```
@@ -280,16 +289,16 @@ decay over increasing lag, at least in cases with nonzero
 autocorrelation. As noted above, this decay can be modeled with the
 function: R = A\exp(-l/\tau) + b where A is the *amplitude*
 (autocorrelation at the initial lag), l is lag, \tau is the *network
-time constant*, and b is a constant (bias or baseline) term. The neurons
-package assumes that the bias term b is a constant function of the
-firing rate \lambda and bin size \Delta, given as: b =
+time constant*, and b is a constant (bias or baseline) term. The
+neuronsDG package assumes that the bias term b is a constant function of
+the firing rate \lambda and bin size \Delta, given as: b =
 (\lambda{}\Delta)^2 In this formula both \lambda and \Delta must be in
 the same unit of time, e.g., ms. The values for A and \tau are set by
 minimizing the mean squared error between the empirical autocorrelation
 and the model function, using the [L-BFGS algorithm as implemented in
 NLopt](https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#low-storage-bfgs).
 
-Model fitting is accessed in the neurons package with the function
+Model fitting is accessed in neuronsDG with the function
 [fit.edf.autocorr()](https://michaelbarkasi.github.io/neurons/reference/fit.edf.autocorr.md).
 The function takes a single neuron and fits the exponential decay
 function to its empirical autocorrelation. Here, for example, is the
@@ -297,6 +306,7 @@ function used to fit the model to the raw autocorrelation for the neuron
 with high autocorrelation:
 
 ``` r
+
 compute.autocorr(neurons[[cell_high]]) # Recompute with raw autocorrelation
 fit.edf.autocorr(neurons[[cell_high]])
 plot.autocorrelation(neurons[[cell_high]])
@@ -309,6 +319,7 @@ exponential decay fit can be fetched directly with a neuron method and
 provide succinct quantification of the empirical autocorrelation.
 
 ``` r
+
 print(neurons[[cell_high]]$fetch_EDF_parameters())
 ```
 
@@ -327,6 +338,7 @@ will perform both steps at once for an entire list of neurons and return
 the results in a data frame.
 
 ``` r
+
 autocor.results.batch <- process.autocorr(neurons)
 print(head(autocor.results.batch))
 ```
@@ -382,6 +394,7 @@ normal (i.e., have mean \mu of 0 and standard deviation \sigma of 1) and
 such that a covariance K_V of 0.75 exists between these distributions.
 
 ``` r
+
 V_sample <- MASS::mvrnorm(
     n = 300,
     mu = c(0,0),
@@ -399,6 +412,7 @@ Next, let’s plot these points and superimpose on top of them thresholds
 threshold.
 
 ``` r
+
 # Convert to data frame for plotting
 V_sample <- as.data.frame(V_sample) 
 threshold <- 1
@@ -508,7 +522,7 @@ covariance K\_{V\_{i_1}V\_{i_2}} between V\_{i_1} and V\_{i_2} which,
 after dichotomization, yields covariance K\_{X\_{i_1}X\_{i_2}}, can be
 found by solving for K\_{V\_{i_1}V\_{i_2}} in the equation:
 0=K\_{X\_{i_1}X\_{i_2}} - \Phi_2^+(\gamma,K\_{V\_{i_1}V\_{i_2}}) +
-(1-\Phi(\gamma))^2 The neurons package solves this equation for
+(1-\Phi(\gamma))^2 The neuronsDG package solves this equation for
 K\_{V\_{i_1}V\_{i_2}} using a root bisection algorithm.
 
 The only remaining task is to determine the covariance needed for a
@@ -541,6 +555,7 @@ simulations per neuron, but in practice, 1000 or more simulations should
 be run.
 
 ``` r
+
 autocor.ests <- estimate.autocorr.params(
     neuron_list = neurons,
     n_trials_per_sim = 500, 
@@ -552,12 +567,12 @@ print(head(autocor.ests$estimates))
 
 ``` scroll-output
 ##    lambda_ms lambda_bin          A      tau    bias_term  autocorr1 max_autocorr mean_autocorr min_autocorr
-## 1 0.01480282  0.1480282 0.01135389 29.60453 0.0002191234 0.01157302  0.008318400  0.0004195115 0.0002191234
-## 2 0.01777465  0.1777465 0.01307888 32.77918 0.0003159381 0.01339481  0.009955992  0.0005759667 0.0003159381
-## 3 0.01730986  0.1730986 0.01259854 33.58607 0.0002996312 0.01289817  0.009653952  0.0005572653 0.0002996312
-## 4 0.01904225  0.1904225 0.01415649 38.63070 0.0003626074 0.01451909  0.011290424  0.0007024252 0.0003626074
-## 5 0.01616901  0.1616901 0.01183272 34.95299 0.0002614370 0.01209416  0.009150043  0.0005148006 0.0002614370
-## 6 0.01540845  0.1540845 0.01177011 29.77690 0.0002374204 0.01200753  0.008650034  0.0004465796 0.0002374204
+## 1 0.01452113  0.1452113 0.01039435 34.17210 0.0002108631 0.01060522  0.007968100  0.0004277115 0.0002108631
+## 2 0.01773239  0.1773239 0.01332894 32.71031 0.0003144378 0.01364338  0.010132497  0.0005787920 0.0003144378
+## 3 0.01670423  0.1670423 0.01240770 36.54395 0.0002790311 0.01268673  0.009716373  0.0005586155 0.0002790311
+## 4 0.01766197  0.1766197 0.01232143 38.74450 0.0003119452 0.01263337  0.009830459  0.0006087025 0.0003119452
+## 5 0.01629577  0.1629577 0.01279240 32.46619 0.0002655523 0.01305795  0.009666764  0.0005170678 0.0002655523
+## 6 0.01577465  0.1577465 0.01163968 30.51361 0.0002488395 0.01188852  0.008635958  0.0004617071 0.0002488395
 ```
 
 With the simulations run, the final step is to estimate the network time
@@ -570,6 +585,7 @@ mean of n draws with replacement from the pool of nm values for \tau.
 For this tutorial, 10k bootstrap resamples are used.
 
 ``` r
+
 autocor.results.bootstraps <- analyze.autocorr(
     autocor.ests,
     covariate = c("hemi","genotype"),
@@ -583,23 +599,25 @@ returns a list with two objects. The first is **resamples**, a dataframe
 holding the tau values for each covariate from each simulation.
 
 ``` r
+
 print(head(autocor.results.bootstraps$resamples))
 ```
 
 ``` scroll-output
 ##   LH_CBA/J RH_CBA/J
-## 1 56.73363 53.67913
-## 2 50.86373 56.29508
-## 3 47.13767 51.25537
-## 4 53.21613 48.99225
-## 5 53.31073 59.97263
-## 6 52.45779 56.65133
+## 1 56.77222 53.73481
+## 2 51.51585 56.34578
+## 3 46.20546 51.45680
+## 4 52.92404 48.94714
+## 5 52.48259 59.84441
+## 6 52.89871 56.81380
 ```
 
 The second is **distribution_plot**, a ggplot2 object visualizing the
 bootstrap distributions of tau for each covariate.
 
 ``` r
+
 print(autocor.results.bootstraps$distribution_plot)
 ```
 
@@ -610,17 +628,18 @@ print(autocor.results.bootstraps$distribution_plot)
 The essential steps to run this analysis are as follows:
 
 ``` r
+
 # Setup
 rm(list = ls())
 set.seed(12345) 
-library(neurons) 
+library(neuronsDG) 
 
 # Load demo data
 spike.rasters <- read.csv(
   system.file(
       "extdata", 
       "spike_rasters_2022data.csv", 
-      package = "neurons"
+      package = "neuronsDG"
     )
   )
 

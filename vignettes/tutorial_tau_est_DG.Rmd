@@ -16,11 +16,11 @@ The extent to which an individual neuron feeds back on itself in a recurrent loo
 
 Network time constants are difficult to estimate from experimental data. The spiking activity of a neuron is indicative of its recurrence only if that neuron is receiving no other input. Thus, time constants must be estimated from periods of spontaneous activity. These periods are short and noisy, making time constant estimates from empirical calculations of a neuron's autocorrelation unreliable. A way to improve the signal-to-noise ratio is needed, such as simulating many recordings. However, typical approaches to such simulations, such as bootstrapping, will only amplify the noise. A better approach is to use dichotomized Gaussians. 
 
-This tutorial shows how to use the neurons package to estimate network time constants using dichotomized Gaussians. Patch-clamp recordings will be used as an example dataset. The recordings are from layer 2/3 of the auditory cortex of mature wildtype mice, in both the left and right hemisphere. These recordings are used by [Neophytou et al. 2022](https://doi.org/10.1371/journal.pbio.3001803), who adapt and apply the dichotomized Gaussian approach of [Macke et al. 2009](https://doi.org/10.1162/neco.2008.02-08-713) to show that the right auditory cortex of mice has more recurrence than the left. This tutorial reproduces that analysis, with a few improvements. 
+This tutorial shows how to use neuronsDG to estimate network time constants using dichotomized Gaussians. Patch-clamp recordings will be used as an example dataset. The recordings are from layer 2/3 of the auditory cortex of mature wildtype mice, in both the left and right hemisphere. These recordings are used by [Neophytou et al. 2022](https://doi.org/10.1371/journal.pbio.3001803), who adapt and apply the dichotomized Gaussian approach of [Macke et al. 2009](https://doi.org/10.1162/neco.2008.02-08-713) to show that the right auditory cortex of mice has more recurrence than the left. This tutorial reproduces that analysis, with a few improvements. 
 
 <h2>Load spike rasters</h2>
 
-Set up the R environment by clearing the workspace, setting a random-number generator seed, and loading the neurons package.
+Set up the R environment by clearing the workspace, setting a random-number generator seed, and loading neuronsDG.
 
 ```{r Rsetup}
 # Clear the R workspace to start fresh
@@ -29,18 +29,18 @@ rm(list = ls())
 # Set seed for reproducibility
 set.seed(12345) 
 
-# Load neurons package
+# Load package
 library(neuronsDG, quietly = TRUE) 
 ```
 
-All of the data is contained in a single csv file, provided with the neurons package, as a compact spike raster. 
+All of the data is contained in a single csv file, provided with neuronsDG, as a compact spike raster. 
 
 ```{r load_rasters}
 spike.rasters <- read.csv(
   system.file(
       "extdata", 
       "spike_rasters_2022data.csv", 
-      package = "neurons"
+      package = "neuronsDG"
     )
   )
 print(head(spike.rasters))
@@ -53,7 +53,7 @@ neurons <- load.rasters.as.neurons(spike.rasters, bin_size = 10.0)
 cat("Number of cells discovered:", length(neurons))
 ```
 
-The **neuron** object class is native to C++ and integrated into neurons (an R package) via Rcpp. It comes with built-in methods for many tasks, such as estimating autocorrelation parameters with dichotomized Gaussian simulations. Some of these methods can be accessed through R, but neurons provides R-native wrappers for the most useful ones. The neurons package also provides native R functions for plotting. Let's plot the rasters for two cells. The first has high autocorrelation, as can be seen from the long horizontal streaks of spikes:
+The **neuron** object class is native to C++ and integrated into neuronsDG (an R package) via Rcpp. It comes with built-in methods for many tasks, such as estimating autocorrelation parameters with dichotomized Gaussian simulations. Some of these methods can be accessed through R, but neurons provides R-native wrappers for the most useful ones. The neuronsDG package also provides native R functions for plotting. Let's plot the rasters for two cells. The first has high autocorrelation, as can be seen from the long horizontal streaks of spikes:
 
 ```{r plot_raster_high_autocor}
 cell_high <- 16
@@ -95,7 +95,7 @@ The **neuron** object class has built-in methods for computing both the raw and 
 
 For more cogent results, the rows (i.e., the time axis) of the matrix $S$ must be downsampled via binning. This binning is done automatically by the function [load.rasters.as.neurons()](../reference/load.rasters.as.neurons.html) and can be controlled via its argument **bin_size**, which below is represented by $\Delta$. The default, used in the code above, is 10ms. 
 
-A further question to decide when computing empirical autocorrelation is how to handle multiple spikes in a single bin. There are three options supported by the neurons package: "sum", "mean", and "boolean". The option is set via the argument **bin_count_action**, available in the functions [compute.autocorr()](../reference/compute.autocorr.html), [process.autocorr()](../reference/process.autocorr.html), and [estimate.autocorr.params()](../reference/estimate.autocorr.params.html). In all cases, the default is "sum", meaning that the value of $S$ in a given bin on a given trial is the total count of spikes falling in that bin. The option "mean" will instead return the mean number of spikes in the bin, while "boolean" will return 1 if there is at least one spike in the bin and 0 otherwise. From *ad hoc* development and testing, the "sum" function works best, presumably because it preserves the most information about correlation. 
+A further question to decide when computing empirical autocorrelation is how to handle multiple spikes in a single bin. There are three options supported by neuronsDG: "sum", "mean", and "boolean". The option is set via the argument **bin_count_action**, available in the functions [compute.autocorr()](../reference/compute.autocorr.html), [process.autocorr()](../reference/process.autocorr.html), and [estimate.autocorr.params()](../reference/estimate.autocorr.params.html). In all cases, the default is "sum", meaning that the value of $S$ in a given bin on a given trial is the total count of spikes falling in that bin. The option "mean" will instead return the mean number of spikes in the bin, while "boolean" will return 1 if there is at least one spike in the bin and 0 otherwise. From *ad hoc* development and testing, the "sum" function works best, presumably because it preserves the most information about correlation. 
 
 Time binning introduces a dilemma. On the one hand, it's essential for avoiding autocorrelation values of zero. On the other hand, it violates a key mathematical fact underlying the dichotomized Gaussian approach. This is the fact, explained below, that: 
 \[\text{E}[X_{i_1}X_{i_2}]=\Phi_2^+(\gamma,K_{V_{i_1}V_{i_2}})\] 
@@ -135,11 +135,11 @@ plot.autocorrelation(neurons[[cell_low]])
 
 Theoretically, autocorrelation can be expected to exhibit exponential decay over increasing lag, at least in cases with nonzero autocorrelation. As noted above, this decay can be modeled with the function: 
 \[R = A\exp(-l/\tau) + b\]
-where $A$ is the *amplitude* (autocorrelation at the initial lag), $l$ is lag, $\tau$ is the *network time constant*, and $b$ is a constant (bias or baseline) term. The neurons package assumes that the bias term $b$ is a constant function of the firing rate $\lambda$ and bin size $\Delta$, given as: 
+where $A$ is the *amplitude* (autocorrelation at the initial lag), $l$ is lag, $\tau$ is the *network time constant*, and $b$ is a constant (bias or baseline) term. The neuronsDG package assumes that the bias term $b$ is a constant function of the firing rate $\lambda$ and bin size $\Delta$, given as: 
 \[b = (\lambda{}\Delta)^2\] 
 In this formula both $\lambda$ and $\Delta$ must be in the same unit of time, e.g., ms. The values for $A$ and $\tau$ are set by minimizing the mean squared error between the empirical autocorrelation and the model function, using the [L-BFGS algorithm as implemented in NLopt](https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#low-storage-bfgs). 
 
-Model fitting is accessed in the neurons package with the function [fit.edf.autocorr()](../reference/fit.edf.autocorr.html). The function takes a single neuron and fits the exponential decay function to its empirical autocorrelation. Here, for example, is the function used to fit the model to the raw autocorrelation for the neuron with high autocorrelation:
+Model fitting is accessed in neuronsDG with the function [fit.edf.autocorr()](../reference/fit.edf.autocorr.html). The function takes a single neuron and fits the exponential decay function to its empirical autocorrelation. Here, for example, is the function used to fit the model to the raw autocorrelation for the neuron with high autocorrelation:
 
 ```{r fit_autocorrelation_high}
 compute.autocorr(neurons[[cell_high]]) # Recompute with raw autocorrelation
@@ -268,7 +268,7 @@ Putting it all together:
 \[K_{X_{i_1}X_{i_2}} = \Phi_2^+(\gamma,K_{V_{i_1}V_{i_2}}) - (1-\Phi(\gamma))^2\]
 Thus, the covariance $K_{V_{i_1}V_{i_2}}$ between $V_{i_1}$ and $V_{i_2}$ which, after dichotomization, yields covariance $K_{X_{i_1}X_{i_2}}$, can be found by solving for $K_{V_{i_1}V_{i_2}}$ in the equation:
 \[0=K_{X_{i_1}X_{i_2}} - \Phi_2^+(\gamma,K_{V_{i_1}V_{i_2}}) + (1-\Phi(\gamma))^2\]
-The neurons package solves this equation for $K_{V_{i_1}V_{i_2}}$ using a root bisection algorithm. 
+The neuronsDG package solves this equation for $K_{V_{i_1}V_{i_2}}$ using a root bisection algorithm. 
 
 The only remaining task is to determine the covariance needed for a given desired autocorrelation. This is straightforward from the definitions of each type of correlation. For raw autocorrelation: \[K_{X_{i_1}X_{i_2}} = R_{X_{i_1}X_{i_2}} - \lambda^2\]for $\lambda$ in time units of bin. For Pearson autocorrelation: \[K_{X_{i_1}X_{i_2}} = R_{X_{i_1}X_{i_2}}\sigma_X^2\]where $\sigma_X^2$ is the variance of $X$, again in bin units.
 
@@ -324,14 +324,14 @@ The essential steps to run this analysis are as follows:
 # Setup
 rm(list = ls())
 set.seed(12345) 
-library(neurons) 
+library(neuronsDG) 
 
 # Load demo data
 spike.rasters <- read.csv(
   system.file(
       "extdata", 
       "spike_rasters_2022data.csv", 
-      package = "neurons"
+      package = "neuronsDG"
     )
   )
 

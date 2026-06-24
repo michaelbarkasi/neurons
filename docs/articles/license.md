@@ -76,16 +76,6 @@ The NLopt nonlinear-optimization package
 GNU Lesser General Public License (LGPL)  
 <https://nlopt.readthedocs.io/en/latest/NLopt_License_and_Copyright/>
 
-# pcg
-
-Melissa E. O’Neill  
-<https://www.cs.hmc.edu/~oneill/index.html>
-
-<https://www.pcg-random.org/>  
-<https://github.com/imneme/pcg-cpp>
-
-Apache 2.0 and The MIT License
-
 # ggplot2
 
 by: ggplot2 core developer team
@@ -98,3 +88,11 @@ The MIT license
 # MASS
 
 … must fill in.
+
+GNU General Public License v2.0 / v3.0
+
+# mvtnorm
+
+… must fill in.
+
+GNU General Public License v2.0

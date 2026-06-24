@@ -6,10 +6,10 @@ Synchronous firing between two neurons can be detected by computing the
 cross-correlation of their spike trains. The *cross-correlation* between
 two time series R (the reference series) and C (the comparison series)
 is the correlation between R and a lagged copy of C. This tutorial shows
-how to use functions from the neurons package and some basic R code to
-compute and visualize cross-correlations between spike trains. Data from
-the thalamic reticular nucleus (TRN) of wildtype and Mut-S Homolog 2
-(Msh2) knock-out mice is used. As discussed in the
+how to use functions from neuronsDG and some basic R code to compute and
+visualize cross-correlations between spike trains. Data from the
+thalamic reticular nucleus (TRN) of wildtype and Mut-S Homolog 2 (Msh2)
+knock-out mice is used. As discussed in the
 [preprint](https://www.biorxiv.org/content/10.1101/2025.02.13.638164v1)
 from which the data is taken, the Msh2 knock-out mice were observed to
 exhibit increased gap junction formation in the TRN, and thus it would
@@ -20,16 +20,17 @@ between cells.
 ## Load spike rasters
 
 The first step is to set up the R environment by clearing the workspace,
-setting a random-number generator seed, and loading the neurons package.
+setting a random-number generator seed, and loading neuronsDG.
 
 ``` r
+
 # Clear the R workspace to start fresh
 rm(list = ls())
 
 # Set seed for reproducibility
 set.seed(12345) 
 
-# Load neurons package
+# Load package
 library(neuronsDG, quietly = TRUE) 
 ```
 
@@ -41,11 +42,12 @@ fired the spike. Additional columns provide information about the
 recording session and covariates, such as genotype.
 
 ``` r
+
 spike.rasters <- read.csv(
   system.file(
       "extdata", 
       "cross_corr_demo_data.csv", 
-      package = "neurons"
+      package = "neuronsDG"
     )
   )
 print(head(spike.rasters))
@@ -93,6 +95,7 @@ with R, while high correlation at a short positive lag will indicate
 that C tends to fire shortly after R.
 
 ``` r
+
 # Write function to parse a compact raster into trials defined by spikes from a reference cell
 make_trials_from_spikes <- function(
     raster,
@@ -104,13 +107,10 @@ make_trials_from_spikes <- function(
     
     # Identify the penetration of the cell of interest
     cell_pen <- unique(raster$recording_name[raster$cell == cell_num])
-    
     # Subset raster to the penetration of the cell of interest
     raster_p <- raster[raster$recording_name == cell_pen,]
-    
     # Get indices of spikes from the reference cell
     cell_idx <- which(raster_p$cell == cell_num)
-    
     # Get spike times of the reference cell
     ref_cell_spikes <- raster_p$time_in_ms[cell_idx]
     
@@ -148,6 +148,7 @@ make_trials_from_spikes <- function(
 As a demonstration, let’s parse trials for one cell.
 
 ``` r
+
 # Parameters for trial parsing and cross-correlation
 trial_duration <- 100 # ms
 lag_divider <- 2      # max lag will be trial_duration/lag_divider
@@ -178,7 +179,7 @@ print(head(raster_demo))
 ## 261150          0   Msh2KO  penetration_4   13       1     6
 ```
 
-The neurons package includes functions for computing both [raw and
+The neuronsDG package includes functions for computing both [raw and
 Pearson
 cross-correlations](https://michaelbarkasi.github.io/neurons/articles/tutorial_tau_est_DG.md)
 from a raster like **raster_demo**. The first step is to convert
@@ -187,6 +188,7 @@ from a raster like **raster_demo**. The first step is to convert
 function.
 
 ``` r
+
 neurons <- load.rasters.as.neurons(
     raster_demo, 
     bin_size = bs, 
@@ -203,6 +205,7 @@ vector of cross-correlation values at lags from zero to the specified
 max lag.
 
 ``` r
+
 # Grab neurons from list
 ref_neuron <- neurons[[paste0("neuron_", ref_cell)]]
 comp_neuron <- neurons[[paste0("neuron_", comp_cell)]]
@@ -234,6 +237,7 @@ cross_corr <- ref_neuron$compute_crosscorrelation_R(
 ```
 
 ``` r
+
 # Plot cross-correlation with ggplot2
 ggplot2::ggplot(
   data.frame(
@@ -260,6 +264,7 @@ synchronously firing neurons, let’s artificially load the comparison
 neuron with lagged copies of spikes from the reference neuron.
 
 ``` r
+
 # Make function to load lagged spikes
 load_lagged_spikes <- function(
     raster,        # Raster to load
@@ -315,6 +320,7 @@ cross_corr_loaded <- ref_neuron_loaded$compute_crosscorrelation_R(
 ```
 
 ``` r
+
 # Plot cross-correlation for loaded neurons
 ggplot2::ggplot(
   data.frame(
@@ -347,6 +353,7 @@ comparison neuron relative to spikes from the reference neuron. Here,
 for example, is the cross-correlogram for the loaded neuron.
 
 ``` r
+
 # Fetch the raster of the loaded comparison neuron
 loaded_raster <- comp_neuron_loaded$fetch_spike_raster_R()
 # Extract spike times relative to reference spikes
@@ -386,6 +393,7 @@ cross-correlation and the cross-correlogram. Normalizing the
 cross-correlation by its mean value helps to mitigate this distortion.
 
 ``` r
+
 cross_corr_by_genotype <- function(
     raster,
     trial_duration, # in ms
@@ -427,10 +435,8 @@ cross_corr_by_genotype <- function(
       # Compute cross-correlation between reference cell and comparison cells
       cross_corr <- c()
       for (comp_cell in comp_cell_list) {
-        
         # Don't compute autocorrelation
         if (ref_cell == comp_cell) next
-        
         # Compute cross-correlation
         ref_neuron <- neurons[[paste0("neuron_", ref_cell)]]
         comp_neuron <- neurons[[paste0("neuron_", comp_cell)]]
@@ -441,15 +447,11 @@ cross_corr_by_genotype <- function(
           TRUE,                         # use raw?
           FALSE                         # verbose?
         )
-        
         # Append to results
         cross_corr <- rbind(cross_corr, cross_corr_cc)
-        
       }
-      
       # Store cross-correlation results for this reference cell
       cross_corr_by_cell[[paste0("cross_corr_", ref_cell)]] <- cross_corr
-      
     }
     
     # Separate cross-correlations by genotype
@@ -459,26 +461,21 @@ cross_corr_by_genotype <- function(
       
       # Get all cross-correlations for this reference cell
       cross_corr_matrix <- cross_corr_by_cell[[ref_cell]]
-      
       # Get genotype of this reference cell
       geno <- unique(spike.rasters$genotype[spike.rasters$cell == ref_cell])
       
       # Process cross-correlation from each comparison cell
       for (comp_cell in 1:nrow(cross_corr_matrix)) {
-        
         # Grab cross-correlation vector
         cross_corr_vector <- cross_corr_matrix[comp_cell, ]
-        
         # Normalize
         cross_corr_vector <- cross_corr_vector/mean(cross_corr_vector)
-        
         # Append to genotype-specific results
         if (geno == "WT") {
           geno_WT_crosscorr <- rbind(geno_WT_crosscorr, cross_corr_vector)
         } else if (geno == "Msh2KO") {
           geno_Msh2KO_crosscorr <- rbind(geno_Msh2KO_crosscorr, cross_corr_vector)
         }
-        
       }
     }
     
@@ -527,6 +524,7 @@ cross_corr_by_genotype <- function(
 First, let’s compare the genotypes on a short timescale of 1-5ms.
 
 ``` r
+
 cross_corr_by_genotype(
       raster = spike.rasters,
       trial_duration = 20,  # in ms
@@ -541,6 +539,7 @@ cross_corr_by_genotype(
 Next, let’s compare the genotypes on a medium timescale of 1-30ms.
 
 ``` r
+
 cross_corr_by_genotype(
       raster = spike.rasters,
       trial_duration = 90,  # in ms
@@ -555,6 +554,7 @@ cross_corr_by_genotype(
 Finally, let’s compare the genotypes on a long timescale of 1-100ms.
 
 ``` r
+
 cross_corr_by_genotype(
       raster = spike.rasters,
       trial_duration = 200, # in ms

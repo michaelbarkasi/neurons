@@ -1,0 +1,105 @@
+---
+title: "The effect of thresholding on correlations"
+author: "Michael Barkasi"
+date: "`r Sys.Date()`"
+---
+
+```{r Rmdsetup, echo=FALSE}
+# Set max width of markdown code outputs
+options(width = 10000)
+knitr::opts_chunk$set(class.output = "scroll-output", cache = TRUE)
+```
+
+<h2>Theorem: The effect of thresholding on correlations between multivariate points</h2> 
+Given a finite set of $m$-dimensional real-valued vectors $S\subset\mathbb{R}^m$, suppose: 
+
+  - **S1.** There are $n$ vectors in $S$ and these vectors are indexed such that $S$ can be treated as an $n\times m$ matrix with the vectors $s\in S$ as rows. 
+  - **S2.** The columns $s_j=\langle s_{ij}\rangle_{1\leq i\leq n}$ of $S$ follow Gaussian distributions, i.e., $s_{ij}\sim\mathcal{N}(\mu_j,\sigma_j)$.
+  - **S3.** The columns of $S$ have pairwise correlations given by $R$, an $m\times m$ symmetric matrix with ones along the diagonal, i.e., $R_{j_{1}j_{2}}=\mathrm{corr}(s_{j_1},s_{j_2})$. 
+
+And define: 
+
+  - **D1.** The real-valued vectors $\mu_S,\sigma_S\in\mathbb{R}^m$ hold, respectively, the column means $\mu_j$ and column standard deviations $\sigma_j$ of $S$, i.e., $\mu_S=\langle\mu_j\rangle_{1\leq j\leq m}$ and $\sigma_S=\langle\sigma_j\rangle_{1\leq j\leq m}$.
+  - **D2.** The diagonal matrix $D$ is the $m\times m$ matrix with all zeros, except the diagonal, which contains $\sigma_S$, i.e., $D_{jj} = \sigma_j$ for all $1\leq j\leq m$. 
+  - **D3.** The matrix $S^{*}$ is the result of thresholding $S$ into binary values of $0$ and $1$ according to the rule $s^{*}_{ij}=1$ if $s_{ij} > 0$ and $s^{*}_{ij}=0$ otherwise. 
+  - **D4.** For a square matrix $M$ and integer vector $v$ shorter than the sides of $M$, $M_{v}$ is the square matrix formed from the rows and columns indexed by $v$. 
+
+It follows that: 
+
+  - **T1.** The covariance matrix for the columns of $S$ is $\Sigma = DRD$.
+  - **T2.** The column means $\mu^{*}_j$ of $S^{*}$ are given by the upper-tail Gaussian cumulative distribution function $\Phi^{+}$: \[\mu^{*}_j = \Phi^{+}(0,\mu_j,\sigma_j) = 1 - \Phi(0,\mu_j,\sigma_j)\]
+  - **T3.** The columns of $S^{*}$ have pairwise correlations $R^{*}_{j_{1}j_{2}}$ given by $\Phi^{+}$ and the upper-tail bivariate Gaussian cumulative distribution function $\Phi^{+}_2$ as follows: 
+    \begin{equation*}
+        R^{*}_{j_{1}j_{2}} = 
+        \frac{
+           \Phi^{+}_{2}(\langle 0,0\rangle,\langle\mu_{j_1},\mu_{j_2}\rangle,\Sigma_{\langle j_{1}, j_{2}\rangle}) - \mu^{*}_{j_1}\mu^{*}_{j_2}
+        }{
+            \sqrt{\mu^{*}_{j_1}-{\mu^{*}_{j_1}}^2} 
+            \sqrt{\mu^{*}_{j_2}-{\mu^{*}_{j_2}}^2}
+        }
+    \end{equation*}
+
+<h2>Proof (T1):</h2>
+Let $\Sigma^\prime=DR$ and note that by the definition of matrix multiplication: 
+\begin{equation*}
+    \Sigma^\prime_{ij} = \sum_{k=1}^{m}D_{ik}R_{kj}
+\end{equation*}
+By (D2), $D_{ik} = 0$ except when $i=k$, in which case $D_{ik}=\sigma_i$. 
+Hence, $\Sigma^{\prime}_{ij}=\sigma_{i}R_{ij}$. 
+Note that $\Sigma=\Sigma^{\prime}D$, and thus: 
+\begin{equation*}
+    \Sigma_{ij} = \sum_{k=1}^{m}\Sigma^{\prime}_{ik}D_{kj}
+\end{equation*}
+As before, $D_{kj}=0$ except when $k=j$, in which case $D_{kj}=\sigma_{j}$. 
+Hence, $\Sigma_{ij}=\Sigma^{\prime}_{ij}\sigma_{j}=\sigma_{i}R_{ij}\sigma_{j}$. 
+From the identity $\mathrm{corr}(X,Y)\sigma_X\sigma_Y=\mathrm{cov}(X,Y)$ and (S3), follows that $\Sigma_{ij}=\mathrm{cov}(s_i,s_j)$. 
+Thus, $\Sigma$ is the covariance matrix for the columns of $S$. 
+$\blacksquare$
+
+<h2>Proof (T2):</h2>
+By the definition of $\Phi^{+}$, for $1\leq i\leq n$:
+\begin{equation*}
+    \Phi^{+}(0,\mu_j,\sigma_j)=\mathrm{P}(s_{ij}> 0\;|\;s_{ij}\sim\mathcal{N}(\mu_j,\sigma_j))
+\end{equation*}
+Hence by (D3), $\Phi^{+}(0,\mu_j,\sigma_j)$ is the number of values $s^{*}_{ij}$ which equal one, over $n$.
+This value is, by definition (S2, D1), the mean $\mu_j^{*}$.
+$\blacksquare$
+
+<h2>Proof (T3):</h2>
+Consider again the identity: 
+\begin{equation*}
+    \mathrm{corr}(X,Y)=\frac{\mathrm{cov}(X,Y)}{\sigma_{X}\sigma_{Y}}
+\end{equation*}
+This identity implies that: 
+\begin{equation*}
+    R^{*}_{j_{1}j_{2}} = \frac{
+        \mathrm{cov}(s^{*}_{j_{1}},s^{*}_{j_{2}})
+    }{
+        \sigma^{*}_{j_{1}}\sigma^{*}_{j_{2}}
+    }
+\end{equation*}
+Given that $s^{*}_j\in\{0,1\}^{m}$ (D3), it follows that $s^{*}_{ij}={s^{*}_{ij}}^2$ for all $1\leq i\leq n$, so $\mu({s^{*}_j}^2)=\mu(s^{*}_j)$. 
+Hence, given the identity: 
+\[\sigma(X)=\sqrt{\mu(X^2)-{\mu(X)}^2}\]
+it follows that:
+\begin{equation*}
+    \sigma^{*}_{j} = \sqrt{\mu^{*}_{j}-{\mu^{*}_{j}}^2} 
+\end{equation*}
+Therefore: 
+\begin{equation*}
+    R^{*}_{j_{1}j_{2}} = \frac{
+        \mathrm{cov}(s^{*}_{j_{1}},s^{*}_{j_{2}})
+    }{
+        \sqrt{\mu^{*}_{j_1}-{\mu^{*}_{j_1}}^2}
+        \sqrt{\mu^{*}_{j_2}-{\mu^{*}_{j_2}}^2}
+    }
+\end{equation*}
+Given (T2) and the identity $\mathrm{cov}(X,Y)=\mu(XY)-\mu(X)\mu(Y)$, it follows that $\mathrm{cov}(s^{*}_{j_{1}},s^{*}_{j_{2}}) = \mu(s^{*}_{j_{1}}s^{*}_{j_{2}}) - \mu^{*}_{j_1}\mu^{*}_{j_2}$.
+Similar to proof of (T2), by the definition of $\Phi^{+}$, for $1\leq i\leq n$:  
+\begin{gather*}
+    \Phi^{+}_{2}(\langle 0,0\rangle,\langle\mu_{j_1},\mu_{j_2}\rangle,\Sigma_{\langle j_{1}, j_{2}\rangle}) = \\
+    \mathrm{P}(s_{ij_{1}}> 0, s_{ij_{2}} > 0 \;|\; s_{ij_{1}}, s_{ij_{2}} \sim \mathrm{MVN}(\langle\mu_{j_1},\mu_{j_2}\rangle,\Sigma_{\langle j_{1}, j_{2}\rangle}))
+\end{gather*}
+Hence by (D3), $\Phi^{+}_{2}(\langle 0,0\rangle,\langle\mu_{j_1},\mu_{j_2}\rangle,\Sigma_{\langle j_{1}, j_{2}\rangle})$ gives the number of rows $i$ such that $s_{ij_{1}}=s_{ij_{2}}=1$, over $n$. 
+This value is equal to $\mu(s^{*}_{j_{1}}s^{*}_{j_{2}})$. 
+$\blacksquare$
