@@ -1,6 +1,12 @@
-* text eol=lf
-*.png -text
-*.jpg -text
+* text=auto eol=lf
+
+*.png  -text
+*.jpg  -text
 *.jpeg -text
-*.gif -text
-*.pdf -text
+*.gif  -text
+*.pdf  -text
+*.ttf  -text
+*.otf  -text
+*.woff -text
+*.woff2 -text
+*.npy  -text
