@@ -87,12 +87,19 @@ The MIT license
 
 # MASS
 
-… must fill in.
+by: Brian Ripley, Bill Venables, Douglas M. Bates, Kurt Hornik (partial
+port ca 1998), Albrecht Gebhardt (partial port ca 1998), and David Firth
+(support functions for polr)
+
+<http://www.stats.ox.ac.uk/pub/MASS4/>
 
 GNU General Public License v2.0 / v3.0
 
 # mvtnorm
 
-… must fill in.
+by: Alan Genz, Frank Bretz, Tetsuhisa Miwa, Xuefei Mi, Friedrich Leisch,
+Fabian Scheipl, Bjoern Bornkamp, Martin Maechler, and Torsten Hothorn
+
+<http://mvtnorm.R-forge.R-project.org>
 
 GNU General Public License v2.0

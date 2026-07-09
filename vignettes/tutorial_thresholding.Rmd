@@ -1,7 +1,7 @@
 ---
 title: "The effect of thresholding on correlations"
 author: "Michael Barkasi"
-date: "`r Sys.Date()`"
+date: "July 8, 2026 (v1.0)"
 ---
 
 ```{r Rmdsetup, echo=FALSE}
@@ -39,7 +39,7 @@ It follows that:
         }
     \end{equation*}
 
-<h2>Proof (T1):</h2>
+<h2>Proof (T1)</h2>
 Let $\Sigma^\prime=DR$ and note that by the definition of matrix multiplication: 
 \begin{equation*}
     \Sigma^\prime_{ij} = \sum_{k=1}^{m}D_{ik}R_{kj}
@@ -56,7 +56,7 @@ From the identity $\mathrm{corr}(X,Y)\sigma_X\sigma_Y=\mathrm{cov}(X,Y)$ and (S3
 Thus, $\Sigma$ is the covariance matrix for the columns of $S$. 
 $\blacksquare$
 
-<h2>Proof (T2):</h2>
+<h2>Proof (T2)</h2>
 By the definition of $\Phi^{+}$, for $1\leq i\leq n$:
 \begin{equation*}
     \Phi^{+}(0,\mu_j,\sigma_j)=\mathrm{P}(s_{ij}> 0\;|\;s_{ij}\sim\mathcal{N}(\mu_j,\sigma_j))
@@ -65,7 +65,7 @@ Hence by (D3), $\Phi^{+}(0,\mu_j,\sigma_j)$ is the number of values $s^{*}_{ij}$
 This value is, by definition (S2, D1), the mean $\mu_j^{*}$.
 $\blacksquare$
 
-<h2>Proof (T3):</h2>
+<h2>Proof (T3)</h2>
 Consider again the identity: 
 \begin{equation*}
     \mathrm{corr}(X,Y)=\frac{\mathrm{cov}(X,Y)}{\sigma_{X}\sigma_{Y}}

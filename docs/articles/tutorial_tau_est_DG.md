@@ -495,8 +495,8 @@ correlation R\_{V\_{i_1}V\_{i_2}} can often be found which, when these
 variables V_i are thresholded by \gamma = \Phi^{-1}(1-\lambda), gives
 back the original correlation R\_{X\_{i_1}X\_{i_2}}. Actually, in this
 case, it’s the covariance K\_{V\_{i_1}V\_{i_2}} that is sought. Knowing
-the correlation R\_{V\_{i_1}V\_{i_2}} is not critical, although because
-V is normal, R\_{V\_{i_1}V\_{i_2}} = K\_{V\_{i_1}V\_{i_2}}.
+the correlation R\_{V\_{i_1}V\_{i_2}} is not critical, because V is
+normal, so R\_{V\_{i_1}V\_{i_2}} = K\_{V\_{i_1}V\_{i_2}}.
 
 By definition, the covariance K\_{X\_{i_1}X\_{i_2}} is given by:
 K\_{X\_{i_1}X\_{i_2}}= \text{E}\[X\_{i_1}X\_{i_2}\] -
@@ -509,12 +509,13 @@ K\_{V\_{i_1}V\_{i_2}}, evaluated at \gamma for both components:
 For a threshold x, \Phi_2^+(x,K\_{V\_{i_1}V\_{i_2}}) is the probability
 that both components of a bivariate normal distribution with covariance
 K\_{V\_{i_1}V\_{i_2}} are greater than x: \begin{aligned}
-&\Phi_2^+(x,K\_{V\_{i_1}V\_{i_2}}) \\ &\\\\\\= P(V_1\>x, V_2\>x \\\|\\
-V_1, V_2\sim \text{MVN}(\mu=0,\sigma=1,K=K\_{V\_{i_1}V\_{i_2}})) \\
-&\\\\\\= \frac{1}{\sqrt{(2\pi)^2\mathbf{det}(K\_{V\_{i_1}V\_{i_2}})}}
+&\Phi_2^+(x,K\_{V\_{i_1}V\_{i_2}}) \\ &\\\\\\= P(V\_{i_1}\>x,
+V\_{i_2}\>x \\\|\\ \langle V\_{i_1}, V\_{i_2}\rangle\sim
+\text{MVN}(\mu=0,\sigma=1,K=K\_{V\_{i_1}V\_{i_2}})) \\ &\\\\\\=
+\frac{1}{\sqrt{(2\pi)^2\mathbf{det}(K\_{V\_{i_1}V\_{i_2}})}}
 \int\_{x}^\infty \int\_{x}^\infty \exp(-\frac{1}{2}\langle
-V\_{i_1}V\_{i_2}\rangle^\text{T}K\_{V\_{i_1}V\_{i_2}}^{-1}\langle
-V\_{i_1}V\_{i_2}\rangle) \langle V\_{i_1}V\_{i_2}\rangle \end{aligned}
+V\_{i_1},V\_{i_2}\rangle K\_{V\_{i_1}V\_{i_2}}^{-1}\langle
+V\_{i_1},V\_{i_2}\rangle^\text{T}) dV\_{i_1}dV\_{i_2} \end{aligned}
 
 Putting it all together: K\_{X\_{i_1}X\_{i_2}} =
 \Phi_2^+(\gamma,K\_{V\_{i_1}V\_{i_2}}) - (1-\Phi(\gamma))^2 Thus, the
@@ -567,12 +568,12 @@ print(head(autocor.ests$estimates))
 
 ``` scroll-output
 ##    lambda_ms lambda_bin          A      tau    bias_term  autocorr1 max_autocorr mean_autocorr min_autocorr
-## 1 0.01452113  0.1452113 0.01039435 34.17210 0.0002108631 0.01060522  0.007968100  0.0004277115 0.0002108631
-## 2 0.01773239  0.1773239 0.01332894 32.71031 0.0003144378 0.01364338  0.010132497  0.0005787920 0.0003144378
-## 3 0.01670423  0.1670423 0.01240770 36.54395 0.0002790311 0.01268673  0.009716373  0.0005586155 0.0002790311
-## 4 0.01766197  0.1766197 0.01232143 38.74450 0.0003119452 0.01263337  0.009830459  0.0006087025 0.0003119452
-## 5 0.01629577  0.1629577 0.01279240 32.46619 0.0002655523 0.01305795  0.009666764  0.0005170678 0.0002655523
-## 6 0.01577465  0.1577465 0.01163968 30.51361 0.0002488395 0.01188852  0.008635958  0.0004617071 0.0002488395
+## 1 0.01485915  0.1485915 0.01105836 32.05667 0.0002207945 0.01127915  0.008315734  0.0004350302 0.0002207945
+## 2 0.01660563  0.1660563 0.01144916 34.19481 0.0002757471 0.01172491  0.008821844  0.0005147842 0.0002757471
+## 3 0.01690141  0.1690141 0.01264304 36.96877 0.0002856576 0.01292870  0.009932287  0.0005743306 0.0002856576
+## 4 0.01811268  0.1811268 0.01290035 37.93506 0.0003280690 0.01322842  0.010239075  0.0006314054 0.0003280690
+## 5 0.01615493  0.1615493 0.01196002 33.57555 0.0002609817 0.01222101  0.009140382  0.0005054699 0.0002609817
+## 6 0.01539437  0.1539437 0.01105912 30.26630 0.0002369865 0.01129610  0.008184464  0.0004373144 0.0002369865
 ```
 
 With the simulations run, the final step is to estimate the network time
@@ -605,12 +606,12 @@ print(head(autocor.results.bootstraps$resamples))
 
 ``` scroll-output
 ##   LH_CBA/J RH_CBA/J
-## 1 56.77222 53.73481
-## 2 51.51585 56.34578
-## 3 46.20546 51.45680
-## 4 52.92404 48.94714
-## 5 52.48259 59.84441
-## 6 52.89871 56.81380
+## 1 57.24231 53.22666
+## 2 51.22015 56.22815
+## 3 46.86830 51.19610
+## 4 52.67101 48.77020
+## 5 53.69465 59.17320
+## 6 52.05223 56.77158
 ```
 
 The second is **distribution_plot**, a ggplot2 object visualizing the

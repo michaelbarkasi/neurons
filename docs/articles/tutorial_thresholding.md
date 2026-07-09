@@ -47,7 +47,7 @@ It follows that:
   \sqrt{\mu^{\*}\_{j_1}-{\mu^{\*}\_{j_1}}^2}
   \sqrt{\mu^{\*}\_{j_2}-{\mu^{\*}\_{j_2}}^2} } \end{equation\*}
 
-## Proof (T1):
+## Proof (T1)
 
 Let \Sigma^\prime=DR and note that by the definition of matrix
 multiplication: \begin{equation\*} \Sigma^\prime\_{ij} =
@@ -62,7 +62,7 @@ From the identity \mathrm{corr}(X,Y)\sigma_X\sigma_Y=\mathrm{cov}(X,Y)
 and (S3), follows that \Sigma\_{ij}=\mathrm{cov}(s_i,s_j). Thus, \Sigma
 is the covariance matrix for the columns of S. \blacksquare
 
-## Proof (T2):
+## Proof (T2)
 
 By the definition of \Phi^{+}, for 1\leq i\leq n: \begin{equation\*}
 \Phi^{+}(0,\mu_j,\sigma_j)=\mathrm{P}(s\_{ij}\>
@@ -71,7 +71,7 @@ By the definition of \Phi^{+}, for 1\leq i\leq n: \begin{equation\*}
 which equal one, over n. This value is, by definition (S2, D1), the mean
 \mu_j^{\*}. \blacksquare
 
-## Proof (T3):
+## Proof (T3)
 
 Consider again the identity: \begin{equation\*}
 \mathrm{corr}(X,Y)=\frac{\mathrm{cov}(X,Y)}{\sigma\_{X}\sigma\_{Y}}

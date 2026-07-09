@@ -1,7 +1,7 @@
 ---
 title: "Dependency licenses"
 author: "Michael Barkasi"
-date: "`r Sys.Date()`"
+date: "July 8, 2026 (v1.0)"
 ---
 
 This package uses code from the following packages, which are distributed under the licenses listed below.
@@ -85,12 +85,16 @@ https://github.com/tidyverse/ggplot2
 
 <h1> MASS </h1> 
 
-... must fill in.
+by: Brian Ripley, Bill Venables, Douglas M. Bates, Kurt Hornik (partial port ca 1998), Albrecht Gebhardt (partial port ca 1998), and David Firth (support functions for polr)
+
+http://www.stats.ox.ac.uk/pub/MASS4/
 
 GNU General Public License v2.0 / v3.0
 
 <h1> mvtnorm </h1>
 
-... must fill in. 
+by: Alan Genz, Frank Bretz, Tetsuhisa Miwa, Xuefei Mi, Friedrich Leisch, Fabian Scheipl, Bjoern Bornkamp, Martin Maechler, and Torsten Hothorn
+
+http://mvtnorm.R-forge.R-project.org
 
 GNU General Public License v2.0
